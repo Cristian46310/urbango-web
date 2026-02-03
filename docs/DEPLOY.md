@@ -1,4 +1,5 @@
 **Requisitos**
+
 - **Docker**: instalado y funcionando en la máquina (ver `docker --version`).
 
 **Construir la imagen Docker**
@@ -30,5 +31,3 @@ docker run --rm -p 8080:80 dev-backendui-uc:latest
 ```
 
 Luego abre en el navegador `http://localhost/` (o `http://localhost:8080/` si usaste 8080).
-
-**Archivo actualizado:** [docs/DEPLOY.md](docs/DEPLOY.md)

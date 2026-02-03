@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+## Inicio rápido
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Clona el repositorio:
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/JuManoel/dev-backendUI-uc.git
+cd dev-backendUI-uc
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Instala dependencias (si no están instaladas):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+Comandos útiles:
+
+- Ejecutar lint y aplicar fixes automáticos:
+
+```bash
+npm run lint -- --fix
+```
+
+- Compilar la aplicación (build):
+
+```bash
+npm run build
+```
+
+- Levantar entorno de desarrollo (HMR):
+
+```bash
+npm run dev
+```
+
+> Nota: algunos `package.json` definen `dev` como script; si tu proyecto usa otro nombre, sustituye `dev` por el script correspondiente.
+
+## Estándares de código
+
+- **Idioma:** Todo el código fuente en inglés; los comentarios pueden estar en español.
+- **Responsabilidad única:** Cada clase o módulo debe tener una única responsabilidad clara.
+- **Arquitectura:** Aplicar Hexagonal/Clean Architecture cuando sea posible. Si es demasiado complejo, aplicar MVC u otra arquitectura indicada por el profesor.
+- **Convenciones de nombres:**
+  - Clases: PascalCase (ej.: `UserService`).
+  - Variables y métodos: camelCase en JavaScript/TypeScript/Java/C# (ej.: `getUser`, `userName`).
+  - Python: snake_case (ej.: `get_user`).
+
+## Estándares de GitHub / flujo de ramas
+
+- Ramas para nuevas features o historias de usuario (HU):
+  - Formato: `feat/XXX/yyy` donde `XXX` es la feature principal (ej.: `auth`) y `yyy` el submódulo (ej.: `google`).
+  - Ejemplo: `feat/auth/google`.
+- Ramas para arreglos (fix):
+  - Formato: `fix/XXX/yyy`.
+  - Ejemplo: `fix/ui/button-alignment`.
+- Ramas principales:
+  - `main`: código estable, funcional y probado.
+  - `dev`: rama de integración para trabajo en curso y pruebas.
+- Reglas de colaboración:
+  - Nunca hacer merge directamente a `main` desde tu rama. Crear un Pull Request (PR) y apuntarlo a `dev` para revisión por el equipo.
+  - Antes de pushear tus cambios, siempre hacer `git pull origin main` (o `git pull --rebase origin main`) y resolver conflictos localmente.
+
+## Buenas prácticas adicionales
+
+- Documenta las decisions importantes en `docs/` o en el PR.
+- Escribe tests para casos de uso críticos.
+- Centraliza las reglas de estilo (ESLint, Prettier) y haz que todos las respeten.
+- Mantén commits pequeños y atómicos con mensajes claros (imperativo, en inglés preferiblemente, ej.: "Add Google auth flow").
