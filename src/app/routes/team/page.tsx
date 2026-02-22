@@ -51,7 +51,7 @@ export default function TeamPage() {
         {/* Team Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {students.map((student) => (
-            <CardGithub student={student} />
+            <CardGithub key={student.github} student={student} />
           ))}
         </div>
 
@@ -71,7 +71,7 @@ export default function TeamPage() {
         {/* Logout Button */}
         <div className="flex justify-center">
           <Button
-            onClick={() => navigate("/login")}
+            onClick={() => void navigate("/login")}
             className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-2.5 rounded-md transition-colors"
           >
             Cerrar Sesión

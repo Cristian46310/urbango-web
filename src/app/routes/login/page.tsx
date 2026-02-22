@@ -22,13 +22,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
-    // Validar que los campos no estén vacíos
-    if (email.trim() && password.trim()) {
-      // Aquí iría la lógica de autenticación
-      navigate("/team");
+    try {
+      // TODO: mover esa logica para su debido lugar, store
+      if (email.trim() && password.trim()) {
+        void navigate("/team");
+      }
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
     }
   };
 
@@ -66,7 +68,9 @@ export default function LoginPage() {
             type="email"
             placeholder="cristian.marin1234@ucaldas.edu.co"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
             className="mt-2 border-slate-300"
             required
           />
@@ -94,7 +98,9 @@ export default function LoginPage() {
             type="password"
             placeholder="••••••••"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
             className="mt-2 border-slate-300"
             required
           />
