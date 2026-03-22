@@ -1,0 +1,9 @@
+import type { User } from "./User";
+
+export interface Session {
+    id: string;
+    token: string;
+    expiration: Date;
+    code2FA: string;
+    user: User
+}
