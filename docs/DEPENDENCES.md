@@ -286,6 +286,61 @@ function ThemeToggle() {
 
 ---
 
+### Zustand
+
+**Versión:** `^5.0.12`
+
+**Descripción:** 
+Zustand es una librería de estado global (state management) pequeña, rápida y escalable para React. Proporciona una alternativa más simple y ligera a Redux o Context API, permitiendo compartir estado entre componentes sin necesidad de prop drilling ni de una arquitectura compleja.
+
+**Ejemplo de Uso:**
+
+```tsx
+// src/app/store/security/userStore.ts
+import { create } from 'zustand';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface UserStore {
+  users: User[];
+  currentUser: User | null;
+  setCurrentUser: (user: User) => void;
+  addUser: (user: User) => void;
+  removeUser: (id: string) => void;
+  fetchUsers: () => Promise<void>;
+}
+
+export const useUserStore = create<UserStore>((set, get) => ({
+  users: [],
+  currentUser: null,
+  
+  setCurrentUser: (user) => set({ currentUser: user }),
+  
+  addUser: (user) => set((state) => ({
+    users: [...state.users, user]
+  })),
+  
+  removeUser: (id) => set((state) => ({
+    users: state.users.filter(u => u.id !== id)
+  })),
+  
+  fetchUsers: async () => {
+    try {
+      // Petición a la API usando UserRepository
+      const response = await fetch('/api/users');
+      const users = await response.json();
+      set({ users });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  }
+}));
+---
+
 ### Class Variance Authority (CVA)
 
 **Versión:** `^0.7.1`
