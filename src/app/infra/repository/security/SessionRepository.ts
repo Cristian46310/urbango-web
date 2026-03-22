@@ -5,7 +5,7 @@ import type { ISessionRepository } from "@/core/domain/interfaces/security/ISess
 
 export class SessionRepository implements ISessionRepository {
   async deleteSession(sessionId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.SESSION.BY_ID(sessionId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.SESSION.BY_ID(sessionId));
   }
 
   async putSession(sessionId: string, sessionData: Session): Promise<Session> {

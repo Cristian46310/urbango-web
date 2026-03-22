@@ -5,7 +5,7 @@ import type { IUserRepository } from "@/core/domain/interfaces/security/IUserRep
 
 export class UserRepository implements IUserRepository {
   async deleteUser(userId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.USER.BY_ID(userId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.BY_ID(userId));
   }
 
   async putUser(userId: string, userData: User): Promise<User> {
@@ -29,7 +29,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async deleteUserSession(userId: string, sessionId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
   }
 
   async postUserProfile(userId: string, profileId: string): Promise<unknown> {
@@ -37,7 +37,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async deleteUserProfile(userId: string, profileId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
   }
 }
 

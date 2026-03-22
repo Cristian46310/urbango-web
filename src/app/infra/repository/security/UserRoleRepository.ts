@@ -4,7 +4,7 @@ import type { IUserRoleRepository } from "@/core/domain/interfaces/security/IUse
 
 export class UserRoleRepository implements IUserRoleRepository {
   async deleteUserRole(userRoleId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.USER_ROLE.BY_ID(userRoleId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER_ROLE.BY_ID(userRoleId));
   }
 
   async postUserRole(userId: string, roleId: string): Promise<unknown> {

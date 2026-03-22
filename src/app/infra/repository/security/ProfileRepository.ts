@@ -5,7 +5,7 @@ import type { IProfileRepository } from "@/core/domain/interfaces/security/IProf
 
 export class ProfileRepository implements IProfileRepository {
   async deleteProfile(profileId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.PROFILE.BY_ID(profileId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.PROFILE.BY_ID(profileId));
   }
 
   async putProfile(profileId: string, profileData: Profile): Promise<Profile> {

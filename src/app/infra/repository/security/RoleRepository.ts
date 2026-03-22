@@ -5,7 +5,7 @@ import type { IRoleRepository } from "@/core/domain/interfaces/security/IRoleRep
 
 export class RoleRepository implements IRoleRepository {
   async deleteRole(roleId: string): Promise<void> {
-    await httpMsSecurity.delete<void>(ENDPOINTS.ROLE.BY_ID(roleId));
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.ROLE.BY_ID(roleId));
   }
 
   async putRole(roleId: string, roleData: Role): Promise<Role> {
