@@ -6,5 +6,4 @@ export interface IProfileRepository {
   getProfile(profileId: string): Promise<Profile>;
   getAllProfiles(): Promise<Profile[]>;
   postProfile(profileData: Profile): Promise<Profile>;
-
 }

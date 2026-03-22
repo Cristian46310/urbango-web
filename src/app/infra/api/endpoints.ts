@@ -18,11 +18,16 @@ export const ENDPOINTS = {
     BASE: "/sessions",
     BY_ID: (sessionId: string) => `/sessions/${sessionId}`,
   },
+  ROLE: {
+    BASE: "/roles",
+    BY_ID: (roleId: string) => `/roles/${roleId}`,
+  },
   PROFILE: {
     BASE: "/profiles",
     BY_ID: (profileId: string) => `/profiles/${profileId}`,
   },
   USER_ROLE: {
+    BY_ID: (userRoleId: string) => `/user-role/${userRoleId}`,
     BASE: (userId: string, roleId: string) =>
       `/user-role/user/${userId}/role/${roleId}`,
   },
