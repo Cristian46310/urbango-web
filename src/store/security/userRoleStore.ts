@@ -2,7 +2,7 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { PostUserRoleUseCase } from "@/core/applications/security/userRole/postUserRoleUseCase";
 import { DeleteUserRoleUseCase } from "@/core/applications/security/userRole/deleteUserRoleUseCase";
-import { UserRoleRepository } from "@/app/infra/repository/security";
+import { UserRoleRepository } from "@/infra/repository/security";
 
 const userRoleRepository = new UserRoleRepository();
 const postUserRoleUseCase = new PostUserRoleUseCase(userRoleRepository);

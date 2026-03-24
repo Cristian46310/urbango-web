@@ -6,7 +6,7 @@ import { GetAllUsersUseCase } from "@/core/applications/security/user/getAllUser
 import { PostUserUseCase } from "@/core/applications/security/user/postUserUseCase";
 import { PutUserUseCase } from "@/core/applications/security/user/putUserUseCase";
 import { DeleteUserUseCase } from "@/core/applications/security/user/deleteUserUseCase";
-import { UserRepository } from "@/app/infra/repository/security";
+import { UserRepository } from "@/infra/repository/security";
 
 const userRepository = new UserRepository();
 const getUserUseCase = new GetUserUseCase(userRepository);

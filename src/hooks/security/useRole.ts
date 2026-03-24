@@ -1,4 +1,4 @@
-import { useRoleStore } from "@/app/store";
+import { useRoleStore } from "@/store";
 import type { Role } from "@/core/domain/entities/security/Role";
 
 export function useRole() {

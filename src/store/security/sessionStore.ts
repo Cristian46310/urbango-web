@@ -6,7 +6,7 @@ import { GetAllSessionsUseCase } from "@/core/applications/security/session/getA
 import { PostSessionUseCase } from "@/core/applications/security/session/postSessionUseCase";
 import { PutSessionUseCase } from "@/core/applications/security/session/putSessionUseCase";
 import { DeleteSessionUseCase } from "@/core/applications/security/session/deleteSessionUseCase";
-import { SessionRepository } from "@/app/infra/repository/security";
+import { SessionRepository } from "@/infra/repository/security";
 
 const sessionRepository = new SessionRepository();
 const getSessionUseCase = new GetSessionUseCase(sessionRepository);

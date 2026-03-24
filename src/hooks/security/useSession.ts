@@ -1,4 +1,4 @@
-import { useSessionStore } from "@/app/store";
+import { useSessionStore } from "@/store";
 import type { Session } from "@/core/domain/entities/security/Session";
 
 export function useSession() {

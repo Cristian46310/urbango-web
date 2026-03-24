@@ -1,4 +1,4 @@
-import { useProfileStore } from "@/app/store";
+import { useProfileStore } from "@/store";
 import type { Profile } from "@/core/domain/entities/security/Profile";
 export function useProfile() {
   const {

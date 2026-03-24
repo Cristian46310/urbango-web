@@ -1,5 +1,5 @@
-import { httpMsSecurity } from "@/app/infra/api/builderHttp";
-import { ENDPOINTS } from "@/app/infra/api/endpoints";
+import { httpMsSecurity } from "@/infra/api/builderHttp";
+import { ENDPOINTS } from "@/infra/api/endpoints";
 import type { Role } from "@/core/domain/entities/security/Role";
 import type { IRoleRepository } from "@/core/domain/interfaces/security/IRoleRepository";
 

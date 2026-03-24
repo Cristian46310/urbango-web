@@ -1,4 +1,4 @@
-import { useUserStore } from "@/app/store";
+import { useUserStore } from "@/store";
 import type { User } from "@/core/domain/entities/security/User";
 
 export function useUser() {

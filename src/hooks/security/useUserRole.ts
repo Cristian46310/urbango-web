@@ -1,4 +1,4 @@
-import { useUserRoleStore } from "@/app/store";
+import { useUserRoleStore } from "@/store";
 
 export function useUserRole() {
   const {

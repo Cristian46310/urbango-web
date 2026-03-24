@@ -6,7 +6,7 @@ import { GetAllRolesUseCase } from "@/core/applications/security/role/getAllRole
 import { PostRoleUseCase } from "@/core/applications/security/role/postRoleUseCase";
 import { PutRoleUseCase } from "@/core/applications/security/role/putRoleUseCase";
 import { DeleteRoleUseCase } from "@/core/applications/security/role/deleteRoleUseCase";
-import { RoleRepository } from "@/app/infra/repository/security";
+import { RoleRepository } from "@/infra/repository/security";
 
 const roleRepository = new RoleRepository();
 const getRoleUseCase = new GetRoleUseCase(roleRepository);

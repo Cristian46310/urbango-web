@@ -6,7 +6,7 @@ import { GetAllProfilesUseCase } from "@/core/applications/security/profile/getA
 import { PostProfileUseCase } from "@/core/applications/security/profile/postProfileUseCase";
 import { PutProfileUseCase } from "@/core/applications/security/profile/putProfileUseCase";
 import { DeleteProfileUseCase } from "@/core/applications/security/profile/deleteProfileUseCase";
-import { ProfileRepository } from "@/app/infra/repository/security";
+import { ProfileRepository } from "@/infra/repository/security";
 
 const profileRepository = new ProfileRepository();
 const getProfileUseCase = new GetProfileUseCase(profileRepository);
