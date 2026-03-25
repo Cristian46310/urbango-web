@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
-import type { User } from "@/core/domain/entities/security/User";
+import type { CreateUserDTO, UpdateUserDTO, User } from "@/core/domain/entities/security/User";
 import { GetUserUseCase } from "@/core/applications/security/user/getUserUseCase";
 import { GetAllUsersUseCase } from "@/core/applications/security/user/getAllUsersUseCase";
 import { PostUserUseCase } from "@/core/applications/security/user/postUserUseCase";
@@ -21,8 +21,8 @@ interface UserStoreState {
   error: string | null;
   fetchUser: (userId: string) => Promise<User>;
   fetchAllUsers: () => Promise<User[]>;
-  createUser: (userData: User) => Promise<User>;
-  updateUser: (userId: string, userData: User) => Promise<User>;
+  createUser: (userData: CreateUserDTO) => Promise<User>;
+  updateUser: (userId: string, userData: UpdateUserDTO) => Promise<User>;
   deleteUser: (userId: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useUserStore = create<UserStoreState>((set) => ({
       throw error;
     }
   },
-  createUser: async (userData: User) => {
+  createUser: async (userData: CreateUserDTO) => {
     set({ loading: true, error: null });
     try {
       const user = await postUserUseCase.execute(userData);
@@ -71,7 +71,7 @@ export const useUserStore = create<UserStoreState>((set) => ({
       throw error;
     }
   },
-  updateUser: async (userId: string, userData: User) => {
+  updateUser: async (userId: string, userData: UpdateUserDTO) => {
     set({ loading: true, error: null });
     try {
       if (!userId || userId.trim() === "") {

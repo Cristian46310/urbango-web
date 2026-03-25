@@ -6,3 +6,7 @@ export interface Profile {
     photo: string;
     user: User
 }
+
+export interface CreateProfileDTO extends Omit<Profile, 'id'> {}
+
+export interface UpdateProfileDTO extends Partial<CreateProfileDTO> {}

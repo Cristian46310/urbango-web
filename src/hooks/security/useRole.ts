@@ -1,5 +1,5 @@
 import { useRoleStore } from "@/store";
-import type { Role } from "@/core/domain/entities/security/Role";
+import type { CreateRoleDTO, Role, UpdateRoleDTO } from "@/core/domain/entities/security/Role";
 
 export function useRole() {
   const {
@@ -19,8 +19,8 @@ export function useRole() {
     error,
     loadRoles: () => fetchAllRoles(),
     getRoleById: (roleId: string) => fetchRole(roleId),
-    addRole: (roleData: Role) => createRole(roleData),
-    editRole: (roleId: string, roleData: Role) => updateRole(roleId, roleData),
+    addRole: (roleData: CreateRoleDTO) => createRole(roleData),
+    editRole: (roleId: string, roleData: UpdateRoleDTO) => updateRole(roleId, roleData),
     removeRole: (roleId: string) => deleteRole(roleId),
   };
 }

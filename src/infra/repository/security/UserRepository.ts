@@ -1,14 +1,15 @@
 import { httpMsSecurity } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
-import type { User } from "@/core/domain/entities/security/User";
+import type { CreateUserDTO, UpdateUserDTO, User } from "@/core/domain/entities/security/User";
 import type { IUserRepository } from "@/core/domain/interfaces/security/IUserRepository";
+import type { MessageResponse } from "@/core/types/MessageResponse";
 
 export class UserRepository implements IUserRepository {
   async deleteUser(userId: string): Promise<void> {
     await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.BY_ID(userId));
   }
 
-  async putUser(userId: string, userData: User): Promise<User> {
+  async putUser(userId: string, userData: UpdateUserDTO): Promise<User> {
     return await httpMsSecurity.put<User>(ENDPOINTS.USER.BY_ID(userId), userData);
   }
 
@@ -20,20 +21,20 @@ export class UserRepository implements IUserRepository {
     return await httpMsSecurity.get<User[]>(ENDPOINTS.USER.BASE);
   }
 
-  async postUser(userData: User): Promise<User> {
+  async postUser(userData: CreateUserDTO): Promise<User> {
     return await httpMsSecurity.post<User>(ENDPOINTS.USER.BASE, userData);
   }
 
-  async postUserSession(userId: string, sessionId: string): Promise<unknown> {
-    return await httpMsSecurity.post<unknown>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
+  async postUserSession(userId: string, sessionId: string): Promise<MessageResponse> {
+    return await httpMsSecurity.post<MessageResponse>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
   }
 
   async deleteUserSession(userId: string, sessionId: string): Promise<void> {
     await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
   }
 
-  async postUserProfile(userId: string, profileId: string): Promise<unknown> {
-    return await httpMsSecurity.post<unknown>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
+  async postUserProfile(userId: string, profileId: string): Promise<MessageResponse> {
+    return await httpMsSecurity.post<MessageResponse>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
   }
 
   async deleteUserProfile(userId: string, profileId: string): Promise<void> {

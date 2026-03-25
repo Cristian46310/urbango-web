@@ -1,4 +1,4 @@
-import type { Role } from "@/core/domain/entities/security/Role";
+import type { Role, UpdateRoleDTO } from "@/core/domain/entities/security/Role";
 import type { IRoleRepository } from "@/core/domain/interfaces/security/IRoleRepository";
 
 export class PutRoleUseCase {
@@ -8,7 +8,7 @@ export class PutRoleUseCase {
     this.roleRepository = roleRepository;
   }
 
-  async execute(roleId: string, roleData: Role): Promise<Role> {
+  async execute(roleId: string, roleData: UpdateRoleDTO): Promise<Role> {
     if (!roleId) {
       throw new Error("Role ID is required");
     }

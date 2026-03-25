@@ -1,4 +1,4 @@
-import type { User } from "@/core/domain/entities/security/User";
+import type { CreateUserDTO, User } from "@/core/domain/entities/security/User";
 import type { IUserRepository } from "@/core/domain/interfaces/security/IUserRepository";
 
 export class PostUserUseCase {
@@ -8,7 +8,7 @@ export class PostUserUseCase {
     this.userRepository = userRepository;
   }
 
-  async execute(userData: User): Promise<User> {
+  async execute(userData: CreateUserDTO): Promise<User> {
     return await this.userRepository.postUser(userData);
   }
 }

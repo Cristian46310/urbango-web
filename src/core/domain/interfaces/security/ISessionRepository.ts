@@ -1,9 +1,9 @@
-import type { Session } from "@/core/domain/entities/security/Session";
+import type { CreateSessionDTO, Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 
 export interface ISessionRepository {
   deleteSession(sessionId: string): Promise<void>;
-  putSession(sessionId: string, sessionData: Session): Promise<Session>;
+  putSession(sessionId: string, sessionData: UpdateSessionDTO): Promise<Session>;
   getSession(sessionId: string): Promise<Session>;
   getAllSessions(): Promise<Session[]>;
-  postSession(sessionData: Session): Promise<Session>;
+  postSession(sessionData: CreateSessionDTO): Promise<Session>;
 }

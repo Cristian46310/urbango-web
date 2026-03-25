@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
-import type { Session } from "@/core/domain/entities/security/Session";
+import type { CreateSessionDTO, Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 import { GetSessionUseCase } from "@/core/applications/security/session/getSessionUseCase";
 import { GetAllSessionsUseCase } from "@/core/applications/security/session/getAllSessionsUseCase";
 import { PostSessionUseCase } from "@/core/applications/security/session/postSessionUseCase";
@@ -21,8 +21,8 @@ interface SessionStoreState {
   error: string | null;
   fetchSession: (sessionId: string) => Promise<Session>;
   fetchAllSessions: () => Promise<Session[]>;
-  createSession: (sessionData: Session) => Promise<Session>;
-  updateSession: (sessionId: string, sessionData: Session) => Promise<Session>;
+  createSession: (sessionData: CreateSessionDTO) => Promise<Session>;
+  updateSession: (sessionId: string, sessionData: UpdateSessionDTO) => Promise<Session>;
   deleteSession: (sessionId: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useSessionStore = create<SessionStoreState>((set) => ({
       throw error;
     }
   },
-  createSession: async (sessionData: Session) => {
+  createSession: async (sessionData: CreateSessionDTO) => {
     set({ loading: true, error: null });
     try {
       const session = await postSessionUseCase.execute(sessionData);
@@ -71,7 +71,7 @@ export const useSessionStore = create<SessionStoreState>((set) => ({
       throw error;
     }
   },
-  updateSession: async (sessionId: string, sessionData: Session) => {
+  updateSession: async (sessionId: string, sessionData: UpdateSessionDTO) => {
     set({ loading: true, error: null });
     try {
       if (!sessionId || sessionId.trim() === "") {

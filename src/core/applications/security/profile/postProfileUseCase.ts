@@ -1,4 +1,4 @@
-import type { Profile } from "@/core/domain/entities/security/Profile";
+import type { CreateProfileDTO, Profile } from "@/core/domain/entities/security/Profile";
 import type { IProfileRepository } from "@/core/domain/interfaces/security/IProfileRepository";
 
 export class PostProfileUseCase {
@@ -8,7 +8,7 @@ export class PostProfileUseCase {
     this.profileRepository = profileRepository;
   }
 
-  async execute(profileData: Profile): Promise<Profile> {
+  async execute(profileData: CreateProfileDTO): Promise<Profile> {
     return await this.profileRepository.postProfile(profileData);
   }
 }

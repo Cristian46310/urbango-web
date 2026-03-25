@@ -1,4 +1,4 @@
-import type { Session } from "@/core/domain/entities/security/Session";
+import type { CreateSessionDTO, Session } from "@/core/domain/entities/security/Session";
 import type { ISessionRepository } from "@/core/domain/interfaces/security/ISessionRepository";
 
 export class PostSessionUseCase {
@@ -8,7 +8,7 @@ export class PostSessionUseCase {
     this.sessionRepository = sessionRepository;
   }
 
-  async execute(sessionData: Session): Promise<Session> {
+  async execute(sessionData: CreateSessionDTO): Promise<Session> {
     return await this.sessionRepository.postSession(sessionData);
   }
 }

@@ -1,5 +1,5 @@
 import { useSessionStore } from "@/store";
-import type { Session } from "@/core/domain/entities/security/Session";
+import type { CreateSessionDTO, Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 
 export function useSession() {
   const {
@@ -19,8 +19,8 @@ export function useSession() {
     error,
     loadSessions: () => fetchAllSessions(),
     getSessionById: (sessionId: string) => fetchSession(sessionId),
-    addSession: (sessionData: Session) => createSession(sessionData),
-    editSession: (sessionId: string, sessionData: Session) => updateSession(sessionId, sessionData),
+    addSession: (sessionData: CreateSessionDTO) => createSession(sessionData),
+    editSession: (sessionId: string, sessionData: UpdateSessionDTO) => updateSession(sessionId, sessionData),
     removeSession: (sessionId: string) => deleteSession(sessionId),
   };
 }

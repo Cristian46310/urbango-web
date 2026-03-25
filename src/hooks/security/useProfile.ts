@@ -1,5 +1,5 @@
 import { useProfileStore } from "@/store";
-import type { Profile } from "@/core/domain/entities/security/Profile";
+import type { CreateProfileDTO, Profile, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
 export function useProfile() {
   const {
     profiles,
@@ -19,8 +19,8 @@ export function useProfile() {
     error,
     loadProfiles: () => fetchAllProfiles(),
     getProfileById: (profileId: string) => fetchProfile(profileId),
-    addProfile: (profileData: Profile) => createProfile(profileData),
-    editProfile: (profileId: string, profileData: Profile) => updateProfile(profileId, profileData),
+    addProfile: (profileData: CreateProfileDTO) => createProfile(profileData),
+    editProfile: (profileId: string, profileData: UpdateProfileDTO) => updateProfile(profileId, profileData),
     removeProfile: (profileId: string) => deleteProfile(profileId),
   };
 }

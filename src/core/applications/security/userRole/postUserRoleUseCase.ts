@@ -1,4 +1,5 @@
 import type { IUserRoleRepository } from "@/core/domain/interfaces/security/IUserRoleRepository";
+import type { MessageResponse } from "@/core/types/MessageResponse";
 
 export class PostUserRoleUseCase {
   private userRoleRepository: IUserRoleRepository;
@@ -7,7 +8,7 @@ export class PostUserRoleUseCase {
     this.userRoleRepository = userRoleRepository;
   }
 
-  async execute(userId: string, roleId: string): Promise<unknown> {
+  async execute(userId: string, roleId: string): Promise<MessageResponse> {
     if (!userId) {
       throw new Error("User ID is required");
     }

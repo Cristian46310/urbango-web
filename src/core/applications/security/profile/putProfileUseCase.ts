@@ -1,5 +1,5 @@
 import type { IProfileRepository } from "@/core/domain/interfaces/security/IProfileRepository";
-import type { Profile } from "@/core/domain/entities/security/Profile";
+import type { Profile, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
 
 export class PutProfileUseCase {
   private profileRepository: IProfileRepository;
@@ -8,7 +8,7 @@ export class PutProfileUseCase {
     this.profileRepository = profileRepository;
   }
 
-  async execute(profileId: string, profileData: Profile): Promise<Profile> {
+  async execute(profileId: string, profileData: UpdateProfileDTO): Promise<Profile> {
     if (!profileId) {
       throw new Error("Profile ID is required");
     }

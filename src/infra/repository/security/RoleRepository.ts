@@ -1,6 +1,6 @@
 import { httpMsSecurity } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
-import type { Role } from "@/core/domain/entities/security/Role";
+import type { CreateRoleDTO, Role, UpdateRoleDTO } from "@/core/domain/entities/security/Role";
 import type { IRoleRepository } from "@/core/domain/interfaces/security/IRoleRepository";
 
 export class RoleRepository implements IRoleRepository {
@@ -8,7 +8,7 @@ export class RoleRepository implements IRoleRepository {
     await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.ROLE.BY_ID(roleId));
   }
 
-  async putRole(roleId: string, roleData: Role): Promise<Role> {
+  async putRole(roleId: string, roleData: UpdateRoleDTO): Promise<Role> {
     return await httpMsSecurity.put<Role>(ENDPOINTS.ROLE.BY_ID(roleId), roleData);
   }
 
@@ -20,7 +20,7 @@ export class RoleRepository implements IRoleRepository {
     return await httpMsSecurity.get<Role[]>(ENDPOINTS.ROLE.BASE);
   }
 
-  async postRole(roleData: Role): Promise<Role> {
+  async postRole(roleData: CreateRoleDTO): Promise<Role> {
     return await httpMsSecurity.post<Role>(ENDPOINTS.ROLE.BASE, roleData);
   }
 }

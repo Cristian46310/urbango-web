@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
-import type { Role } from "@/core/domain/entities/security/Role";
+import type { CreateRoleDTO, Role, UpdateRoleDTO } from "@/core/domain/entities/security/Role";
 import { GetRoleUseCase } from "@/core/applications/security/role/getRoleUseCase";
 import { GetAllRolesUseCase } from "@/core/applications/security/role/getAllRolesUseCase";
 import { PostRoleUseCase } from "@/core/applications/security/role/postRoleUseCase";
@@ -21,8 +21,8 @@ interface RoleStoreState {
   error: string | null;
   fetchRole: (roleId: string) => Promise<Role>;
   fetchAllRoles: () => Promise<Role[]>;
-  createRole: (roleData: Role) => Promise<Role>;
-  updateRole: (roleId: string, roleData: Role) => Promise<Role>;
+  createRole: (roleData: CreateRoleDTO) => Promise<Role>;
+  updateRole: (roleId: string, roleData: UpdateRoleDTO) => Promise<Role>;
   deleteRole: (roleId: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       throw error;
     }
   },
-  createRole: async (roleData: Role) => {
+  createRole: async (roleData: CreateRoleDTO) => {
     set({ loading: true, error: null });
     try {
       const role = await postRoleUseCase.execute(roleData);
@@ -71,7 +71,7 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       throw error;
     }
   },
-  updateRole: async (roleId: string, roleData: Role) => {
+  updateRole: async (roleId: string, roleData: UpdateRoleDTO) => {
     set({ loading: true, error: null });
     try {
       if (!roleId || roleId.trim() === "") {

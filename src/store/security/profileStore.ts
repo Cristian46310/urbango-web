@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
-import type { Profile } from "@/core/domain/entities/security/Profile";
+import type { CreateProfileDTO, Profile, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
 import { GetProfileUseCase } from "@/core/applications/security/profile/getProfileUseCase";
 import { GetAllProfilesUseCase } from "@/core/applications/security/profile/getAllProfilesUseCase";
 import { PostProfileUseCase } from "@/core/applications/security/profile/postProfileUseCase";
@@ -21,8 +21,8 @@ interface ProfileStoreState {
   error: string | null;
   fetchProfile: (profileId: string) => Promise<Profile>;
   fetchAllProfiles: () => Promise<Profile[]>;
-  createProfile: (profileData: Profile) => Promise<Profile>;
-  updateProfile: (profileId: string, profileData: Profile) => Promise<Profile>;
+  createProfile: (profileData: CreateProfileDTO) => Promise<Profile>;
+  updateProfile: (profileId: string, profileData: UpdateProfileDTO) => Promise<Profile>;
   deleteProfile: (profileId: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useProfileStore = create<ProfileStoreState>((set) => ({
       throw error;
     }
   },
-  createProfile: async (profileData: Profile) => {
+  createProfile: async (profileData: CreateProfileDTO) => {
     set({ loading: true, error: null });
     try {
       const profile = await postProfileUseCase.execute(profileData);
@@ -71,7 +71,7 @@ export const useProfileStore = create<ProfileStoreState>((set) => ({
       throw error;
     }
   },
-  updateProfile: async (profileId: string, profileData: Profile) => {
+  updateProfile: async (profileId: string, profileData: UpdateProfileDTO) => {
     set({ loading: true, error: null });
     try {
       if (!profileId || profileId.trim() === "") {

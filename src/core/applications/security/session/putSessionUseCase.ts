@@ -1,4 +1,4 @@
-import type { Session } from "@/core/domain/entities/security/Session";
+import type { Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 import type { ISessionRepository } from "@/core/domain/interfaces/security/ISessionRepository";
 
 export class PutSessionUseCase {
@@ -8,7 +8,7 @@ export class PutSessionUseCase {
     this.sessionRepository = sessionRepository;
   }
 
-  async execute(sessionId: string, sessionData: Session): Promise<Session> {
+  async execute(sessionId: string, sessionData: UpdateSessionDTO): Promise<Session> {
     if (!sessionId) {
       throw new Error("Session ID is required");
     }

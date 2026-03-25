@@ -7,3 +7,7 @@ export interface Session {
     code2FA: string;
     user: User
 }
+
+export interface CreateSessionDTO extends Omit<Session, 'id'> {}
+
+export interface UpdateSessionDTO extends Partial<CreateSessionDTO> {}

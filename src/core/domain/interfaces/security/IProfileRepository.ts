@@ -1,9 +1,9 @@
-import type { Profile } from "@/core/domain/entities/security/Profile";
+import type { CreateProfileDTO, Profile, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
 
 export interface IProfileRepository {
   deleteProfile(profileId: string): Promise<void>;
-  putProfile(profileId: string, profileData: Profile): Promise<Profile>;
+  putProfile(profileId: string, profileData: UpdateProfileDTO): Promise<Profile>;
   getProfile(profileId: string): Promise<Profile>;
   getAllProfiles(): Promise<Profile[]>;
-  postProfile(profileData: Profile): Promise<Profile>;
+  postProfile(profileData: CreateProfileDTO): Promise<Profile>;
 }
