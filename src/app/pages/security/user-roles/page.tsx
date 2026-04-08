@@ -1,97 +1,183 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { PageShell } from "@/app/components/security/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageShell } from "@/app/components/security/page-shell";
-import { useUserRole } from "@/hooks/security";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRole, useUser, useUserRole } from "@/hooks/security";
 
 export default function UserRolesPage() {
   const { loading, error, assignRoleToUser, assignMultipleRolesToUser, removeRoleFromUser } = useUserRole();
-  const [userId, setUserId] = useState("");
-  const [roleId, setRoleId] = useState("");
-  const [roleIds, setRoleIds] = useState("");
-  const [userRoleId, setUserRoleId] = useState("");
+  const { users, loadUsers } = useUser();
+  const { roles, loadRoles } = useRole();
+
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState("");
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [userRoleIdToRemove, setUserRoleIdToRemove] = useState("");
+
+  useEffect(() => {
+    void loadUsers();
+    void loadRoles();
+  }, []);
+
+  const selectedUserName = useMemo(() => {
+    return users.find((user) => user.id === selectedUserId)?.name ?? "";
+  }, [users, selectedUserId]);
+
+  const assignSingle = async () => {
+    if (!selectedUserId || !selectedRoleId) {
+      toast.error("Selecciona un usuario y un rol.");
+      return;
+    }
+
+    await assignRoleToUser(selectedUserId, selectedRoleId);
+    toast.success("Rol asignado al usuario");
+  };
+
+  const assignMultiple = async () => {
+    if (!selectedUserId || selectedRoleIds.length === 0) {
+      toast.error("Selecciona un usuario y al menos un rol.");
+      return;
+    }
+
+    await assignMultipleRolesToUser({
+      userId: selectedUserId,
+      roleIds: selectedRoleIds,
+    });
+    toast.success("Roles asignados correctamente");
+  };
+
+  const removeByRelationId = async () => {
+    if (!userRoleIdToRemove) {
+      toast.error("Selecciona el ID de relacion a eliminar.");
+      return;
+    }
+
+    await removeRoleFromUser(userRoleIdToRemove);
+    toast.success("Relacion usuario/rol eliminada");
+  };
 
   return (
     <PageShell
-      title="Usuario / Rol"
-      description="Asignación y eliminación de relaciones entre usuarios y roles."
+      title="Gestion de relacion usuario / rol"
+      description="Asigna roles a usuarios con listas seleccionables."
       aside={
         <div className="space-y-3">
-          <p>Este hook no carga un listado, por eso la pantalla se centra en acciones concretas.</p>
-          <p>Para múltiples roles usa IDs separados por coma.</p>
+          <p>Ahora no necesitas escribir IDs de usuario o rol manualmente.</p>
+          <p>Para eliminar una relacion aun se requiere el ID de la relacion creado por backend.</p>
         </div>
       }
     >
       <div className="grid gap-6 xl:grid-cols-3">
-        <form
-          className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            await assignRoleToUser(userId.trim(), roleId.trim());
-            toast.success("Rol asignado al usuario");
-          }}
-        >
-          <div>
-            <Label htmlFor="ur-user">ID de usuario</Label>
-            <Input id="ur-user" value={userId} onChange={(event) => setUserId(event.target.value)} />
+        <div className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm">
+          <h3 className="text-base font-semibold text-(--security-foreground)">Asignar un rol</h3>
+
+          <div className="grid gap-2">
+            <Label>Usuario</Label>
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un usuario" />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label htmlFor="ur-role">ID de rol</Label>
-            <Input id="ur-role" value={roleId} onChange={(event) => setRoleId(event.target.value)} />
+
+          <div className="grid gap-2">
+            <Label>Rol</Label>
+            <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un rol" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Button type="submit" disabled={loading} className="w-full">
+
+          <Button type="button" disabled={loading} className="w-full" onClick={() => { void assignSingle(); }}>
             Asignar rol
           </Button>
-        </form>
+        </div>
 
-        <form
-          className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            await assignMultipleRolesToUser({
-              userId: userId.trim(),
-              roleIds: roleIds.split(",").map((value) => value.trim()).filter(Boolean),
-            });
-            toast.success("Roles asignados en bloque");
-          }}
-        >
-          <div>
-            <Label htmlFor="ur-multiple-user">ID de usuario</Label>
-            <Input id="ur-multiple-user" value={userId} onChange={(event) => setUserId(event.target.value)} />
+        <div className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm">
+          <h3 className="text-base font-semibold text-(--security-foreground)">Asignar varios roles</h3>
+          <p className="text-sm text-(--security-muted-foreground)">
+            Usuario seleccionado: {selectedUserName || "Ninguno"}
+          </p>
+
+          <div className="grid gap-2">
+            <Label>Selecciona roles (uno por vez)</Label>
+            <Select
+              value=""
+              onValueChange={(value) => {
+                if (!selectedRoleIds.includes(value)) {
+                  setSelectedRoleIds((current) => [...current, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Agregar rol" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label htmlFor="ur-multiple-roles">IDs de roles separados por coma</Label>
+
+          <div className="rounded-lg border border-(--security-border) bg-card p-3 text-sm text-(--security-muted-foreground)">
+            {selectedRoleIds.length === 0 ? "Sin roles seleccionados" : selectedRoleIds.join(", ")}
+          </div>
+
+          <Button type="button" disabled={loading} className="w-full" onClick={() => { void assignMultiple(); }}>
+            Asignar roles seleccionados
+          </Button>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm">
+          <h3 className="text-base font-semibold text-(--security-foreground)">Eliminar relacion</h3>
+          <p className="text-sm text-(--security-muted-foreground)">
+            Esta accion requiere el ID de relacion usuario/rol que entrega el backend.
+          </p>
+
+          <div className="grid gap-2">
+            <Label htmlFor="user-role-id">ID de relacion</Label>
             <Input
-              id="ur-multiple-roles"
-              value={roleIds}
-              onChange={(event) => setRoleIds(event.target.value)}
-              placeholder="role-1, role-2, role-3"
+              id="user-role-id"
+              value={userRoleIdToRemove}
+              onChange={(event) => {
+                setUserRoleIdToRemove(event.target.value);
+              }}
+              placeholder="Ej: 93c4e2..."
             />
           </div>
-          <Button type="submit" disabled={loading} className="w-full">
-            Asignar múltiples
-          </Button>
-        </form>
 
-        <form
-          className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            await removeRoleFromUser(userRoleId.trim());
-            toast.success("Relación eliminada");
-          }}
-        >
-          <div>
-            <Label htmlFor="ur-link-id">ID de relación usuario-rol</Label>
-            <Input id="ur-link-id" value={userRoleId} onChange={(event) => setUserRoleId(event.target.value)} />
-          </div>
-          <Button type="submit" disabled={loading} variant="destructive" className="w-full">
-            Eliminar relación
+          <Button type="button" variant="destructive" disabled={loading} className="w-full" onClick={() => { void removeByRelationId(); }}>
+            Eliminar relacion
           </Button>
-        </form>
+        </div>
       </div>
 
       {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}

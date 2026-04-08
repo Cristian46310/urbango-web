@@ -1,171 +1,303 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Eye, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { createColumnHelper } from "@tanstack/react-table";
 
+import { DataTable } from "@/app/components/security/data-table";
+import { PageShell } from "@/app/components/security/page-shell";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { CrudTable } from "@/app/components/security/crud-table";
-import { PageShell } from "@/app/components/security/page-shell";
-import { useProfile } from "@/hooks/security";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useProfile, useUser } from "@/hooks/security";
+import type { User } from "@/core/domain/entities/security/User";
+import type { Profile } from "@/core/domain/entities/security/Profile";
 
-type ProfileForm = {
+type ProfileDialogMode = "create" | "edit" | "view";
+
+interface ProfileForm {
   id: string;
   phone: string;
   photo: string;
-  user: string;
-};
+  userId: string;
+}
 
 const initialForm: ProfileForm = {
   id: "",
   phone: "",
   photo: "",
-  user: "{\n  \"id\": \"\",\n  \"name\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}",
+  userId: "",
 };
 
 export default function ProfilesPage() {
   const { profiles, loading, error, loadProfiles, addProfile, editProfile, removeProfile } = useProfile();
+  const { users, loadUsers } = useUser();
+
   const [form, setForm] = useState<ProfileForm>(initialForm);
+  const [dialogMode, setDialogMode] = useState<ProfileDialogMode>("create");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     void loadProfiles();
+    void loadUsers();
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const usersById = useMemo(() => {
+    return new Map(users.map((user) => [user.id, user]));
+  }, [users]);
 
+  const mapProfileToForm = (profile: Profile): ProfileForm => ({
+    id: profile.id,
+    phone: profile.phone,
+    photo: profile.photo,
+    userId: profile.user.id,
+  });
+
+  const openCreateDialog = () => {
+    setForm(initialForm);
+    setDialogMode("create");
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (profile: Profile) => {
+    setForm(mapProfileToForm(profile));
+    setDialogMode("edit");
+    setIsDialogOpen(true);
+  };
+
+  const openViewDialog = (profile: Profile) => {
+    setForm(mapProfileToForm(profile));
+    setDialogMode("view");
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = async () => {
     try {
-      const user = JSON.parse(form.user);
-      const payload = {
-        phone: form.phone.trim(),
-        photo: form.photo.trim(),
-        user,
-      };
+      const user = usersById.get(form.userId);
 
-      if (!payload.phone || !payload.photo) {
-        throw new Error("Teléfono y foto son obligatorios");
+      if (!form.phone.trim() || !form.photo.trim()) {
+        throw new Error("Telefono y foto son obligatorios.");
       }
 
-      if (form.id.trim()) {
-        await editProfile(form.id, payload);
-        toast.success("Perfil actualizado");
+      if (!user) {
+        throw new Error("Debes seleccionar un usuario valido.");
+      }
+
+      if (dialogMode === "edit") {
+        await editProfile(form.id, {
+          phone: form.phone.trim(),
+          photo: form.photo.trim(),
+          user,
+        });
+        toast.success("Perfil actualizado correctamente");
       } else {
-        await addProfile(payload);
-        toast.success("Perfil creado");
+        await addProfile({
+          phone: form.phone.trim(),
+          photo: form.photo.trim(),
+          user,
+        });
+        toast.success("Perfil creado correctamente");
       }
 
+      setIsDialogOpen(false);
       setForm(initialForm);
       await loadProfiles();
     } catch (submitError) {
-      toast.error(submitError instanceof SyntaxError ? "El campo user debe ser JSON válido" : (submitError as Error).message);
+      toast.error((submitError as Error).message);
     }
   };
 
+  const handleDelete = async (profileId: string) => {
+    await removeProfile(profileId);
+    await loadProfiles();
+    toast.success("Perfil eliminado");
+  };
+
+  const columnHelper = createColumnHelper<Profile>();
+  const columns = [
+    columnHelper.accessor("id", {
+      header: "ID",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("phone", {
+      header: "Telefono",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("photo", {
+      header: "Foto",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.display({
+      id: "usuario",
+      header: "Usuario",
+      cell: (info) => {
+        const user = info.row.original.user;
+        return user.name || user.email;
+      },
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "",
+      cell: (info) => {
+        const profile = info.row.original;
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Opciones">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openViewDialog(profile)}>
+                  <Eye className="size-4" />
+                  Ver
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openEditDialog(profile)}>
+                  <Pencil className="size-4" />
+                  Actualizar
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => { void handleDelete(profile.id); }}>
+                  <Trash2 className="size-4" />
+                  Borrar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    }),
+  ];
+
   return (
     <PageShell
-      title="Perfiles"
-      description="Módulo de perfiles con soporte para teléfono, foto y usuario asociado."
+      title="Gestion de perfiles"
+      description="Relaciona informacion de contacto con cada usuario sin editar JSON manualmente."
       aside={
         <div className="space-y-3">
-          <p>El DTO de perfil usa un objeto de usuario anidado, por eso el formulario acepta JSON.</p>
-          <p>Si ya tienes el usuario completo desde el backend, pégalo en el bloque correspondiente.</p>
+          <p>Selecciona el usuario desde la lista para crear o actualizar su perfil.</p>
+          <p>Asi evitas errores de estructura y trabajas mas rapido.</p>
         </div>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <form className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5" onSubmit={handleSubmit}>
-          <div>
-            <Label htmlFor="profile-id">ID opcional para editar</Label>
-            <Input
-              id="profile-id"
-              value={form.id}
-              onChange={(event) => setForm((current) => ({ ...current, id: event.target.value }))}
-            />
-          </div>
-          <div>
-            <Label htmlFor="profile-phone">Teléfono</Label>
-            <Input
-              id="profile-phone"
-              value={form.phone}
-              onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-            />
-          </div>
-          <div>
-            <Label htmlFor="profile-photo">Foto</Label>
-            <Input
-              id="profile-photo"
-              value={form.photo}
-              onChange={(event) => setForm((current) => ({ ...current, photo: event.target.value }))}
-              placeholder="https://..."
-            />
-          </div>
-          <div>
-            <Label htmlFor="profile-user">Usuario JSON</Label>
-            <Textarea
-              id="profile-user"
-              rows={8}
-              value={form.user}
-              onChange={(event) => setForm((current) => ({ ...current, user: event.target.value }))}
-            />
-          </div>
-          <Button type="submit" className="w-full">
-            {form.id.trim() ? "Actualizar perfil" : "Crear perfil"}
+      <DataTable
+        title="Listado de perfiles"
+        description="Perfiles asociados a usuarios del sistema."
+        data={profiles}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onRefresh={() => {
+          void loadProfiles();
+        }}
+        filterField="phone"
+        filterPlaceholder="Buscar por telefono"
+        emptyMessage="No hay perfiles registrados."
+        toolbarAction={
+          <Button type="button" size="sm" onClick={openCreateDialog}>
+            <Plus className="mr-1 size-4" />
+            Adicionar
           </Button>
-          <Button type="button" variant="outline" className="w-full" onClick={() => setForm(initialForm)}>
-            Limpiar
-          </Button>
-        </form>
+        }
+      />
 
-        <CrudTable
-          title="Listado de perfiles"
-          description="Perfiles cargados desde el hook."
-          items={profiles}
-          loading={loading}
-          error={error}
-          onRefresh={() => void loadProfiles()}
-          emptyMessage="No hay perfiles cargados."
-          columns={[
-            { key: "id", label: "ID" },
-            { key: "phone", label: "Teléfono" },
-            { key: "photo", label: "Foto" },
-            {
-              key: "user",
-              label: "Usuario",
-              render: (_, profile) => profile.user?.name ?? profile.user?.email ?? "—",
-            },
-          ]}
-          renderActions={(profile) => (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setForm({
-                    id: profile.id,
-                    phone: profile.phone,
-                    photo: profile.photo,
-                    user: JSON.stringify(profile.user, null, 2),
-                  })
-                }
-              >
-                Editar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={async () => {
-                  await removeProfile(profile.id);
-                  await loadProfiles();
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="border-(--security-border)">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === "create" ? "Adicionar perfil" : dialogMode === "edit" ? "Actualizar perfil" : "Detalle del perfil"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogMode === "view" ? "Informacion del perfil seleccionado." : "Completa los datos del perfil y selecciona su usuario."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="profile-phone">Telefono</Label>
+              <Input
+                id="profile-phone"
+                value={form.phone}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, phone: event.target.value }));
                 }}
-              >
-                Eliminar
-              </Button>
+                disabled={dialogMode === "view"}
+              />
             </div>
-          )}
-        />
-      </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="profile-photo">Foto</Label>
+              <Input
+                id="profile-photo"
+                value={form.photo}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, photo: event.target.value }));
+                }}
+                disabled={dialogMode === "view"}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Usuario asociado</Label>
+              <Select
+                value={form.userId}
+                onValueChange={(value) => {
+                  setForm((current) => ({ ...current, userId: value }));
+                }}
+                disabled={dialogMode === "view"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user: User) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsDialogOpen(false);
+              }}
+            >
+              Cerrar
+            </Button>
+            {dialogMode !== "view" ? (
+              <Button type="button" onClick={() => { void handleSave(); }}>
+                Guardar
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

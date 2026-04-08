@@ -1,73 +1,141 @@
 import { useEffect, useState } from "react";
+import { Eye, MoreVertical } from "lucide-react";
+import { createColumnHelper } from "@tanstack/react-table";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CrudTable } from "@/app/components/security/crud-table";
+import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useRole } from "@/hooks/security";
 
+interface RoleRow {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export default function RolesPage() {
-  const { roles, loading, error, loadRoles, getRoleById } = useRole();
-  const [roleId, setRoleId] = useState("");
-  const [selectedRole, setSelectedRole] = useState<{ id: string; name: string; description: string } | null>(null);
+  const { roles, loading, error, loadRoles } = useRole();
+
+  const [selectedRole, setSelectedRole] = useState<RoleRow | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     void loadRoles();
   }, []);
 
+  const openViewDialog = (role: RoleRow) => {
+    setSelectedRole(role);
+    setIsDialogOpen(true);
+  };
+
+  const columnHelper = createColumnHelper<RoleRow>();
+  const columns = [
+    columnHelper.accessor("id", {
+      header: "ID",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("name", {
+      header: "Nombre",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("description", {
+      header: "Descripcion",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "",
+      cell: (info) => {
+        const role = info.row.original;
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Opciones">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openViewDialog(role)}>
+                  <Eye className="size-4" />
+                  Ver
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    }),
+  ];
+
   return (
     <PageShell
-      title="Roles"
-      description="Vista de consulta para roles. El hook actual solo expone lectura."
+      title="Gestion de roles"
+      description="Consulta los roles disponibles y su alcance funcional."
       aside={
         <div className="space-y-3">
-          <p>Este módulo es intencionalmente de solo lectura porque el hook no expone creación o borrado.</p>
-          <p>Puedes usar la búsqueda por ID para inspeccionar un rol puntual.</p>
+          <p>Este modulo es solo de consulta en el backend actual.</p>
+          <p>Si necesitas cambios de roles, debes habilitar esas operaciones en el servicio.</p>
         </div>
       }
     >
-      <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-          <div>
-            <Label htmlFor="role-id">Buscar rol por ID</Label>
-            <Input id="role-id" value={roleId} onChange={(event) => setRoleId(event.target.value)} />
-          </div>
-          <Button
-            type="button"
-            onClick={async () => {
-              if (!roleId.trim()) return;
-              setSelectedRole(await getRoleById(roleId.trim()));
-            }}
-          >
-            Consultar
-          </Button>
-        </div>
-
-        {selectedRole ? (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-            <p className="font-semibold text-slate-900">Resultado</p>
-            <p>ID: {selectedRole.id}</p>
-            <p>Nombre: {selectedRole.name}</p>
-            <p>Descripción: {selectedRole.description}</p>
-          </div>
-        ) : null}
-      </div>
-
-      <CrudTable
+      <DataTable
         title="Listado de roles"
-        description="Datos cargados desde el hook useRole."
-        items={roles}
+        description="Roles cargados desde el servicio de seguridad."
+        data={roles}
+        columns={columns}
         loading={loading}
         error={error}
-        onRefresh={() => void loadRoles()}
+        onRefresh={() => {
+          void loadRoles();
+        }}
+        filterField="name"
+        filterPlaceholder="Buscar por nombre"
         emptyMessage="No hay roles disponibles."
-        columns={[
-          { key: "id", label: "ID" },
-          { key: "name", label: "Nombre" },
-          { key: "description", label: "Descripción" },
-        ]}
       />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="border-(--security-border)">
+          <DialogHeader>
+            <DialogTitle>Detalle del rol</DialogTitle>
+            <DialogDescription>Informacion del rol seleccionado.</DialogDescription>
+          </DialogHeader>
+
+          {selectedRole ? (
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="font-semibold">ID:</span> {selectedRole.id}
+              </p>
+              <p>
+                <span className="font-semibold">Nombre:</span> {selectedRole.name}
+              </p>
+              <p>
+                <span className="font-semibold">Descripcion:</span> {selectedRole.description}
+              </p>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

@@ -1,7 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Eye, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { createColumnHelper } from "@tanstack/react-table";
 
+import { DataTable } from "@/app/components/security/data-table";
+import { PageShell } from "@/app/components/security/page-shell";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,15 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CrudTable } from "@/app/components/security/crud-table";
-import { PageShell } from "@/app/components/security/page-shell";
 import { usePermission } from "@/hooks/security";
+import type { Permission } from "@/core/domain/entities/security/Permission";
 
-type PermissionForm = {
+type PermissionDialogMode = "create" | "edit" | "view";
+
+interface PermissionForm {
   id: string;
   url: string;
-  method: string;
-};
+  method: "GET" | "POST" | "PUT" | "DELETE";
+}
 
 const initialForm: PermissionForm = {
   id: "",
@@ -29,36 +48,54 @@ const initialForm: PermissionForm = {
 
 export default function PermissionsPage() {
   const { permissions, loading, error, loadPermissions, addPermission, editPermission, removePermission } = usePermission();
+
   const [form, setForm] = useState<PermissionForm>(initialForm);
+  const [dialogMode, setDialogMode] = useState<PermissionDialogMode>("create");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     void loadPermissions();
   }, []);
 
-  const description = useMemo(() => "Gestiona los permisos HTTP por URL y método.", []);
+  const openCreateDialog = () => {
+    setForm(initialForm);
+    setDialogMode("create");
+    setIsDialogOpen(true);
+  };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const openEditDialog = (permission: Permission) => {
+    setForm(permission);
+    setDialogMode("edit");
+    setIsDialogOpen(true);
+  };
 
+  const openViewDialog = (permission: Permission) => {
+    setForm(permission);
+    setDialogMode("view");
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = async () => {
     try {
       if (!form.url.trim()) {
-        throw new Error("La URL es obligatoria");
+        throw new Error("La URL es obligatoria.");
       }
 
-      if (form.id.trim()) {
+      if (dialogMode === "edit") {
         await editPermission(form.id, {
           url: form.url.trim(),
-          method: form.method as "GET" | "POST" | "PUT" | "DELETE",
+          method: form.method,
         });
-        toast.success("Permiso actualizado");
+        toast.success("Permiso actualizado correctamente");
       } else {
         await addPermission({
           url: form.url.trim(),
-          method: form.method as "GET" | "POST" | "PUT" | "DELETE",
+          method: form.method,
         });
-        toast.success("Permiso creado");
+        toast.success("Permiso creado correctamente");
       }
 
+      setIsDialogOpen(false);
       setForm(initialForm);
       await loadPermissions();
     } catch (submitError) {
@@ -66,98 +103,156 @@ export default function PermissionsPage() {
     }
   };
 
+  const handleDelete = async (permissionId: string) => {
+    await removePermission(permissionId);
+    await loadPermissions();
+    toast.success("Permiso eliminado");
+  };
+
+  const columnHelper = createColumnHelper<Permission>();
+  const columns = [
+    columnHelper.accessor("id", {
+      header: "ID",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("url", {
+      header: "URL",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("method", {
+      header: "Metodo",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "",
+      cell: (info) => {
+        const permission = info.row.original;
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Opciones">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openViewDialog(permission)}>
+                  <Eye className="size-4" />
+                  Ver
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openEditDialog(permission)}>
+                  <Pencil className="size-4" />
+                  Actualizar
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => { void handleDelete(permission.id); }}>
+                  <Trash2 className="size-4" />
+                  Borrar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    }),
+  ];
+
   return (
     <PageShell
-      title="Permisos"
-      description={description}
+      title="Gestion de permisos"
+      description="Administra rutas y metodos HTTP de manera organizada."
       aside={
         <div className="space-y-3">
-          <p>El hook expone lectura, creación, edición y eliminación de permisos.</p>
-          <p>El campo método debe coincidir con el enum HTTP del dominio.</p>
+          <p>Los permisos definen que endpoints puede consumir cada rol.</p>
+          <p>Usa la opcion de adicionar para registrar nuevas reglas.</p>
         </div>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <form className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5" onSubmit={handleSubmit}>
-          <div>
-            <Label htmlFor="permission-id">ID opcional para editar</Label>
-            <Input
-              id="permission-id"
-              value={form.id}
-              onChange={(event) => setForm((current) => ({ ...current, id: event.target.value }))}
-              placeholder="Dejar vacío para crear"
-            />
-          </div>
-          <div>
-            <Label htmlFor="permission-url">URL</Label>
-            <Input
-              id="permission-url"
-              value={form.url}
-              onChange={(event) => setForm((current) => ({ ...current, url: event.target.value }))}
-              placeholder="/api/users"
-            />
-          </div>
-          <div>
-            <Label>Método</Label>
-            <Select value={form.method} onValueChange={(value) => setForm((current) => ({ ...current, method: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un método" />
-              </SelectTrigger>
-              <SelectContent>
-                {(["GET", "POST", "PUT", "DELETE"] as const).map((method) => (
-                  <SelectItem key={method} value={method}>
-                    {method}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" className="w-full">
-            {form.id.trim() ? "Actualizar permiso" : "Crear permiso"}
+      <DataTable
+        title="Listado de permisos"
+        description="Permisos registrados para el sistema."
+        data={permissions}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onRefresh={() => {
+          void loadPermissions();
+        }}
+        filterField="url"
+        filterPlaceholder="Buscar por URL"
+        emptyMessage="No hay permisos creados."
+        toolbarAction={
+          <Button type="button" size="sm" onClick={openCreateDialog}>
+            <Plus className="mr-1 size-4" />
+            Adicionar
           </Button>
-          <Button type="button" variant="outline" className="w-full" onClick={() => setForm(initialForm)}>
-            Limpiar
-          </Button>
-        </form>
+        }
+      />
 
-        <CrudTable
-          title="Listado"
-          description="Permisos cargados desde el hook."
-          items={permissions}
-          loading={loading}
-          error={error}
-          onRefresh={() => void loadPermissions()}
-          emptyMessage="Aún no hay permisos cargados."
-          columns={[
-            { key: "id", label: "ID" },
-            { key: "url", label: "URL" },
-            { key: "method", label: "Método" },
-          ]}
-          renderActions={(permission) => (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setForm({ id: permission.id, url: permission.url, method: permission.method })}
-              >
-                Editar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={async () => {
-                  await removePermission(permission.id);
-                  await loadPermissions();
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="border-(--security-border)">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === "create" ? "Adicionar permiso" : dialogMode === "edit" ? "Actualizar permiso" : "Detalle del permiso"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogMode === "view" ? "Informacion del permiso seleccionado." : "Configura la ruta y el metodo HTTP."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="permission-url">URL</Label>
+              <Input
+                id="permission-url"
+                value={form.url}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, url: event.target.value }));
                 }}
-              >
-                Eliminar
-              </Button>
+                disabled={dialogMode === "view"}
+              />
             </div>
-          )}
-        />
-      </div>
+
+            <div className="grid gap-2">
+              <Label>Metodo</Label>
+              <Select
+                value={form.method}
+                onValueChange={(value: PermissionForm["method"]) => {
+                  setForm((current) => ({ ...current, method: value }));
+                }}
+                disabled={dialogMode === "view"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un metodo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsDialogOpen(false);
+              }}
+            >
+              Cerrar
+            </Button>
+            {dialogMode !== "view" ? (
+              <Button type="button" onClick={() => { void handleSave(); }}>
+                Guardar
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

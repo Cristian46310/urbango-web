@@ -5,17 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CrudTable } from "@/app/components/security/crud-table";
+import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
 import { useSession } from "@/hooks/security";
+import type { ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper } from "@tanstack/react-table";
 
-type SessionForm = {
+interface SessionForm {
   id: string;
   token: string;
   expiration: string;
   code2FA: string;
   user: string;
-};
+}
 
 const initialForm: SessionForm = {
   id: "",
@@ -29,6 +31,60 @@ export default function SessionsPage() {
   const { sessions, loading, error, loadSessions, addSession, editSession, removeSession } = useSession();
   const [form, setForm] = useState<SessionForm>(initialForm);
 
+  const columnHelper = createColumnHelper<SessionForm & { id: string }>();
+  const columns: ColumnDef<SessionForm & { id: string }>[] = [
+    columnHelper.accessor("id", { header: "ID", cell: (info) => info.getValue() }),
+    columnHelper.accessor("token", { header: "Token", cell: (info) => info.getValue() }),
+    columnHelper.accessor("expiration", {
+      header: "Expiración",
+      cell: (info) => {
+        const value = info.getValue();
+        return value instanceof Date ? value.toLocaleString() : String(value);
+      },
+    }),
+    columnHelper.accessor("code2FA", { header: "2FA", cell: (info) => info.getValue() }),
+    columnHelper.display({
+      id: "actions",
+      header: "Acciones",
+      cell: (info) => {
+        const session = info.row.original as SessionForm & { id: string };
+        return (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setForm({
+                  id: session.id,
+                  token: session.token,
+                  expiration:
+                    session.expiration instanceof Date
+                      ? session.expiration.toISOString().slice(0, 16)
+                      : String(session.expiration).slice(0, 16),
+                  code2FA: session.code2FA,
+                  user: JSON.stringify(session.user, null, 2),
+                });
+              }}
+            >
+              Editar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={async () => {
+                await removeSession(session.id);
+                await loadSessions();
+              }}
+            >
+              Eliminar
+            </Button>
+          </div>
+        );
+      },
+    }),
+  ];
   useEffect(() => {
     void loadSessions();
   }, []);
@@ -76,13 +132,13 @@ export default function SessionsPage() {
       }
     >
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <form className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5" onSubmit={handleSubmit}>
+        <form className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm" onSubmit={handleSubmit}>
           <div>
             <Label htmlFor="session-id">ID opcional para editar</Label>
             <Input
               id="session-id"
               value={form.id}
-              onChange={(event) => setForm((current) => ({ ...current, id: event.target.value }))}
+              onChange={(event) => { setForm((current) => ({ ...current, id: event.target.value })); }}
             />
           </div>
           <div>
@@ -90,7 +146,7 @@ export default function SessionsPage() {
             <Input
               id="session-token"
               value={form.token}
-              onChange={(event) => setForm((current) => ({ ...current, token: event.target.value }))}
+              onChange={(event) => { setForm((current) => ({ ...current, token: event.target.value })); }}
             />
           </div>
           <div>
@@ -99,7 +155,7 @@ export default function SessionsPage() {
               id="session-expiration"
               type="datetime-local"
               value={form.expiration}
-              onChange={(event) => setForm((current) => ({ ...current, expiration: event.target.value }))}
+              onChange={(event) => { setForm((current) => ({ ...current, expiration: event.target.value })); }}
             />
           </div>
           <div>
@@ -107,7 +163,7 @@ export default function SessionsPage() {
             <Input
               id="session-code"
               value={form.code2FA}
-              onChange={(event) => setForm((current) => ({ ...current, code2FA: event.target.value }))}
+              onChange={(event) => { setForm((current) => ({ ...current, code2FA: event.target.value })); }}
             />
           </div>
           <div>
@@ -116,69 +172,26 @@ export default function SessionsPage() {
               id="session-user"
               rows={8}
               value={form.user}
-              onChange={(event) => setForm((current) => ({ ...current, user: event.target.value }))}
+              onChange={(event) => { setForm((current) => ({ ...current, user: event.target.value })); }}
             />
           </div>
           <Button type="submit" className="w-full">
             {form.id.trim() ? "Actualizar sesión" : "Crear sesión"}
           </Button>
-          <Button type="button" variant="outline" className="w-full" onClick={() => setForm(initialForm)}>
+          <Button type="button" variant="outline" className="w-full" onClick={() => { setForm(initialForm); }}>
             Limpiar
           </Button>
         </form>
 
-        <CrudTable
+        <DataTable
           title="Listado de sesiones"
           description="Sesiones cargadas por el hook."
-          items={sessions}
+          data={sessions}
           loading={loading}
           error={error}
           onRefresh={() => void loadSessions()}
           emptyMessage="No hay sesiones cargadas."
-          columns={[
-            { key: "id", label: "ID" },
-            { key: "token", label: "Token" },
-            {
-              key: "expiration",
-              label: "Expiración",
-              render: (value) => (value instanceof Date ? value.toLocaleString() : String(value)),
-            },
-            { key: "code2FA", label: "2FA" },
-          ]}
-          renderActions={(session) => (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setForm({
-                    id: session.id,
-                    token: session.token,
-                    expiration:
-                      session.expiration instanceof Date
-                        ? session.expiration.toISOString().slice(0, 16)
-                        : String(session.expiration).slice(0, 16),
-                    code2FA: session.code2FA,
-                    user: JSON.stringify(session.user, null, 2),
-                  })
-                }
-              >
-                Editar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={async () => {
-                  await removeSession(session.id);
-                  await loadSessions();
-                }}
-              >
-                Eliminar
-              </Button>
-            </div>
-          )}
+          columns={columns}
         />
       </div>
     </PageShell>

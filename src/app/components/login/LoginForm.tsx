@@ -113,7 +113,7 @@ export function LoginForm() {
                     type="email"
                     placeholder="cristian.marin1234@ucaldas.edu.co"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => { setEmail(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
                   />
                 </div>
@@ -137,7 +137,7 @@ export function LoginForm() {
                     type="password"
                     placeholder="........"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => { setPassword(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
                   />
                 </div>
@@ -174,7 +174,7 @@ export function LoginForm() {
                   <Input
                     id="code"
                     value={code}
-                    onChange={(event) => setCode(event.target.value)}
+                    onChange={(event) => { setCode(event.target.value); }}
                     placeholder="000000"
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4 tracking-[0.35em]"
                   />
@@ -192,7 +192,7 @@ export function LoginForm() {
                     type="button"
                     variant="outline"
                     className="h-12 w-full rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    onClick={() => setPhase("credentials")}
+                    onClick={() => { setPhase("credentials"); }}
                   >
                     Volver
                   </Button>
