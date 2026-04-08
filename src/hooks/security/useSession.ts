@@ -1,5 +1,5 @@
 import { useSessionStore } from "@/store";
-import type { CreateSessionDTO, Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
+import type { CreateSessionDTO, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 
 export function useSession() {
   const {

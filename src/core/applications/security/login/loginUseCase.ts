@@ -1,4 +1,4 @@
-import type { login, LoginResponse } from "@/core/domain/entities/security/Login";
+import type { login, LoginChallengeResponse } from "@/core/domain/entities/security/Login";
 import type { ILoginRepository } from "@/core/domain/interfaces/security/ILoginRepository";
 
 export class LoginUseCase {
@@ -8,7 +8,7 @@ export class LoginUseCase {
         this.loginRepository = loginRepository;
     }
 
-    async execute(credentials: login): Promise<LoginResponse> {
+    async execute(credentials: login): Promise<LoginChallengeResponse> {
         return await this.loginRepository.login(credentials);
     }
 }

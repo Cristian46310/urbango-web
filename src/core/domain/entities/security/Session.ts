@@ -8,6 +8,6 @@ export interface Session {
     user: User
 }
 
-export interface CreateSessionDTO extends Omit<Session, 'id'> {}
+export type CreateSessionDTO = Omit<Session, 'id'>;
 
-export interface UpdateSessionDTO extends Partial<CreateSessionDTO> {}
+export type UpdateSessionDTO = Partial<CreateSessionDTO>;

@@ -2,6 +2,7 @@ import { httpMsSecurity } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
 import type { IUserRoleRepository } from "@/core/domain/interfaces/security/IUserRoleRepository";
 import type { MessageResponse } from "@/core/types/MessageResponse";
+import type { AssignRolesDTO } from "@/core/domain/entities/security/UserRole";
 
 export class UserRoleRepository implements IUserRoleRepository {
   async deleteUserRole(userRoleId: string): Promise<void> {
@@ -10,6 +11,10 @@ export class UserRoleRepository implements IUserRoleRepository {
 
   async postUserRole(userId: string, roleId: string): Promise<MessageResponse> {
     return await httpMsSecurity.post<MessageResponse>(ENDPOINTS.USER_ROLE.BASE(userId, roleId));
+  }
+
+  async assignMultipleRoles(payload: AssignRolesDTO): Promise<MessageResponse> {
+    return await httpMsSecurity.post<MessageResponse>(ENDPOINTS.USER_ROLE.ASSIGN_MULTIPLE, payload);
   }
 }
 

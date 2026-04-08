@@ -1,5 +1,5 @@
 import { useProfileStore } from "@/store";
-import type { CreateProfileDTO, Profile, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
+import type { CreateProfileDTO, UpdateProfileDTO } from "@/core/domain/entities/security/Profile";
 export function useProfile() {
   const {
     profiles,

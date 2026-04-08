@@ -1,16 +1,23 @@
 import { useLoginStore } from "@/store/security/loginStore";
-import type { login, LoginResponse } from "@/core/domain/entities/security/Login";
+import type {
+    login,
+    LoginChallengeResponse,
+    LoginResponse,
+    Verify2FADTO,
+} from "@/core/domain/entities/security/Login";
 
 export function useLogin() {
     const {
         loading,
         error,
-        login
+        login,
+        verifyTwoFactor,
     } = useLoginStore();
 
     return {
         loading,
         error,
-        login: (credentials: login) => login(credentials),
+        login: (credentials: login): Promise<LoginChallengeResponse> => login(credentials),
+        verify2FA: (payload: Verify2FADTO): Promise<LoginResponse> => verifyTwoFactor(payload),
     };
 }

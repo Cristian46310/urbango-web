@@ -7,6 +7,6 @@ export interface Profile {
     user: User
 }
 
-export interface CreateProfileDTO extends Omit<Profile, 'id'> {}
+export type CreateProfileDTO = Omit<Profile, 'id'>;
 
-export interface UpdateProfileDTO extends Partial<CreateProfileDTO> {}
+export type UpdateProfileDTO = Partial<CreateProfileDTO>;

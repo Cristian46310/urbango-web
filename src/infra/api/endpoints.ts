@@ -1,34 +1,45 @@
 export const ENDPOINTS = {
   SECURITY: {
-    LOGIN: "/security/login",
+    LOGIN: "/api/public/security/login",
+    VERIFY_2FA: "/api/public/security/verify-2fa",
   },
   USER: {
-    BASE: "/users",
-    BY_ID: (id: string) => `/users/${id}`,
+    BASE: "/api/public/users",
+    BY_ID: (id: string) => `/api/public/users/${id}`,
     SESSION: {
       BASE: (userId: string, sessionId: string) =>
-        `/users/${userId}/sessions/${sessionId}`,
+        `/api/public/users/${userId}/sessions/${sessionId}`,
     },
     PROFILE: {
       BASE: (userId: string, profileId: string) =>
-        `/users/${userId}/profile/${profileId}`,
+        `/api/public/users/${userId}/profile/${profileId}`,
     },
   },
   SESSION: {
-    BASE: "/sessions",
-    BY_ID: (sessionId: string) => `/sessions/${sessionId}`,
+    BASE: "/api/sessions",
+    BY_ID: (sessionId: string) => `/api/sessions/${sessionId}`,
   },
   ROLE: {
-    BASE: "/roles",
-    BY_ID: (roleId: string) => `/roles/${roleId}`,
+    BASE: "/api/roles",
+    BY_ID: (roleId: string) => `/api/roles/${roleId}`,
   },
   PROFILE: {
-    BASE: "/profiles",
-    BY_ID: (profileId: string) => `/profiles/${profileId}`,
+    BASE: "/api/profiles",
+    BY_ID: (profileId: string) => `/api/profiles/${profileId}`,
+  },
+  PERMISSION: {
+    BASE: "/api/permissions",
+    BY_ID: (permissionId: string) => `/api/permissions/${permissionId}`,
   },
   USER_ROLE: {
-    BY_ID: (userRoleId: string) => `/user-role/${userRoleId}`,
+    BY_ID: (userRoleId: string) => `/api/public/user-role/${userRoleId}`,
     BASE: (userId: string, roleId: string) =>
-      `/user-role/user/${userId}/role/${roleId}`,
+      `/api/public/user-role/user/${userId}/role/${roleId}`,
+    ASSIGN_MULTIPLE: "/api/public/user-role/assign-multiple",
+  },
+  ROLE_PERMISSION: {
+    BASE: (roleId: string, permissionId: string) =>
+      `/api/role-permission/role/${roleId}/permission/${permissionId}`,
+    BY_ID: (rolePermissionId: string) => `/api/role-permission/${rolePermissionId}`,
   },
 };
