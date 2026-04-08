@@ -1,7 +1,23 @@
 import LoginPage from './login/page'
 import TeamPage from './team/page'
+import DashboardPage from './security/dashboard/page'
+import PermissionsPage from './security/permissions/page'
+import ProfilesPage from './security/profiles/page'
+import RolesPage from './security/roles/page'
+import RolePermissionsPage from './security/role-permissions/page'
+import SessionsPage from './security/sessions/page'
+import UserRolesPage from './security/user-roles/page'
+import UsersPage from './security/users/page'
 
 export {
+  DashboardPage,
   LoginPage,
+  PermissionsPage,
+  ProfilesPage,
+  RolePermissionsPage,
+  RolesPage,
+  SessionsPage,
   TeamPage
+  ,UserRolesPage,
+  UsersPage
 }
