@@ -137,11 +137,11 @@ export default function PermissionsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openViewDialog(permission)}>
+                <DropdownMenuItem onClick={() => { openViewDialog(permission); }}>
                   <Eye className="size-4" />
                   Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openEditDialog(permission)}>
+                <DropdownMenuItem onClick={() => { openEditDialog(permission); }}>
                   <Pencil className="size-4" />
                   Actualizar
                 </DropdownMenuItem>

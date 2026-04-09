@@ -1,4 +1,6 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from 'axios';
+
+const AUTH_TOKEN_STORAGE_KEY = 'authToken';
 
 class HttpClient {
   private instance: AxiosInstance;
@@ -6,6 +8,23 @@ class HttpClient {
   constructor(baseURL: string) {
     this.instance = axios.create({
       baseURL,
+    });
+
+    this.instance.interceptors.request.use((config) => {
+      if (typeof window === 'undefined') {
+        return config;
+      }
+
+      const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+      if (!token || config.headers?.Authorization) {
+        return config;
+      }
+
+      const headers = AxiosHeaders.from(config.headers);
+      headers.set('Authorization', `Bearer ${token}`);
+      config.headers = headers;
+
+      return config;
     });
   }
 

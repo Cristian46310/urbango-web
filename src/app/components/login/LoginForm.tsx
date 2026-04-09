@@ -57,12 +57,11 @@ export function LoginForm() {
     event.preventDefault();
 
     try {
-      const response = await verify2FA({
+      await verify2FA({
         challengeToken,
         code,
       });
 
-      localStorage.setItem("authToken", response.token);
       toast.success("Inicio de sesión completado");
       void navigate("/app");
     } catch (submitError) {

@@ -42,6 +42,11 @@ interface ProfileForm {
   userId: string;
 }
 
+type ProfileWithOptionalUser = Profile & {
+  user?: User | null;
+  userId?: string;
+};
+
 const initialForm: ProfileForm = {
   id: "",
   phone: "",
@@ -66,12 +71,16 @@ export default function ProfilesPage() {
     return new Map(users.map((user) => [user.id, user]));
   }, [users]);
 
-  const mapProfileToForm = (profile: Profile): ProfileForm => ({
-    id: profile.id,
-    phone: profile.phone,
-    photo: profile.photo,
-    userId: profile.user.id,
-  });
+  const mapProfileToForm = (profile: Profile): ProfileForm => {
+    const profileWithOptionalUser = profile as ProfileWithOptionalUser;
+
+    return {
+      id: profile.id,
+      phone: profile.phone,
+      photo: profile.photo,
+      userId: profileWithOptionalUser.user?.id ?? profileWithOptionalUser.userId ?? "",
+    };
+  };
 
   const openCreateDialog = () => {
     setForm(initialForm);
@@ -151,8 +160,14 @@ export default function ProfilesPage() {
       id: "usuario",
       header: "Usuario",
       cell: (info) => {
-        const user = info.row.original.user;
-        return user.name || user.email;
+        const profile = info.row.original as ProfileWithOptionalUser;
+        const user = profile.user;
+
+        if (user) {
+          return user.name || user.email;
+        }
+
+        return profile.userId ?? "Sin usuario";
       },
     }),
     columnHelper.display({
@@ -169,11 +184,11 @@ export default function ProfilesPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openViewDialog(profile)}>
+                <DropdownMenuItem onClick={() => { openViewDialog(profile); }}>
                   <Eye className="size-4" />
                   Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openEditDialog(profile)}>
+                <DropdownMenuItem onClick={() => { openEditDialog(profile); }}>
                   <Pencil className="size-4" />
                   Actualizar
                 </DropdownMenuItem>

@@ -70,7 +70,7 @@ export default function RolesPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openViewDialog(role)}>
+                <DropdownMenuItem onClick={() => { openViewDialog(role); }}>
                   <Eye className="size-4" />
                   Ver
                 </DropdownMenuItem>
@@ -130,7 +130,7 @@ export default function RolesPage() {
           ) : null}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); }}>
               Cerrar
             </Button>
           </DialogFooter>

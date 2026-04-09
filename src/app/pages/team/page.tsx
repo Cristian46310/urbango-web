@@ -15,7 +15,7 @@ const students: Student[] = [
     url: "https://github.com/CristianMarinS",
   },
   {
-    name: "Juan Manuel",
+    name: "Juan Manoel",
     github: "JuManoel",
     url: "https://github.com/JuManoel",
   },

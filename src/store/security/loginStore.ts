@@ -51,6 +51,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
       }
 
       const response = await verifyTwoFactorUseCase.execute(payload);
+      localStorage.setItem("authToken", response.token);
       set({ loading: false });
       return response;
     } catch (error) {

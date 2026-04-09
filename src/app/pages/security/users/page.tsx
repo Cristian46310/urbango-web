@@ -151,11 +151,11 @@ export default function UsersPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openViewDialog(user)}>
+                <DropdownMenuItem onClick={() => { openViewDialog(user); }}>
                   <Eye className="size-4" />
                   Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                <DropdownMenuItem onClick={() => { openEditDialog(user); }}>
                   <Pencil className="size-4" />
                   Actualizar
                 </DropdownMenuItem>

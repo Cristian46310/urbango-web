@@ -73,16 +73,17 @@ export function DataTable<TData>({
   });
 
   return (
-    <Card className="border-(--security-border) bg-card shadow-sm">
-      <CardHeader className="flex flex-col gap-4 border-b border-(--security-border) bg-(--security-surface)">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-xl text-(--security-foreground)">{title}</CardTitle>
-            <CardDescription className="text-(--security-muted-foreground)">
+    <Card className="overflow-hidden border-(--security-border) bg-card shadow-sm">
+      <CardHeader className="space-y-4 bg-card">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="text-xl text-black">{title}</CardTitle>
+            <CardDescription className="text-black/80">
               {description}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex shrink-0 items-center gap-2">
             {toolbarAction}
             {onRefresh ? (
               <Button
@@ -130,15 +131,15 @@ export function DataTable<TData>({
           </div>
         ) : (
           <>
-            <div className="overflow-hidden rounded-none border-t border-(--security-border)">
+            <div className="overflow-hidden">
               <table className="min-w-full divide-y divide-(--security-border) text-sm">
-                <thead className="bg-(--security-surface)">
+                <thead className="bg-[linear-gradient(140deg,var(--security-hero-start)_0%,var(--security-hero-end)_100%)]">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-6 py-3 text-left font-semibold text-(--security-muted-foreground)"
+                          className="px-6 py-3 text-left font-semibold text-white/95"
                         >
                           {header.isPlaceholder ? null : (
                             <div
@@ -151,16 +152,16 @@ export function DataTable<TData>({
                             >
                               {flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                               {header.column.getCanSort() && (
                                 <span className="ml-auto">
                                   {header.column.getIsSorted() === "desc" ? (
-                                    <ChevronDown className="h-4 w-4 text-(--security-muted-foreground)" />
+                                    <ChevronDown className="h-4 w-4 text-white/90" />
                                   ) : header.column.getIsSorted() === "asc" ? (
-                                    <ChevronUp className="h-4 w-4 text-(--security-muted-foreground)" />
+                                    <ChevronUp className="h-4 w-4 text-white/90" />
                                   ) : (
-                                    <span className="text-xs text-(--security-muted-foreground) opacity-0 group-hover:opacity-100">
+                                    <span className="text-xs text-white/70 opacity-0 group-hover:opacity-100">
                                       ⇅
                                     </span>
                                   )}
@@ -186,7 +187,7 @@ export function DataTable<TData>({
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </td>
                       ))}
@@ -198,7 +199,7 @@ export function DataTable<TData>({
 
             <div className="flex items-center gap-2 border-t border-(--security-border) px-6 py-4">
               <Button
-                onClick={() => table.previousPage()}
+                onClick={() => { table.previousPage(); }}
                 disabled={!table.getCanPreviousPage()}
                 variant="outline"
                 size="sm"
@@ -210,7 +211,7 @@ export function DataTable<TData>({
                 {table.getPageCount() || 1}
               </div>
               <Button
-                onClick={() => table.nextPage()}
+                onClick={() => { table.nextPage(); }}
                 disabled={!table.getCanNextPage()}
                 variant="outline"
                 size="sm"
