@@ -43,7 +43,6 @@ interface ProfileForm {
 }
 
 type ProfileWithOptionalUser = Profile & {
-  user?: User | null;
   userId?: string;
 };
 
@@ -78,7 +77,7 @@ export default function ProfilesPage() {
       id: profile.id,
       phone: profile.phone,
       photo: profile.photo,
-      userId: profileWithOptionalUser.user?.id ?? profileWithOptionalUser.userId ?? "",
+      userId: profileWithOptionalUser.userId ?? profile.user.id,
     };
   };
 
@@ -162,12 +161,7 @@ export default function ProfilesPage() {
       cell: (info) => {
         const profile = info.row.original as ProfileWithOptionalUser;
         const user = profile.user;
-
-        if (user) {
-          return user.name || user.email;
-        }
-
-        return profile.userId ?? "Sin usuario";
+        return user.name || user.email;
       },
     }),
     columnHelper.display({

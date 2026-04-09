@@ -17,3 +17,7 @@ export interface LoginChallengeResponse {
 export interface LoginResponse {
     token: string;
 }
+
+export interface LoginGoogle {
+    idToken: string;
+}

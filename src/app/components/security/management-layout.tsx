@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BadgeCheck,
@@ -82,15 +82,8 @@ export function ManagementLayout() {
   const [isSecurityOpen, setIsSecurityOpen] = useState(securityActive);
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
 
-  useEffect(() => {
-    if (securityActive) {
-      setIsSecurityOpen(true);
-    }
-
-    if (teamActive) {
-      setIsTeamOpen(true);
-    }
-  }, [securityActive, teamActive]);
+  const securityOpen = securityActive || isSecurityOpen;
+  const teamOpen = teamActive || isTeamOpen;
 
   return (
     <SidebarProvider>
@@ -137,16 +130,16 @@ export function ManagementLayout() {
                     title="Security"
                     size="sm"
                     className="justify-between"
-                    onClick={() => setIsSecurityOpen((open) => !open)}
+                    onClick={() => { setIsSecurityOpen(!securityOpen); }}
                   >
                     <span className="flex items-center gap-2">
                       <ShieldCheck />
                       <span className="font-medium">Security</span>
                     </span>
-                    <ChevronDown className={`size-4 transition-transform ${isSecurityOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`size-4 transition-transform ${securityOpen ? "rotate-180" : ""}`} />
                   </SidebarMenuButton>
 
-                  {isSecurityOpen ? (
+                  {securityOpen ? (
                     <SidebarMenuSub>
                       {securityMenuItems.map((item) => {
                         const Icon = item.icon;
@@ -173,16 +166,16 @@ export function ManagementLayout() {
                     title="Team"
                     size="sm"
                     className="justify-between"
-                    onClick={() => setIsTeamOpen((open) => !open)}
+                    onClick={() => { setIsTeamOpen(!teamOpen); }}
                   >
                     <span className="flex items-center gap-2">
                       <BookUser />
                       <span className="font-medium">Team</span>
                     </span>
-                    <ChevronDown className={`size-4 transition-transform ${isTeamOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`size-4 transition-transform ${teamOpen ? "rotate-180" : ""}`} />
                   </SidebarMenuButton>
 
-                  {isTeamOpen ? (
+                  {teamOpen ? (
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild isActive={teamActive}>

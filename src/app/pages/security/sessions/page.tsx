@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
 import { useSession } from "@/hooks/security";
-import type { ColumnDef } from "@tanstack/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
+import type { Session } from "@/core/domain/entities/security/Session";
+import type { User } from "@/core/domain/entities/security/User";
 
 interface SessionForm {
   id: string;
@@ -27,19 +28,21 @@ const initialForm: SessionForm = {
   user: "{\n  \"id\": \"\",\n  \"name\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}",
 };
 
+type SessionRow = Omit<Session, "expiration"> & { expiration: Date | string };
+
 export default function SessionsPage() {
   const { sessions, loading, error, loadSessions, addSession, editSession, removeSession } = useSession();
   const [form, setForm] = useState<SessionForm>(initialForm);
 
-  const columnHelper = createColumnHelper<SessionForm & { id: string }>();
-  const columns: ColumnDef<SessionForm & { id: string }>[] = [
+  const columnHelper = createColumnHelper<SessionRow>();
+  const columns = [
     columnHelper.accessor("id", { header: "ID", cell: (info) => info.getValue() }),
     columnHelper.accessor("token", { header: "Token", cell: (info) => info.getValue() }),
     columnHelper.accessor("expiration", {
       header: "Expiración",
       cell: (info) => {
         const value = info.getValue();
-        return value instanceof Date ? value.toLocaleString() : String(value);
+        return value instanceof Date ? value.toLocaleString() : value;
       },
     }),
     columnHelper.accessor("code2FA", { header: "2FA", cell: (info) => info.getValue() }),
@@ -47,7 +50,7 @@ export default function SessionsPage() {
       id: "actions",
       header: "Acciones",
       cell: (info) => {
-        const session = info.row.original as SessionForm & { id: string };
+        const session = info.row.original;
         return (
           <div className="flex flex-wrap gap-2">
             <Button
@@ -61,7 +64,7 @@ export default function SessionsPage() {
                   expiration:
                     session.expiration instanceof Date
                       ? session.expiration.toISOString().slice(0, 16)
-                      : String(session.expiration).slice(0, 16),
+                      : session.expiration.slice(0, 16),
                   code2FA: session.code2FA,
                   user: JSON.stringify(session.user, null, 2),
                 });
@@ -73,9 +76,11 @@ export default function SessionsPage() {
               type="button"
               size="sm"
               variant="destructive"
-              onClick={async () => {
-                await removeSession(session.id);
-                await loadSessions();
+              onClick={() => {
+                void (async () => {
+                  await removeSession(session.id);
+                  await loadSessions();
+                })();
               }}
             >
               Eliminar
@@ -89,11 +94,9 @@ export default function SessionsPage() {
     void loadSessions();
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleSubmit = async () => {
     try {
-      const user = JSON.parse(form.user);
+      const user = JSON.parse(form.user) as User;
       const payload = {
         token: form.token.trim(),
         expiration: form.expiration ? new Date(form.expiration) : new Date(),
@@ -132,7 +135,13 @@ export default function SessionsPage() {
       }
     >
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <form className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm" onSubmit={handleSubmit}>
+        <form
+          className="space-y-4 rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSubmit();
+          }}
+        >
           <div>
             <Label htmlFor="session-id">ID opcional para editar</Label>
             <Input

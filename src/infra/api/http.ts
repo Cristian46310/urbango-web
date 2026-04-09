@@ -16,11 +16,11 @@ class HttpClient {
       }
 
       const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
-      if (!token || config.headers?.Authorization) {
+      const headers = AxiosHeaders.from(config.headers);
+      if (!token || headers.has("Authorization")) {
         return config;
       }
 
-      const headers = AxiosHeaders.from(config.headers);
       headers.set('Authorization', `Bearer ${token}`);
       config.headers = headers;
 

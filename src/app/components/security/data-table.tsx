@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface DataTableProps<TData> {
+  // TanStack infers a different TValue per accessor column; `any` keeps compatibility across mixed columns.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];
   title: string;

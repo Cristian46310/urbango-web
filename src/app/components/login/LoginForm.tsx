@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Info } from "lucide-react";
@@ -12,7 +12,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 import { useLogin } from "@/hooks/security";
+import { OAuthProviders } from "./OAuthProviders";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -34,9 +36,7 @@ export function LoginForm() {
     }
   }, [error]);
 
-  const handleCredentialsSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleCredentialsSubmit = async () => {
     try {
       const response = await login({
         email: email.trim(),
@@ -53,9 +53,7 @@ export function LoginForm() {
     }
   };
 
-  const handle2FASubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handle2FASubmit = async () => {
     try {
       await verify2FA({
         challengeToken,
@@ -92,7 +90,13 @@ export function LoginForm() {
 
           <CardContent className="p-0">
             {phase === "credentials" ? (
-              <form className="space-y-5" onSubmit={handleCredentialsSubmit}>
+              <form
+                className="space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleCredentialsSubmit();
+                }}
+              >
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="email">Correo electronico</Label>
@@ -148,23 +152,33 @@ export function LoginForm() {
                 >
                   {loading ? "Validando..." : "Continuar"}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-500">O continúa con</span>
+                  </div>
+                </div>
+
+                <OAuthProviders />
               </form>
             ) : (
-              <form className="space-y-5" onSubmit={handle2FASubmit}>
+              <form
+                className="space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handle2FASubmit();
+                }}
+              >
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                   <p className="font-medium text-slate-900">En el correo: {email}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     Debio llegar el codigo para confirmar el ingreso.
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Expira:{" "}
-                    {Math.max(
-                      0,
-                      Math.ceil(
-                        (new Date(expiration).getTime() - Date.now()) / 60000,
-                      ),
-                    )}{" "}
-                    minutos
+                    Expira: {new Date(expiration).toLocaleString()}
                   </p>
                 </div>
 
