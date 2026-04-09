@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { useLogin } from "@/hooks/security";
+import { recaptchaConfig } from "@/config/recaptcha";
+import { executeRecaptcha } from "@/lib/recaptcha";
 import { OAuthProviders } from "./OAuthProviders";
 
 export function LoginForm() {
@@ -38,9 +40,12 @@ export function LoginForm() {
 
   const handleCredentialsSubmit = async () => {
     try {
+      const recaptchaToken = await executeRecaptcha(recaptchaConfig.actions.login);
+
       const response = await login({
         email: email.trim(),
         password,
+        recaptchaToken,
       });
 
       setChallengeToken(response.challengeToken);
