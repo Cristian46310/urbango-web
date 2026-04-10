@@ -3,6 +3,9 @@ export const ENDPOINTS = {
     LOGIN: "/api/public/security/login",
     VERIFY_2FA: "/api/public/security/verify-2fa",
     LOGIN_GOOGLE: "/api/public/security/login/google",
+    LOGIN_GITHUB_AUTHORIZE: "/api/public/security/login/github/authorize",
+    LOGIN_GITHUB: "/api/public/security/login/github",
+    LOGIN_GITHUB_COMPLETE: "/api/public/security/login/github/complete",
   },
   USER: {
     BASE: "/api/public/users",

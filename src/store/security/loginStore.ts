@@ -1,19 +1,29 @@
 import { toast } from "sonner";
 import { create } from "zustand";
 import { LoginRepository } from "@/infra/repository/security/LoginRepository";
+import { AuthorizeGithubLoginUseCase } from "@/core/applications/security/login/authorizeGithubLoginUseCase";
+import { CompleteGithubRegistrationUseCase } from "@/core/applications/security/login/completeGithubRegistrationUseCase";
 import { LoginUseCase } from "@/core/applications/security/login/loginUseCase";
+import { LoginWithGithubUseCase } from "@/core/applications/security/login/loginWithGithubUseCase";
 import { LoginWithGoogleUseCase } from "@/core/applications/security/login/loginWithGoogleUseCase";
 import { VerifyTwoFactorUseCase } from "@/core/applications/security/login/verifyTwoFactorUseCase";
 import type {
   login,
   LoginChallengeResponse,
+  LoginGithubAuthorizeResponse,
+  LoginGithubCallback,
+  LoginGithubCompleteRegistration,
+  LoginGithubResponse,
   LoginGoogle,
   LoginResponse,
   Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 
 const loginRepository = new LoginRepository();
+const authorizeGithubLoginUseCase = new AuthorizeGithubLoginUseCase(loginRepository);
+const completeGithubRegistrationUseCase = new CompleteGithubRegistrationUseCase(loginRepository);
 const loginUseCase = new LoginUseCase(loginRepository);
+const loginWithGithubUseCase = new LoginWithGithubUseCase(loginRepository);
 const loginWithGoogleUseCase = new LoginWithGoogleUseCase(loginRepository);
 const verifyTwoFactorUseCase = new VerifyTwoFactorUseCase(loginRepository);
 
@@ -23,6 +33,11 @@ interface LoginStoreState {
   login: (credentials: login) => Promise<LoginChallengeResponse>;
   verifyTwoFactor: (payload: Verify2FADTO) => Promise<LoginResponse>;
   loginWithGoogle: (payload: LoginGoogle) => Promise<LoginResponse>;
+  authorizeGithubLogin: () => Promise<LoginGithubAuthorizeResponse>;
+  loginWithGithub: (payload: LoginGithubCallback) => Promise<LoginGithubResponse>;
+  completeGithubRegistration: (
+    payload: LoginGithubCompleteRegistration,
+  ) => Promise<LoginGithubResponse>;
 }
 
 export const useLoginStore = create<LoginStoreState>((set) => ({
@@ -80,6 +95,48 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       toast.error(`Google login failed: ${(error as Error).message}`);
+      throw error;
+    }
+  },
+  authorizeGithubLogin: async () => {
+    set({ loading: true, error: null });
+    try {
+      const response = await authorizeGithubLoginUseCase.execute();
+      set({ loading: false });
+      return response;
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      toast.error(`GitHub authorize failed: ${(error as Error).message}`);
+      throw error;
+    }
+  },
+  loginWithGithub: async (payload: LoginGithubCallback) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await loginWithGithubUseCase.execute(payload);
+      if (response.status === "AUTHENTICATED" && response.token) {
+        localStorage.setItem("authToken", response.token);
+      }
+      set({ loading: false });
+      return response;
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      toast.error(`GitHub login failed: ${(error as Error).message}`);
+      throw error;
+    }
+  },
+  completeGithubRegistration: async (payload: LoginGithubCompleteRegistration) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await completeGithubRegistrationUseCase.execute(payload);
+      if (response.status === "AUTHENTICATED" && response.token) {
+        localStorage.setItem("authToken", response.token);
+      }
+      set({ loading: false });
+      return response;
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      toast.error(`GitHub registration failed: ${(error as Error).message}`);
       throw error;
     }
   },

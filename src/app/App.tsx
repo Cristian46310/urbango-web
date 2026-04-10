@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolePermissionsPage, RolesPage, UserRolesPage, UsersPage } from './pages'
+import { LoginPage, GithubCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolePermissionsPage, RolesPage, UserRolesPage, UsersPage } from './pages'
 import { ManagementLayout } from './components/security/management-layout'
 import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
@@ -12,6 +12,7 @@ function App() {
         <Toaster />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/github/callback" element={<GithubCallbackPage />} />
           <Route path="/app" element={<ManagementLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />

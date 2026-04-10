@@ -22,3 +22,28 @@ export interface LoginResponse {
 export interface LoginGoogle {
     idToken: string;
 }
+
+export interface LoginGithubAuthorizeResponse {
+    authorizationUrl: string;
+}
+
+export interface LoginGithubCallback {
+    code: string;
+    state: string;
+}
+
+export interface LoginGithubCompleteRegistration {
+    registrationToken: string;
+    email: string;
+}
+
+export interface LoginGithubResponse {
+    status: string;
+    message: string;
+    token: string | null;
+    idToken: string | null;
+    registrationToken: string | null;
+    linked: boolean;
+    created: boolean;
+    user: unknown | null;
+}

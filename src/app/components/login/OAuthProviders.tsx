@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Github } from "lucide-react";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
+import { Button } from "@/components/ui/button";
 import { useLogin } from "@/hooks/security";
 
 export function OAuthProviders() {
   const navigate = useNavigate();
-  const { error, loginWithGoogle } = useLogin();
+  const { error, authorizeGithubLogin, loginWithGoogle } = useLogin();
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +45,18 @@ export function OAuthProviders() {
     toast.error(message);
   };
 
+  const handleGithubLogin = async () => {
+    try {
+      setLocalError(null);
+      const response = await authorizeGithubLogin();
+      window.location.href = response.authorizationUrl;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error en login con GitHub";
+      setLocalError(message);
+      toast.error(message);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {localError && (
@@ -57,6 +71,18 @@ export function OAuthProviders() {
           onError={handleGoogleError}
         />
       </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 w-full rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        onClick={() => {
+          void handleGithubLogin();
+        }}
+      >
+        <Github className="mr-2 size-4" />
+        Continuar con GitHub
+      </Button>
     </div>
   );
 }
