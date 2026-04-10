@@ -3,12 +3,16 @@ import { ENDPOINTS } from "@/infra/api/endpoints";
 import type {
     login,
     LoginChallengeResponse,
+    LoginGoogle,
     LoginResponse,
     Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 import type { ILoginRepository } from "@/core/domain/interfaces/security/ILoginRepository";
 
 export class LoginRepository implements ILoginRepository {
+    async loginWithGoogle(payload: LoginGoogle): Promise<LoginResponse> {
+        return httpMsSecurity.post<LoginResponse>(ENDPOINTS.SECURITY.LOGIN_GOOGLE, payload);
+    }
     async login(credentials: login): Promise<LoginChallengeResponse> {
         return await httpMsSecurity.post<LoginChallengeResponse>(ENDPOINTS.SECURITY.LOGIN, credentials);
     }

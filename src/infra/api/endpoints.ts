@@ -2,6 +2,7 @@ export const ENDPOINTS = {
   SECURITY: {
     LOGIN: "/api/public/security/login",
     VERIFY_2FA: "/api/public/security/verify-2fa",
+    LOGIN_GOOGLE: "/api/public/security/login/google",
   },
   USER: {
     BASE: "/api/public/users",
@@ -40,6 +41,7 @@ export const ENDPOINTS = {
   ROLE_PERMISSION: {
     BASE: (roleId: string, permissionId: string) =>
       `/api/role-permission/role/${roleId}/permission/${permissionId}`,
-    BY_ID: (rolePermissionId: string) => `/api/role-permission/${rolePermissionId}`,
+    BY_ID: (rolePermissionId: string) =>
+      `/api/role-permission/${rolePermissionId}`,
   },
 };
