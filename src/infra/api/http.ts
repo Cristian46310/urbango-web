@@ -2,6 +2,8 @@ import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from
 
 const AUTH_TOKEN_STORAGE_KEY = 'authToken';
 
+type ErrorHandler = (statusCode: number) => void;
+
 class HttpClient {
   private instance: AxiosInstance;
 
@@ -26,6 +28,18 @@ class HttpClient {
 
       return config;
     });
+  }
+
+  setErrorHandler(handler: ErrorHandler) {
+    this.instance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          handler(error.response.status);
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {

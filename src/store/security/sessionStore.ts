@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { create } from "zustand";
+import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
 import type { CreateSessionDTO, Session, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 import { GetSessionUseCase } from "@/core/applications/security/session/getSessionUseCase";
 import { GetAllSessionsUseCase } from "@/core/applications/security/session/getAllSessionsUseCase";
@@ -31,11 +31,12 @@ export const useSessionStore = create<SessionStoreState>((set) => ({
   loading: false,
   error: null,
   fetchSession: async (sessionId: string) => {
+    const loadingToastId = showLoadingToast("Cargando sesion...");
     set({ loading: true, error: null });
     try {
       if (!sessionId || sessionId.trim() === "") {
         set({ loading: false, error: "Session ID is required" });
-        toast.error("Session ID is required");
+        showErrorToast("Session ID is required");
         throw new Error("Session ID is required");
       }
       const session = await getSessionUseCase.execute(sessionId);
@@ -43,11 +44,14 @@ export const useSessionStore = create<SessionStoreState>((set) => ({
       return session;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching session: ${(error as Error).message}`);
+      showErrorToast(`Error fetching session: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   fetchAllSessions: async () => {
+    const loadingToastId = showLoadingToast("Cargando sesiones...");
     set({ loading: true, error: null });
     try {
       const sessions = await getAllSessionsUseCase.execute();
@@ -55,53 +59,67 @@ export const useSessionStore = create<SessionStoreState>((set) => ({
       return sessions;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching sessions: ${(error as Error).message}`);
+      showErrorToast(`Error fetching sessions: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   createSession: async (sessionData: CreateSessionDTO) => {
+    const loadingToastId = showLoadingToast("Creando sesion...");
     set({ loading: true, error: null });
     try {
       const session = await postSessionUseCase.execute(sessionData);
       set({ loading: false });
+      showSuccessToast("Session created successfully");
       return session;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error creating session: ${(error as Error).message}`);
+      showErrorToast(`Error creating session: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   updateSession: async (sessionId: string, sessionData: UpdateSessionDTO) => {
+    const loadingToastId = showLoadingToast("Actualizando sesion...");
     set({ loading: true, error: null });
     try {
       if (!sessionId || sessionId.trim() === "") {
         set({ loading: false, error: "Session ID is required" });
-        toast.error("Session ID is required");
+        showErrorToast("Session ID is required");
         throw new Error("Session ID is required");
       }
       const session = await putSessionUseCase.execute(sessionId, sessionData);
       set({ loading: false });
+      showSuccessToast("Session updated successfully");
       return session;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error updating session: ${(error as Error).message}`);
+      showErrorToast(`Error updating session: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   deleteSession: async (sessionId: string) => {
+    const loadingToastId = showLoadingToast("Eliminando sesion...");
     set({ loading: true, error: null });
     try {
       if (!sessionId || sessionId.trim() === "") {
         set({ loading: false, error: "Session ID is required" });
-        toast.error("Session ID is required");
+        showErrorToast("Session ID is required");
         throw new Error("Session ID is required");
       }
       await deleteSessionUseCase.execute(sessionId);
       set({ loading: false });
+      showSuccessToast("Session deleted successfully");
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error deleting session: ${(error as Error).message}`);
+      showErrorToast(`Error deleting session: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
 }));

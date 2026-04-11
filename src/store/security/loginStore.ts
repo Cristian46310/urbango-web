@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { create } from "zustand";
+import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
 import { LoginRepository } from "@/infra/repository/security/LoginRepository";
 import { AuthorizeGithubLoginUseCase } from "@/core/applications/security/login/authorizeGithubLoginUseCase";
 import { CompleteGithubRegistrationUseCase } from "@/core/applications/security/login/completeGithubRegistrationUseCase";
@@ -44,11 +44,12 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
   loading: false,
   error: null,
   login: async (credentials: login) => {
+    const loadingToastId = showLoadingToast("Iniciando sesion...");
     set({ loading: true, error: null });
     try {
       if (!credentials.email || !credentials.password) {
         set({ loading: false, error: "Email and password are required" });
-        toast.error("Email and password are required");
+        showErrorToast("Email and password are required");
         throw new Error("Email and password are required");
       }
       const response = await loginUseCase.execute(credentials);
@@ -56,61 +57,76 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Login failed: ${(error as Error).message}`);
+      showErrorToast(`Login failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   verifyTwoFactor: async (payload: Verify2FADTO) => {
+    const loadingToastId = showLoadingToast("Validando codigo 2FA...");
     set({ loading: true, error: null });
     try {
       if (!payload.challengeToken || !payload.code) {
         set({ loading: false, error: "Challenge token and 2FA code are required" });
-        toast.error("Challenge token and 2FA code are required");
+        showErrorToast("Challenge token and 2FA code are required");
         throw new Error("Challenge token and 2FA code are required");
       }
 
       const response = await verifyTwoFactorUseCase.execute(payload);
       localStorage.setItem("authToken", response.token);
       set({ loading: false });
+      showSuccessToast("2FA verification successful");
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`2FA validation failed: ${(error as Error).message}`);
+      showErrorToast(`2FA validation failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   loginWithGoogle: async (payload: LoginGoogle) => {
+    const loadingToastId = showLoadingToast("Iniciando sesion con Google...");
     set({ loading: true, error: null });
     try {
       if (!payload.idToken) {
         set({ loading: false, error: "ID Token is required" });
-        toast.error("ID Token is required");
+        showErrorToast("ID Token is required");
         throw new Error("ID Token is required");
       }
 
       const response = await loginWithGoogleUseCase.execute(payload);
       localStorage.setItem("authToken", response.token);
       set({ loading: false });
+      showSuccessToast("Google login successful");
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Google login failed: ${(error as Error).message}`);
+      showErrorToast(`Google login failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   authorizeGithubLogin: async () => {
+    const loadingToastId = showLoadingToast("Autorizando GitHub...");
     set({ loading: true, error: null });
     try {
       const response = await authorizeGithubLoginUseCase.execute();
       set({ loading: false });
+      showSuccessToast("GitHub authorization successful");
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`GitHub authorize failed: ${(error as Error).message}`);
+      showErrorToast(`GitHub authorize failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   loginWithGithub: async (payload: LoginGithubCallback) => {
+    const loadingToastId = showLoadingToast("Iniciando sesion con GitHub...");
     set({ loading: true, error: null });
     try {
       const response = await loginWithGithubUseCase.execute(payload);
@@ -118,14 +134,18 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
         localStorage.setItem("authToken", response.token);
       }
       set({ loading: false });
+      showSuccessToast("GitHub login successful");
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`GitHub login failed: ${(error as Error).message}`);
+      showErrorToast(`GitHub login failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   completeGithubRegistration: async (payload: LoginGithubCompleteRegistration) => {
+    const loadingToastId = showLoadingToast("Completando registro con GitHub...");
     set({ loading: true, error: null });
     try {
       const response = await completeGithubRegistrationUseCase.execute(payload);
@@ -133,11 +153,14 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
         localStorage.setItem("authToken", response.token);
       }
       set({ loading: false });
+      showSuccessToast("GitHub registration completed");
       return response;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`GitHub registration failed: ${(error as Error).message}`);
+      showErrorToast(`GitHub registration failed: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
 }));

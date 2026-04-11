@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { create } from "zustand";
+import { dismissToast, showErrorToast, showLoadingToast } from "@/lib/toast";
 import type { Role } from "@/core/domain/entities/security/Role";
 import { GetRoleUseCase } from "@/core/applications/security/role/getRoleUseCase";
 import { GetAllRolesUseCase } from "@/core/applications/security/role/getAllRolesUseCase";
@@ -22,11 +22,12 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
   loading: false,
   error: null,
   fetchRole: async (roleId: string) => {
+    const loadingToastId = showLoadingToast("Cargando rol...");
     set({ loading: true, error: null });
     try {
       if (!roleId || roleId.trim() === "") {
         set({ loading: false, error: "Role ID is required" });
-        toast.error("Role ID is required");
+        showErrorToast("Role ID is required");
         throw new Error("Role ID is required");
       }
       const role = await getRoleUseCase.execute(roleId);
@@ -34,11 +35,14 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       return role;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching role: ${(error as Error).message}`);
+      showErrorToast(`Error fetching role: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   fetchAllRoles: async () => {
+    const loadingToastId = showLoadingToast("Cargando roles...");
     set({ loading: true, error: null });
     try {
       const roles = await getAllRolesUseCase.execute();
@@ -46,8 +50,10 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       return roles;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching roles: ${(error as Error).message}`);
+      showErrorToast(`Error fetching roles: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
 }));
