@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
-import { Eye, MoreVertical, ShieldCheck } from "lucide-react";
+import { Eye, ShieldCheck } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
-import { toast } from "sonner";
 
+import {
+  SECURITY_ASSIGNMENT_PAGE_SIZE,
+  SECURITY_LOOKUP_PAGE_SIZE,
+  SECURITY_PAGE_SIZE,
+} from "@/app/components/security/constants";
 import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
+import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -15,19 +20,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { usePermission, useRole, useRolePermission } from "@/hooks/security";
 import type { Permission } from "@/core/domain/entities/security/Permission";
 import type { Role } from "@/core/domain/entities/security/Role";
-
-const PAGE_SIZE = 10;
-const LOOKUP_PAGE_SIZE = 10;
-const ASSIGN_PERMISSIONS_PAGE_SIZE = 8;
 
 interface RoleDetail extends Role {
   permissions: Permission[];
@@ -46,14 +41,14 @@ export default function RolesPage() {
   const [assignPermissionsPage, setAssignPermissionsPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const assignPermissionsPageCount = Math.max(1, Math.ceil(availablePermissions.length / ASSIGN_PERMISSIONS_PAGE_SIZE));
+  const assignPermissionsPageCount = Math.max(1, Math.ceil(availablePermissions.length / SECURITY_ASSIGNMENT_PAGE_SIZE));
   const visiblePermissions = availablePermissions.slice(
-    assignPermissionsPage * ASSIGN_PERMISSIONS_PAGE_SIZE,
-    (assignPermissionsPage + 1) * ASSIGN_PERMISSIONS_PAGE_SIZE,
+    assignPermissionsPage * SECURITY_ASSIGNMENT_PAGE_SIZE,
+    (assignPermissionsPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
   useEffect(() => {
-    void loadRoles({ page: currentPage, size: PAGE_SIZE });
+    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
   }, [currentPage]);
 
   useEffect(() => {
@@ -72,7 +67,7 @@ export default function RolesPage() {
     let totalPages = 1;
 
     do {
-      const response = await loadPermissions({ page, size: LOOKUP_PAGE_SIZE });
+      const response = await loadPermissions({ page, size: SECURITY_LOOKUP_PAGE_SIZE });
       collected.push(...response.content);
       totalPages = response.totalPages;
       page += 1;
@@ -137,7 +132,6 @@ export default function RolesPage() {
 
   const handleAssignPermissions = async () => {
     if (!selectedRole) {
-      toast.error("Selecciona un rol.");
       return;
     }
 
@@ -149,7 +143,6 @@ export default function RolesPage() {
     }
 
     closeAssignPermissionsDialog();
-    toast.success("Permisos actualizados correctamente");
   };
 
   const columnHelper = createColumnHelper<Role>();
@@ -172,25 +165,24 @@ export default function RolesPage() {
       cell: (info) => {
         const role = info.row.original;
         return (
-          <div className="flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Opciones">
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => { void openViewDialog(role); }}>
-                  <Eye className="size-4" />
-                  Ver
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { void openAssignPermissionsDialog(role); }}>
-                  <ShieldCheck className="size-4" />
-                  Asignar permisos
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <RowActionsDropdown
+            actions={[
+              {
+                label: "Ver",
+                icon: Eye,
+                onClick: () => {
+                  void openViewDialog(role);
+                },
+              },
+              {
+                label: "Asignar permisos",
+                icon: ShieldCheck,
+                onClick: () => {
+                  void openAssignPermissionsDialog(role);
+                },
+              },
+            ]}
+          />
         );
       },
     }),
@@ -200,12 +192,6 @@ export default function RolesPage() {
     <PageShell
       title="Gestion de roles"
       description="Consulta los roles disponibles y su alcance funcional."
-      aside={
-        <div className="space-y-3">
-          <p>Este modulo es solo de consulta en el backend actual.</p>
-          <p>Si necesitas cambios de roles, debes habilitar esas operaciones en el servicio.</p>
-        </div>
-      }
     >
       <DataTable
         title="Listado de roles"
@@ -215,10 +201,10 @@ export default function RolesPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadRoles({ page: currentPage, size: PAGE_SIZE });
+          void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
         pageIndex={currentPage}
-        pageSize={PAGE_SIZE}
+        pageSize={SECURITY_PAGE_SIZE}
         pageCount={rolesPage?.totalPages ?? 1}
         totalItems={rolesPage?.totalElements}
         onPageChange={setCurrentPage}

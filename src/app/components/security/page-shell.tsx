@@ -6,7 +6,6 @@ interface PageShellProps {
   title: string;
   description: string;
   children: ReactNode;
-  aside?: ReactNode;
 }
 
 export function PageShell({ title, description, children }: PageShellProps) {
@@ -20,7 +19,6 @@ export function PageShell({ title, description, children }: PageShellProps) {
             <CardDescription className="text-(--security-muted-foreground)">{description}</CardDescription>
           </div>
         </header>
-
         <div className="space-y-6">{children}</div>
       </div>
     </div>

@@ -1,27 +1,15 @@
 import { useEffect, useState } from "react";
-import { Eye, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
+import { CrudDialogShell } from "@/app/components/security/crud-dialog-shell";
 import { DataTable } from "@/app/components/security/data-table";
+import { DialogField } from "@/app/components/security/dialog-field";
 import { PageShell } from "@/app/components/security/page-shell";
+import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
+import { SECURITY_PAGE_SIZE } from "@/app/components/security/constants";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,8 +19,6 @@ import {
 } from "@/components/ui/select";
 import { usePermission } from "@/hooks/security";
 import type { Permission } from "@/core/domain/entities/security/Permission";
-
-const PAGE_SIZE = 10;
 
 type PermissionDialogMode = "create" | "edit" | "view";
 
@@ -66,7 +52,7 @@ export default function PermissionsPage() {
   const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    void loadPermissions({ page: currentPage, size: PAGE_SIZE });
+    void loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
   }, [currentPage]);
 
   const openCreateDialog = () => {
@@ -98,27 +84,24 @@ export default function PermissionsPage() {
           url: form.url.trim(),
           method: form.method,
         });
-        toast.success("Permiso actualizado correctamente");
       } else {
         await addPermission({
           url: form.url.trim(),
           method: form.method,
         });
-        toast.success("Permiso creado correctamente");
       }
 
       setIsDialogOpen(false);
       setForm(initialForm);
-      await loadPermissions({ page: currentPage, size: PAGE_SIZE });
-    } catch (submitError) {
-      toast.error((submitError as Error).message);
+      await loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
+    } catch {
+      // Store layer handles user feedback.
     }
   };
 
   const handleDelete = async (permissionId: string) => {
     await removePermission(permissionId);
-    await loadPermissions({ page: currentPage, size: PAGE_SIZE });
-    toast.success("Permiso eliminado");
+    await loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
   };
 
   const columnHelper = createColumnHelper<Permission>();
@@ -141,29 +124,32 @@ export default function PermissionsPage() {
       cell: (info) => {
         const permission = info.row.original;
         return (
-          <div className="flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Opciones">
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => { openViewDialog(permission); }}>
-                  <Eye className="size-4" />
-                  Ver
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { openEditDialog(permission); }}>
-                  <Pencil className="size-4" />
-                  Actualizar
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => { void handleDelete(permission.id); }}>
-                  <Trash2 className="size-4" />
-                  Borrar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <RowActionsDropdown
+            actions={[
+              {
+                label: "Ver",
+                icon: Eye,
+                onClick: () => {
+                  openViewDialog(permission);
+                },
+              },
+              {
+                label: "Actualizar",
+                icon: Pencil,
+                onClick: () => {
+                  openEditDialog(permission);
+                },
+              },
+              {
+                label: "Borrar",
+                icon: Trash2,
+                variant: "destructive",
+                onClick: () => {
+                  void handleDelete(permission.id);
+                },
+              },
+            ]}
+          />
         );
       },
     }),
@@ -173,12 +159,6 @@ export default function PermissionsPage() {
     <PageShell
       title="Gestion de permisos"
       description="Administra rutas y metodos HTTP de manera organizada."
-      aside={
-        <div className="space-y-3">
-          <p>Los permisos definen que endpoints puede consumir cada rol.</p>
-          <p>Usa la opcion de adicionar para registrar nuevas reglas.</p>
-        </div>
-      }
     >
       <DataTable
         title="Listado de permisos"
@@ -188,10 +168,10 @@ export default function PermissionsPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadPermissions({ page: currentPage, size: PAGE_SIZE });
+          void loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
         pageIndex={currentPage}
-        pageSize={PAGE_SIZE}
+        pageSize={SECURITY_PAGE_SIZE}
         pageCount={permissionsPage?.totalPages ?? 1}
         totalItems={permissionsPage?.totalElements}
         onPageChange={setCurrentPage}
@@ -206,70 +186,50 @@ export default function PermissionsPage() {
         }
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="border-(--security-border)">
-          <DialogHeader>
-            <DialogTitle>
-              {dialogMode === "create" ? "Adicionar permiso" : dialogMode === "edit" ? "Actualizar permiso" : "Detalle del permiso"}
-            </DialogTitle>
-            <DialogDescription>
-              {dialogMode === "view" ? "Informacion del permiso seleccionado." : "Configura la ruta y el metodo HTTP."}
-            </DialogDescription>
-          </DialogHeader>
+      <CrudDialogShell
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        mode={dialogMode}
+        title={dialogMode === "create" ? "Adicionar permiso" : dialogMode === "edit" ? "Actualizar permiso" : "Detalle del permiso"}
+        description={dialogMode === "view" ? "Informacion del permiso seleccionado." : "Configura la ruta y el metodo HTTP."}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        onSave={() => {
+          void handleSave();
+        }}
+      >
+        <DialogField label="URL" htmlFor="permission-url">
+          <Input
+            id="permission-url"
+            value={form.url}
+            onChange={(event) => {
+              setForm((current) => ({ ...current, url: event.target.value }));
+            }}
+            disabled={dialogMode === "view"}
+          />
+        </DialogField>
 
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="permission-url">URL</Label>
-              <Input
-                id="permission-url"
-                value={form.url}
-                onChange={(event) => {
-                  setForm((current) => ({ ...current, url: event.target.value }));
-                }}
-                disabled={dialogMode === "view"}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Metodo</Label>
-              <Select
-                value={form.method}
-                onValueChange={(value: PermissionForm["method"]) => {
-                  setForm((current) => ({ ...current, method: value }));
-                }}
-                disabled={dialogMode === "view"}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un metodo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GET">GET</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsDialogOpen(false);
-              }}
-            >
-              Cerrar
-            </Button>
-            {dialogMode !== "view" ? (
-              <Button type="button" onClick={() => { void handleSave(); }}>
-                Guardar
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <DialogField label="Metodo">
+          <Select
+            value={form.method}
+            onValueChange={(value: PermissionForm["method"]) => {
+              setForm((current) => ({ ...current, method: value }));
+            }}
+            disabled={dialogMode === "view"}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona un metodo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="GET">GET</SelectItem>
+              <SelectItem value="POST">POST</SelectItem>
+              <SelectItem value="PUT">PUT</SelectItem>
+              <SelectItem value="DELETE">DELETE</SelectItem>
+            </SelectContent>
+          </Select>
+        </DialogField>
+      </CrudDialogShell>
     </PageShell>
   );
 }

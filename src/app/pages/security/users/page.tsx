@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { Eye, MoreVertical, Pencil, Plus, Trash2, UserCog } from "lucide-react";
-import { toast } from "sonner";
+import { Eye, Pencil, Plus, Trash2, UserCog } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
+import { CrudDialogShell } from "@/app/components/security/crud-dialog-shell";
 import { DataTable } from "@/app/components/security/data-table";
+import { DialogField } from "@/app/components/security/dialog-field";
 import { PageShell } from "@/app/components/security/page-shell";
+import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
+import {
+  SECURITY_ASSIGNMENT_PAGE_SIZE,
+  SECURITY_LOOKUP_PAGE_SIZE,
+  SECURITY_PAGE_SIZE,
+} from "@/app/components/security/constants";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -15,14 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useUser } from "@/hooks/security";
 import { useRole, useUserRole } from "@/hooks/security";
 import type { Role } from "@/core/domain/entities/security/Role";
@@ -55,10 +55,6 @@ const initialForm: UserForm = {
   password: "",
 };
 
-const PAGE_SIZE = 10;
-const LOOKUP_PAGE_SIZE = 10;
-const ASSIGN_ROLES_PAGE_SIZE = 8;
-
 const normalizeRoleName = (name: string) => name.trim().toLowerCase();
 
 const dedupeRolesById = (roles: Role[]) => {
@@ -87,14 +83,14 @@ export default function UsersPage() {
   const [assignRolesPage, setAssignRolesPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const assignRolesPageCount = Math.max(1, Math.ceil(availableRoles.length / ASSIGN_ROLES_PAGE_SIZE));
+  const assignRolesPageCount = Math.max(1, Math.ceil(availableRoles.length / SECURITY_ASSIGNMENT_PAGE_SIZE));
   const visibleRoles = availableRoles.slice(
-    assignRolesPage * ASSIGN_ROLES_PAGE_SIZE,
-    (assignRolesPage + 1) * ASSIGN_ROLES_PAGE_SIZE,
+    assignRolesPage * SECURITY_ASSIGNMENT_PAGE_SIZE,
+    (assignRolesPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
   useEffect(() => {
-    void loadUsers({ page: currentPage, size: PAGE_SIZE });
+    void loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
   }, [currentPage]);
 
   useEffect(() => {
@@ -113,7 +109,7 @@ export default function UsersPage() {
     let totalPages = 1;
 
     do {
-      const response = await loadRoles({ page, size: LOOKUP_PAGE_SIZE });
+      const response = await loadRoles({ page, size: SECURITY_LOOKUP_PAGE_SIZE });
       collected.push(...response.content);
       totalPages = response.totalPages;
       page += 1;
@@ -215,29 +211,25 @@ export default function UsersPage() {
         }
 
         await editUser(form.id, updatePayload);
-        toast.success("Usuario actualizado correctamente");
       } else {
         await addUser(payload);
-        toast.success("Usuario creado correctamente");
       }
 
       setIsDialogOpen(false);
       setForm(initialForm);
-      await loadUsers({ page: currentPage, size: PAGE_SIZE });
-    } catch (submitError) {
-      toast.error((submitError as Error).message);
+      await loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
+    } catch {
+      // Store layer handles user feedback.
     }
   };
 
   const handleDelete = async (userId: string) => {
     await removeUser(userId);
-    await loadUsers({ page: currentPage, size: PAGE_SIZE });
-    toast.success("Usuario eliminado");
+    await loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
   };
 
   const handleAssignRoles = async () => {
     if (!selectedUser) {
-      toast.error("Selecciona un usuario.");
       return;
     }
 
@@ -249,7 +241,6 @@ export default function UsersPage() {
     }
 
     closeAssignRolesDialog();
-    toast.success("Roles actualizados correctamente");
   };
 
   const columnHelper = createColumnHelper<User>();
@@ -272,33 +263,39 @@ export default function UsersPage() {
       cell: (info) => {
         const user = info.row.original;
         return (
-          <div className="flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Opciones">
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => { openViewDialog(user); }}>
-                  <Eye className="size-4" />
-                  Ver
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { void openAssignRolesDialog(user); }}>
-                  <UserCog className="size-4" />
-                  Asignar roles
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { void openEditDialog(user); }}>
-                  <Pencil className="size-4" />
-                  Actualizar
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => { void handleDelete(user.id); }}>
-                  <Trash2 className="size-4" />
-                  Borrar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <RowActionsDropdown
+            actions={[
+              {
+                label: "Ver",
+                icon: Eye,
+                onClick: () => {
+                  openViewDialog(user);
+                },
+              },
+              {
+                label: "Asignar roles",
+                icon: UserCog,
+                onClick: () => {
+                  void openAssignRolesDialog(user);
+                },
+              },
+              {
+                label: "Actualizar",
+                icon: Pencil,
+                onClick: () => {
+                  void openEditDialog(user);
+                },
+              },
+              {
+                label: "Borrar",
+                icon: Trash2,
+                variant: "destructive",
+                onClick: () => {
+                  void handleDelete(user.id);
+                },
+              },
+            ]}
+          />
         );
       },
     }),
@@ -308,12 +305,6 @@ export default function UsersPage() {
     <PageShell
       title="Gestion de usuarios"
       description="Administra las cuentas de acceso de forma rapida y clara."
-      aside={
-        <div className="space-y-3">
-          <p>Desde aqui puedes registrar, consultar y actualizar usuarios.</p>
-          <p>Para cambiar la contraseña en una edicion, escribe una nueva.</p>
-        </div>
-      }
     >
       <DataTable
         title="Listado de usuarios"
@@ -323,10 +314,10 @@ export default function UsersPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadUsers({ page: currentPage, size: PAGE_SIZE });
+          void loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
         pageIndex={currentPage}
-        pageSize={PAGE_SIZE}
+        pageSize={SECURITY_PAGE_SIZE}
         pageCount={usersPage?.totalPages ?? 1}
         totalItems={usersPage?.totalElements}
         onPageChange={setCurrentPage}
@@ -341,78 +332,58 @@ export default function UsersPage() {
         }
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="border-(--security-border)">
-          <DialogHeader>
-            <DialogTitle>
-              {dialogMode === "create" ? "Adicionar usuario" : dialogMode === "edit" ? "Actualizar usuario" : "Detalle del usuario"}
-            </DialogTitle>
-            <DialogDescription>
-              {dialogMode === "view" ? "Informacion del usuario seleccionado." : "Completa los datos y guarda los cambios."}
-            </DialogDescription>
-          </DialogHeader>
+      <CrudDialogShell
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        mode={dialogMode}
+        title={dialogMode === "create" ? "Adicionar usuario" : dialogMode === "edit" ? "Actualizar usuario" : "Detalle del usuario"}
+        description={dialogMode === "view" ? "Informacion del usuario seleccionado." : "Completa los datos y guarda los cambios."}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        onSave={() => {
+          void handleSave();
+        }}
+      >
+        <DialogField label="Nombre" htmlFor="user-name">
+          <Input
+            id="user-name"
+            value={form.name}
+            onChange={(event) => {
+              setForm((current) => ({ ...current, name: event.target.value }));
+            }}
+            disabled={dialogMode === "view"}
+          />
+        </DialogField>
 
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="user-name">Nombre</Label>
-              <Input
-                id="user-name"
-                value={form.name}
-                onChange={(event) => {
-                  setForm((current) => ({ ...current, name: event.target.value }));
-                }}
-                disabled={dialogMode === "view"}
-              />
-            </div>
+        <DialogField label="Correo" htmlFor="user-email">
+          <Input
+            id="user-email"
+            type="email"
+            value={form.email}
+            onChange={(event) => {
+              setForm((current) => ({ ...current, email: event.target.value }));
+            }}
+            disabled={dialogMode === "view"}
+          />
+        </DialogField>
 
-            <div className="grid gap-2">
-              <Label htmlFor="user-email">Correo</Label>
-              <Input
-                id="user-email"
-                type="email"
-                value={form.email}
-                onChange={(event) => {
-                  setForm((current) => ({ ...current, email: event.target.value }));
-                }}
-                disabled={dialogMode === "view"}
-              />
-            </div>
-
-            {dialogMode !== "view" ? (
-              <div className="grid gap-2">
-                <Label htmlFor="user-password">
-                  {dialogMode === "edit" ? "Nueva contraseña (opcional)" : "Contraseña"}
-                </Label>
-                <Input
-                  id="user-password"
-                  type="password"
-                  value={form.password}
-                  onChange={(event) => {
-                    setForm((current) => ({ ...current, password: event.target.value }));
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsDialogOpen(false);
+        {dialogMode !== "view" ? (
+          <DialogField
+            label={dialogMode === "edit" ? "Nueva contraseña (opcional)" : "Contraseña"}
+            htmlFor="user-password"
+          >
+            <Input
+              id="user-password"
+              type="password"
+              value={form.password}
+              onChange={(event) => {
+                setForm((current) => ({ ...current, password: event.target.value }));
               }}
-            >
-              Cerrar
-            </Button>
-            {dialogMode !== "view" ? (
-              <Button type="button" onClick={() => { void handleSave(); }}>
-                Guardar
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            />
+          </DialogField>
+        ) : null}
+      </CrudDialogShell>
 
       <Dialog open={isAssignRolesDialogOpen} onOpenChange={setIsAssignRolesDialogOpen}>
         <DialogContent className="max-w-4xl border-(--security-border)">
