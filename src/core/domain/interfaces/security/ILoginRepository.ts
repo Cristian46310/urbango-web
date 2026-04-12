@@ -2,6 +2,9 @@ import type {
     login,
     RegisterUser,
     RegisterUserResponse,
+    ForgotPasswordDTO,
+    ResetPasswordDTO,
+    MessageResponse,
     LoginChallengeResponse,
     LoginGithubAuthorizeResponse,
     LoginGithubCallback,
@@ -18,6 +21,8 @@ import type {
 
 export interface ILoginRepository {
     register(payload: RegisterUser): Promise<RegisterUserResponse>;
+    forgotPassword(payload: ForgotPasswordDTO): Promise<MessageResponse>;
+    resetPassword(payload: ResetPasswordDTO): Promise<MessageResponse>;
     login(credentials: login): Promise<LoginChallengeResponse>;
     verifyTwoFactor(payload: Verify2FADTO): Promise<LoginResponse>;
     loginWithGoogle(payload: LoginGoogle): Promise<LoginResponse>;

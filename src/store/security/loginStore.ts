@@ -10,11 +10,16 @@ import { LoginWithGithubUseCase } from "@/core/applications/security/login/login
 import { LoginWithMicrosoftUseCase } from "@/core/applications/security/login/loginWithMicrosoftUseCase";
 import { LoginWithGoogleUseCase } from "@/core/applications/security/login/loginWithGoogleUseCase";
 import { RegisterUseCase } from "@/core/applications/security/login/registerUseCase";
+import { ForgotPasswordUseCase } from "@/core/applications/security/login/forgotPasswordUseCase";
+import { ResetPasswordUseCase } from "@/core/applications/security/login/resetPasswordUseCase";
 import { VerifyTwoFactorUseCase } from "@/core/applications/security/login/verifyTwoFactorUseCase";
 import type {
   login,
   RegisterUser,
   RegisterUserResponse,
+  ForgotPasswordDTO,
+  ResetPasswordDTO,
+  MessageResponse,
   LoginChallengeResponse,
   LoginGithubAuthorizeResponse,
   LoginGithubCallback,
@@ -39,12 +44,16 @@ const loginWithGithubUseCase = new LoginWithGithubUseCase(loginRepository);
 const loginWithMicrosoftUseCase = new LoginWithMicrosoftUseCase(loginRepository);
 const loginWithGoogleUseCase = new LoginWithGoogleUseCase(loginRepository);
 const registerUseCase = new RegisterUseCase(loginRepository);
+const forgotPasswordUseCase = new ForgotPasswordUseCase(loginRepository);
+const resetPasswordUseCase = new ResetPasswordUseCase(loginRepository);
 const verifyTwoFactorUseCase = new VerifyTwoFactorUseCase(loginRepository);
 
 interface LoginStoreState {
   loading: boolean;
   error: string | null;
   register: (payload: RegisterUser) => Promise<RegisterUserResponse>;
+  forgotPassword: (payload: ForgotPasswordDTO) => Promise<MessageResponse>;
+  resetPassword: (payload: ResetPasswordDTO) => Promise<MessageResponse>;
   login: (credentials: login) => Promise<LoginChallengeResponse>;
   verifyTwoFactor: (payload: Verify2FADTO) => Promise<LoginResponse>;
   loginWithGoogle: (payload: LoginGoogle) => Promise<LoginResponse>;
@@ -74,6 +83,50 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Registro fallido: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      dismissToast(loadingToastId);
+    }
+  },
+  forgotPassword: async (payload: ForgotPasswordDTO) => {
+    const loadingToastId = showLoadingToast("Enviando solicitud de recuperacion...");
+    set({ loading: true, error: null });
+    try {
+      if (!payload.email) {
+        set({ loading: false, error: "Email is required" });
+        showErrorToast("Email is required");
+        throw new Error("Email is required");
+      }
+
+      const response = await forgotPasswordUseCase.execute(payload);
+      set({ loading: false });
+      showSuccessToast("Solicitud enviada correctamente");
+      return response;
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      showErrorToast(`Password recovery failed: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      dismissToast(loadingToastId);
+    }
+  },
+  resetPassword: async (payload: ResetPasswordDTO) => {
+    const loadingToastId = showLoadingToast("Actualizando contrasena...");
+    set({ loading: true, error: null });
+    try {
+      if (!payload.token || !payload.newPassword) {
+        set({ loading: false, error: "Token and new password are required" });
+        showErrorToast("Token and new password are required");
+        throw new Error("Token and new password are required");
+      }
+
+      const response = await resetPasswordUseCase.execute(payload);
+      set({ loading: false });
+      showSuccessToast("Contrasena actualizada");
+      return response;
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      showErrorToast(`Reset password failed: ${(error as Error).message}`);
       throw error;
     } finally {
       dismissToast(loadingToastId);

@@ -2,6 +2,8 @@ export const ENDPOINTS = {
   SECURITY: {
     LOGIN: "/api/public/security/login",
     REGISTER: "/api/public/security/register",
+    FORGOT_PASSWORD: "/api/public/security/forgot-password",
+    RESET_PASSWORD: "/api/public/security/reset-password",
     VERIFY_2FA: "/api/public/security/verify-2fa",
     LOGIN_GOOGLE: "/api/public/security/login/google",
     LOGIN_GITHUB_AUTHORIZE: "/api/public/security/login/github/authorize",

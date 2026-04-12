@@ -4,6 +4,9 @@ import type {
     login,
     RegisterUser,
     RegisterUserResponse,
+    ForgotPasswordDTO,
+    ResetPasswordDTO,
+    MessageResponse,
     LoginChallengeResponse,
     LoginGithubAuthorizeResponse,
     LoginGithubCallback,
@@ -22,6 +25,14 @@ import type { ILoginRepository } from "@/core/domain/interfaces/security/ILoginR
 export class LoginRepository implements ILoginRepository {
     async register(payload: RegisterUser): Promise<RegisterUserResponse> {
         return httpMsSecurity.post<RegisterUserResponse>(ENDPOINTS.SECURITY.REGISTER, payload);
+    }
+
+    async forgotPassword(payload: ForgotPasswordDTO): Promise<MessageResponse> {
+        return httpMsSecurity.post<MessageResponse>(ENDPOINTS.SECURITY.FORGOT_PASSWORD, payload);
+    }
+
+    async resetPassword(payload: ResetPasswordDTO): Promise<MessageResponse> {
+        return httpMsSecurity.post<MessageResponse>(ENDPOINTS.SECURITY.RESET_PASSWORD, payload);
     }
 
     async authorizeGithubLogin(): Promise<LoginGithubAuthorizeResponse> {

@@ -18,6 +18,19 @@ export interface RegisterUserResponse {
     message: string;
 }
 
+export interface ForgotPasswordDTO {
+    email: string;
+}
+
+export interface ResetPasswordDTO {
+    token: string;
+    newPassword: string;
+}
+
+export interface MessageResponse {
+    message: string;
+}
+
 export interface Verify2FADTO {
     challengeToken: string;
     code: string;

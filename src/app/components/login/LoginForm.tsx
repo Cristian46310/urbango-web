@@ -345,6 +345,15 @@ export function LoginForm() {
                     onChange={(event) => { setPassword(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
                   />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { void navigate("/forgot-password"); }}
+                      className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+                    >
+                      Olvide mi contrasena
+                    </button>
+                  </div>
                 </div>
 
                 <Button
