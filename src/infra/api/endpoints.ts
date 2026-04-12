@@ -44,6 +44,7 @@ export const ENDPOINTS = {
   ROLE_PERMISSION: {
     BASE: (roleId: string, permissionId: string) =>
       `/api/role-permission/role/${roleId}/permission/${permissionId}`,
+    ASSIGN_MULTIPLE: "/api/role-permission/assign-multiple",
     BY_ID: (rolePermissionId: string) =>
       `/api/role-permission/${rolePermissionId}`,
   },

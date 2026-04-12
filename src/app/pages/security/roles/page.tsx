@@ -27,6 +27,7 @@ import type { Role } from "@/core/domain/entities/security/Role";
 
 const PAGE_SIZE = 10;
 const LOOKUP_PAGE_SIZE = 10;
+const ASSIGN_PERMISSIONS_PAGE_SIZE = 8;
 
 interface RoleDetail extends Role {
   permissions: Permission[];
@@ -34,22 +35,61 @@ interface RoleDetail extends Role {
 
 export default function RolesPage() {
   const { roles, rolesPage, loading, error, loadRoles, getRoleById } = useRole();
-  const { permissions, loadPermissions } = usePermission();
-  const { assignPermissionToRole, removePermissionRoleLink } = useRolePermission();
+  const { loadPermissions } = usePermission();
+  const { assignMultiplePermissionsToRole } = useRolePermission();
 
   const [selectedRole, setSelectedRole] = useState<RoleDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignPermissionsOpen, setIsAssignPermissionsOpen] = useState(false);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
+  const [assignPermissionsPage, setAssignPermissionsPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
+
+  const assignPermissionsPageCount = Math.max(1, Math.ceil(availablePermissions.length / ASSIGN_PERMISSIONS_PAGE_SIZE));
+  const visiblePermissions = availablePermissions.slice(
+    assignPermissionsPage * ASSIGN_PERMISSIONS_PAGE_SIZE,
+    (assignPermissionsPage + 1) * ASSIGN_PERMISSIONS_PAGE_SIZE,
+  );
 
   useEffect(() => {
     void loadRoles({ page: currentPage, size: PAGE_SIZE });
   }, [currentPage]);
 
   useEffect(() => {
-    void loadPermissions({ page: 0, size: LOOKUP_PAGE_SIZE });
+    void (async () => {
+      await ensurePermissionsLoaded();
+    })();
   }, []);
+
+  const ensurePermissionsLoaded = async () => {
+    if (availablePermissions.length > 0) {
+      return availablePermissions;
+    }
+
+    const collected: Permission[] = [];
+    let page = 0;
+    let totalPages = 1;
+
+    do {
+      const response = await loadPermissions({ page, size: LOOKUP_PAGE_SIZE });
+      collected.push(...response.content);
+      totalPages = response.totalPages;
+      page += 1;
+    } while (page < totalPages);
+
+    const seen = new Set<string>();
+    const allPermissions = collected.filter((permission) => {
+      if (seen.has(permission.id)) {
+        return false;
+      }
+      seen.add(permission.id);
+      return true;
+    });
+
+    setAvailablePermissions(allPermissions);
+    return allPermissions;
+  };
 
   const openViewDialog = async (role: Role) => {
     const detailedRole = await getRoleById(role.id) as RoleDetail;
@@ -58,13 +98,23 @@ export default function RolesPage() {
   };
 
   const openAssignPermissionsDialog = async (role: Role) => {
-    const detailedRole = await getRoleById(role.id) as RoleDetail;
+    const [detailedRole, allPermissions] = await Promise.all([
+      getRoleById(role.id) as Promise<RoleDetail>,
+      ensurePermissionsLoaded(),
+    ]);
+
     const assignedPermissions = detailedRole.permissions;
+    const availablePermissionIds = new Set(allPermissions.map((permission) => permission.id));
+    const assignedPermissionIds = assignedPermissions
+      .map((permission) => permission.id)
+      .filter((permissionId) => availablePermissionIds.has(permissionId));
+
     setSelectedRole({
       ...detailedRole,
       permissions: assignedPermissions,
     });
-    setSelectedPermissionIds(assignedPermissions.map((permission) => permission.id));
+    setSelectedPermissionIds(assignedPermissionIds);
+    setAssignPermissionsPage(0);
     setIsAssignPermissionsOpen(true);
   };
 
@@ -72,6 +122,7 @@ export default function RolesPage() {
     setIsAssignPermissionsOpen(false);
     setSelectedRole(null);
     setSelectedPermissionIds([]);
+    setAssignPermissionsPage(0);
   };
 
   const togglePermissionSelection = (permissionId: string, checked: boolean) => {
@@ -90,28 +141,13 @@ export default function RolesPage() {
       return;
     }
 
-    const currentPermissionIds = (selectedRole.permissions ?? []).map((permission) => permission.id);
-    const permissionsToAdd = selectedPermissionIds.filter(
-      (permissionId) => !currentPermissionIds.includes(permissionId),
-    );
-    const permissionsToRemove = (selectedRole.permissions ?? []).filter(
-      (permission) => !selectedPermissionIds.includes(permission.id),
-    );
-
-    for (const permissionId of permissionsToAdd) {
-      await assignPermissionToRole(selectedRole.id, permissionId);
+    if (selectedPermissionIds.length > 0) {
+      await assignMultiplePermissionsToRole({
+        roleId: selectedRole.id,
+        permissionIds: selectedPermissionIds,
+      });
     }
 
-    const removablePermissions = permissionsToRemove.filter((permission) => Boolean(permission.relationId));
-    if (permissionsToRemove.length > removablePermissions.length) {
-      toast.error("No se pudieron quitar algunos permisos porque el backend no expone el id de relacion.");
-    }
-
-    for (const permission of removablePermissions) {
-      await removePermissionRoleLink(permission.relationId as string);
-    }
-
-    await loadRoles({ page: currentPage, size: PAGE_SIZE });
     closeAssignPermissionsDialog();
     toast.success("Permisos actualizados correctamente");
   };
@@ -248,7 +284,7 @@ export default function RolesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-(--security-border)">
-                  {permissions.map((permission) => {
+                  {visiblePermissions.map((permission) => {
                     const checked = selectedPermissionIds.includes(permission.id);
 
                     return (
@@ -268,6 +304,36 @@ export default function RolesPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-(--security-muted-foreground)">
+              <span>
+                Pagina {assignPermissionsPage + 1} de {assignPermissionsPageCount}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAssignPermissionsPage((current) => Math.max(0, current - 1));
+                  }}
+                  disabled={assignPermissionsPage === 0}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAssignPermissionsPage((current) => Math.min(assignPermissionsPageCount - 1, current + 1));
+                  }}
+                  disabled={assignPermissionsPage >= assignPermissionsPageCount - 1}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           </div>
 

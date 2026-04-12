@@ -9,3 +9,8 @@ export interface AssignRolePermissionDTO {
     roleId: string;
     permissionId: string;
 }
+
+export interface AssignMultipleRolePermissionsDTO {
+    roleId: string;
+    permissionIds: string[];
+}

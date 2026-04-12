@@ -2,16 +2,20 @@ import { create } from "zustand";
 import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
 import { AddRolePermissionUseCase } from "@/core/applications/security/rolePermission/addRolePermissionUseCase";
 import { RemoveRolePermissionUseCase } from "@/core/applications/security/rolePermission/removeRolePermissionUseCase";
+import { AssignMultipleRolePermissionsUseCase } from "@/core/applications/security/rolePermission/assignMultipleRolePermissionsUseCase";
 import { RolePermissionRepository } from "@/infra/repository/security";
+import type { AssignMultipleRolePermissionsDTO } from "@/core/domain/entities/security/Role";
 
 const rolePermissionRepository = new RolePermissionRepository();
 const addRolePermissionUseCase = new AddRolePermissionUseCase(rolePermissionRepository);
 const removeRolePermissionUseCase = new RemoveRolePermissionUseCase(rolePermissionRepository);
+const assignMultipleRolePermissionsUseCase = new AssignMultipleRolePermissionsUseCase(rolePermissionRepository);
 
 interface RolePermissionStoreState {
   loading: boolean;
   error: string | null;
   addPermissionToRole: (roleId: string, permissionId: string) => Promise<void>;
+  assignMultiplePermissionsToRole: (payload: AssignMultipleRolePermissionsDTO) => Promise<void>;
   removePermissionFromRole: (rolePermissionId: string) => Promise<void>;
 }
 
@@ -39,6 +43,32 @@ export const useRolePermissionStore = create<RolePermissionStoreState>((set) => 
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Error assigning permission to role: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      dismissToast(loadingToastId);
+    }
+  },
+  assignMultiplePermissionsToRole: async (payload: AssignMultipleRolePermissionsDTO) => {
+    const loadingToastId = showLoadingToast("Asignando permisos al rol...");
+    set({ loading: true, error: null });
+    try {
+      if (!payload.roleId || payload.roleId.trim() === "") {
+        set({ loading: false, error: "Role ID is required" });
+        showErrorToast("Role ID is required");
+        throw new Error("Role ID is required");
+      }
+      if (!payload.permissionIds.length) {
+        set({ loading: false, error: "At least one permission ID is required" });
+        showErrorToast("At least one permission ID is required");
+        throw new Error("At least one permission ID is required");
+      }
+
+      await assignMultipleRolePermissionsUseCase.execute(payload);
+      set({ loading: false });
+      showSuccessToast("Permissions assigned to role successfully");
+    } catch (error) {
+      set({ loading: false, error: (error as Error).message });
+      showErrorToast(`Error assigning permissions to role: ${(error as Error).message}`);
       throw error;
     } finally {
       dismissToast(loadingToastId);

@@ -15,6 +15,6 @@ export function useUserRole() {
     error,
     assignRoleToUser: (userId: string, roleId: string) => assignRole(userId, roleId),
     assignMultipleRolesToUser: (payload: AssignRolesDTO) => assignMultipleRoles(payload),
-    removeRoleFromUser: (userRoleId: string) => removeRole(userRoleId),
+    removeRoleFromUser: (userId: string, roleId: string) => removeRole(userId, roleId),
   };
 }

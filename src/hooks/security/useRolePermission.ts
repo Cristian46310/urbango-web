@@ -1,10 +1,12 @@
 import { useRolePermissionStore } from "@/store";
+import type { AssignMultipleRolePermissionsDTO } from "@/core/domain/entities/security/Role";
 
 export function useRolePermission() {
   const {
     loading,
     error,
     addPermissionToRole,
+    assignMultiplePermissionsToRole,
     removePermissionFromRole,
   } = useRolePermissionStore();
 
@@ -13,6 +15,8 @@ export function useRolePermission() {
     error,
     assignPermissionToRole: (roleId: string, permissionId: string) =>
       addPermissionToRole(roleId, permissionId),
+    assignMultiplePermissionsToRole: (payload: AssignMultipleRolePermissionsDTO) =>
+      assignMultiplePermissionsToRole(payload),
     removePermissionRoleLink: (rolePermissionId: string) =>
       removePermissionFromRole(rolePermissionId),
   };

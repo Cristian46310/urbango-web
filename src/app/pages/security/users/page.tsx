@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/hooks/security";
 import { useRole, useUserRole } from "@/hooks/security";
+import type { Role } from "@/core/domain/entities/security/Role";
 import type { User } from "@/core/domain/entities/security/User";
 
 type UserDialogMode = "create" | "edit" | "view";
@@ -37,9 +38,8 @@ interface UserForm {
 }
 
 interface UserRoleDetail {
-  id: string;
   name: string;
-  relationId?: string;
+  description: string;
 }
 
 interface UserDetail extends User {
@@ -57,11 +57,25 @@ const initialForm: UserForm = {
 
 const PAGE_SIZE = 10;
 const LOOKUP_PAGE_SIZE = 10;
+const ASSIGN_ROLES_PAGE_SIZE = 8;
+
+const normalizeRoleName = (name: string) => name.trim().toLowerCase();
+
+const dedupeRolesById = (roles: Role[]) => {
+  const seen = new Set<string>();
+  return roles.filter((role) => {
+    if (seen.has(role.id)) {
+      return false;
+    }
+    seen.add(role.id);
+    return true;
+  });
+};
 
 export default function UsersPage() {
   const { users, usersPage, loading, error, loadUsers, getUserById, addUser, editUser, removeUser } = useUser();
-  const { roles, loadRoles } = useRole();
-  const { assignMultipleRolesToUser, removeRoleFromUser } = useUserRole();
+  const { loadRoles } = useRole();
+  const { assignMultipleRolesToUser } = useUserRole();
 
   const [form, setForm] = useState<UserForm>(initialForm);
   const [dialogMode, setDialogMode] = useState<UserDialogMode>("create");
@@ -69,15 +83,46 @@ export default function UsersPage() {
   const [isAssignRolesDialogOpen, setIsAssignRolesDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserSelection | null>(null);
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [assignRolesPage, setAssignRolesPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
+
+  const assignRolesPageCount = Math.max(1, Math.ceil(availableRoles.length / ASSIGN_ROLES_PAGE_SIZE));
+  const visibleRoles = availableRoles.slice(
+    assignRolesPage * ASSIGN_ROLES_PAGE_SIZE,
+    (assignRolesPage + 1) * ASSIGN_ROLES_PAGE_SIZE,
+  );
 
   useEffect(() => {
     void loadUsers({ page: currentPage, size: PAGE_SIZE });
   }, [currentPage]);
 
   useEffect(() => {
-    void loadRoles({ page: 0, size: LOOKUP_PAGE_SIZE });
+    void (async () => {
+      await ensureRolesLoaded();
+    })();
   }, []);
+
+  const ensureRolesLoaded = async () => {
+    if (availableRoles.length > 0) {
+      return availableRoles;
+    }
+
+    const collected: Role[] = [];
+    let page = 0;
+    let totalPages = 1;
+
+    do {
+      const response = await loadRoles({ page, size: LOOKUP_PAGE_SIZE });
+      collected.push(...response.content);
+      totalPages = response.totalPages;
+      page += 1;
+    } while (page < totalPages);
+
+    const allRoles = dedupeRolesById(collected);
+    setAvailableRoles(allRoles);
+    return allRoles;
+  };
 
   const openCreateDialog = () => {
     setForm(initialForm);
@@ -109,13 +154,24 @@ export default function UsersPage() {
   };
 
   const openAssignRolesDialog = async (user: User) => {
-    const detailedUser = await getUserById(user.id) as UserDetail;
-    const assignedRoles = detailedUser.roles;
+    const [detailedUser, allRoles] = await Promise.all([
+      getUserById(user.id) as Promise<UserDetail>,
+      ensureRolesLoaded(),
+    ]);
+
+    const assignedRoles = detailedUser.roles ?? [];
+    const assignedRoleNames = assignedRoles.map((role) => normalizeRoleName(role.name));
+    const assignedRoleNamesSet = new Set(assignedRoleNames);
+    const assignedRoleIds = allRoles
+      .filter((role) => assignedRoleNamesSet.has(normalizeRoleName(role.name)))
+      .map((role) => role.id);
+
     setSelectedUser({
       ...detailedUser,
       roles: assignedRoles,
     });
-    setSelectedRoleIds(assignedRoles.map((role) => role.id));
+    setSelectedRoleIds(assignedRoleIds);
+    setAssignRolesPage(0);
     setIsAssignRolesDialogOpen(true);
   };
 
@@ -123,6 +179,7 @@ export default function UsersPage() {
     setIsAssignRolesDialogOpen(false);
     setSelectedUser(null);
     setSelectedRoleIds([]);
+    setAssignRolesPage(0);
   };
 
   const toggleRoleSelection = (roleId: string, checked: boolean) => {
@@ -184,27 +241,13 @@ export default function UsersPage() {
       return;
     }
 
-    const currentRoleIds = (selectedUser.roles ?? []).map((role) => role.id);
-    const rolesToAdd = selectedRoleIds.filter((roleId) => !currentRoleIds.includes(roleId));
-    const rolesToRemove = (selectedUser.roles ?? []).filter((role) => !selectedRoleIds.includes(role.id));
-
-    if (rolesToAdd.length > 0) {
+    if (selectedRoleIds.length > 0) {
       await assignMultipleRolesToUser({
         userId: selectedUser.id,
-        roleIds: rolesToAdd,
+        roleIds: selectedRoleIds,
       });
     }
 
-    const removableRoles = rolesToRemove.filter((role) => Boolean(role.relationId));
-    if (rolesToRemove.length > removableRoles.length) {
-      toast.error("No se pudieron quitar algunos roles porque el backend no expone el id de relacion.");
-    }
-
-    for (const role of removableRoles) {
-      await removeRoleFromUser(role.relationId as string);
-    }
-
-    await loadUsers({ page: currentPage, size: PAGE_SIZE });
     closeAssignRolesDialog();
     toast.success("Roles actualizados correctamente");
   };
@@ -399,7 +442,7 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-(--security-border)">
-                  {roles.map((role) => {
+                  {visibleRoles.map((role) => {
                     const checked = selectedRoleIds.includes(role.id);
 
                     return (
@@ -419,6 +462,36 @@ export default function UsersPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-(--security-muted-foreground)">
+              <span>
+                Pagina {assignRolesPage + 1} de {assignRolesPageCount}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAssignRolesPage((current) => Math.max(0, current - 1));
+                  }}
+                  disabled={assignRolesPage === 0}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAssignRolesPage((current) => Math.min(assignRolesPageCount - 1, current + 1));
+                  }}
+                  disabled={assignRolesPage >= assignRolesPageCount - 1}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           </div>
 

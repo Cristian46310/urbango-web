@@ -16,7 +16,7 @@ interface UserRoleStoreState {
   error: string | null;
   assignRole: (userId: string, roleId: string) => Promise<void>;
   assignMultipleRoles: (payload: AssignRolesDTO) => Promise<void>;
-  removeRole: (userRoleId: string) => Promise<void>;
+  removeRole: (userId: string, roleId: string) => Promise<void>;
 }
 
 export const useUserRoleStore = create<UserRoleStoreState>((set) => ({
@@ -73,16 +73,21 @@ export const useUserRoleStore = create<UserRoleStoreState>((set) => ({
       dismissToast(loadingToastId);
     }
   },
-  removeRole: async (userRoleId: string) => {
+  removeRole: async (userId: string, roleId: string) => {
     const loadingToastId = showLoadingToast("Removiendo rol...");
     set({ loading: true, error: null });
     try {
-      if (!userRoleId || userRoleId.trim() === "") {
-        set({ loading: false, error: "User Role ID is required" });
-        showErrorToast("User Role ID is required");
-        throw new Error("User Role ID is required");
+      if (!userId || userId.trim() === "") {
+        set({ loading: false, error: "User ID is required" });
+        showErrorToast("User ID is required");
+        throw new Error("User ID is required");
       }
-      await deleteUserRoleUseCase.execute(userRoleId);
+      if (!roleId || roleId.trim() === "") {
+        set({ loading: false, error: "Role ID is required" });
+        showErrorToast("Role ID is required");
+        throw new Error("Role ID is required");
+      }
+      await deleteUserRoleUseCase.execute(userId, roleId);
       set({ loading: false });
       showSuccessToast("Role removed successfully");
     } catch (error) {
