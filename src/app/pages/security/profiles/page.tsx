@@ -33,6 +33,9 @@ import { useProfile, useUser } from "@/hooks/security";
 import type { User } from "@/core/domain/entities/security/User";
 import type { Profile } from "@/core/domain/entities/security/Profile";
 
+const PAGE_SIZE = 10;
+const LOOKUP_PAGE_SIZE = 200;
+
 type ProfileDialogMode = "create" | "edit" | "view";
 
 interface ProfileForm {
@@ -54,17 +57,18 @@ const initialForm: ProfileForm = {
 };
 
 export default function ProfilesPage() {
-  const { profiles, loading, error, loadProfiles, addProfile, editProfile, removeProfile } = useProfile();
+  const { profiles, profilesPage, loading, error, loadProfiles, addProfile, editProfile, removeProfile } = useProfile();
   const { users, loadUsers } = useUser();
 
   const [form, setForm] = useState<ProfileForm>(initialForm);
   const [dialogMode, setDialogMode] = useState<ProfileDialogMode>("create");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    void loadProfiles();
-    void loadUsers();
-  }, []);
+    void loadProfiles({ page: currentPage, size: PAGE_SIZE });
+    void loadUsers({ page: 0, size: LOOKUP_PAGE_SIZE });
+  }, [currentPage]);
 
   const usersById = useMemo(() => {
     return new Map(users.map((user) => [user.id, user]));
@@ -129,7 +133,7 @@ export default function ProfilesPage() {
 
       setIsDialogOpen(false);
       setForm(initialForm);
-      await loadProfiles();
+      await loadProfiles({ page: currentPage, size: PAGE_SIZE });
     } catch (submitError) {
       toast.error((submitError as Error).message);
     }
@@ -137,7 +141,7 @@ export default function ProfilesPage() {
 
   const handleDelete = async (profileId: string) => {
     await removeProfile(profileId);
-    await loadProfiles();
+    await loadProfiles({ page: currentPage, size: PAGE_SIZE });
     toast.success("Perfil eliminado");
   };
 
@@ -217,8 +221,13 @@ export default function ProfilesPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadProfiles();
+          void loadProfiles({ page: currentPage, size: PAGE_SIZE });
         }}
+        pageIndex={currentPage}
+        pageSize={PAGE_SIZE}
+        pageCount={profilesPage?.totalPages ?? 1}
+        totalItems={profilesPage?.totalElements}
+        onPageChange={setCurrentPage}
         filterField="phone"
         filterPlaceholder="Buscar por telefono"
         emptyMessage="No hay perfiles registrados."

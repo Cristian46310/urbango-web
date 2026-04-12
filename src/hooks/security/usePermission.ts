@@ -3,10 +3,12 @@ import type {
   CreatePermissionDTO,
   UpdatePermissionDTO,
 } from "@/core/domain/entities/security/Permission";
+import type { PageableQuery } from "@/core/types/Page";
 
 export function usePermission() {
   const {
     permissions,
+    permissionsPage,
     loading,
     error,
     fetchPermission,
@@ -18,9 +20,10 @@ export function usePermission() {
 
   return {
     permissions,
+    permissionsPage,
     loading,
     error,
-    loadPermissions: () => fetchAllPermissions(),
+    loadPermissions: (pageable?: PageableQuery) => fetchAllPermissions(pageable),
     getPermissionById: (permissionId: string) => fetchPermission(permissionId),
     addPermission: (permissionData: CreatePermissionDTO) => createPermission(permissionData),
     editPermission: (permissionId: string, permissionData: UpdatePermissionDTO) =>

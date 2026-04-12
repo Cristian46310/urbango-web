@@ -32,6 +32,8 @@ import {
 import { usePermission } from "@/hooks/security";
 import type { Permission } from "@/core/domain/entities/security/Permission";
 
+const PAGE_SIZE = 10;
+
 type PermissionDialogMode = "create" | "edit" | "view";
 
 interface PermissionForm {
@@ -47,15 +49,25 @@ const initialForm: PermissionForm = {
 };
 
 export default function PermissionsPage() {
-  const { permissions, loading, error, loadPermissions, addPermission, editPermission, removePermission } = usePermission();
+  const {
+    permissions,
+    permissionsPage,
+    loading,
+    error,
+    loadPermissions,
+    addPermission,
+    editPermission,
+    removePermission,
+  } = usePermission();
 
   const [form, setForm] = useState<PermissionForm>(initialForm);
   const [dialogMode, setDialogMode] = useState<PermissionDialogMode>("create");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    void loadPermissions();
-  }, []);
+    void loadPermissions({ page: currentPage, size: PAGE_SIZE });
+  }, [currentPage]);
 
   const openCreateDialog = () => {
     setForm(initialForm);
@@ -97,7 +109,7 @@ export default function PermissionsPage() {
 
       setIsDialogOpen(false);
       setForm(initialForm);
-      await loadPermissions();
+      await loadPermissions({ page: currentPage, size: PAGE_SIZE });
     } catch (submitError) {
       toast.error((submitError as Error).message);
     }
@@ -105,7 +117,7 @@ export default function PermissionsPage() {
 
   const handleDelete = async (permissionId: string) => {
     await removePermission(permissionId);
-    await loadPermissions();
+    await loadPermissions({ page: currentPage, size: PAGE_SIZE });
     toast.success("Permiso eliminado");
   };
 
@@ -176,8 +188,13 @@ export default function PermissionsPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadPermissions();
+          void loadPermissions({ page: currentPage, size: PAGE_SIZE });
         }}
+        pageIndex={currentPage}
+        pageSize={PAGE_SIZE}
+        pageCount={permissionsPage?.totalPages ?? 1}
+        totalItems={permissionsPage?.totalElements}
+        onPageChange={setCurrentPage}
         filterField="url"
         filterPlaceholder="Buscar por URL"
         emptyMessage="No hay permisos creados."

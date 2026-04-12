@@ -9,7 +9,6 @@ import {
   LogOut,
   ShieldCheck,
   ShieldUser,
-  UserCog,
   Users,
 } from "lucide-react";
 
@@ -46,8 +45,6 @@ const securityMenuItems: MenuItem[] = [
   { title: "Perfiles", to: "/app/profiles", description: "Gestion de perfiles", icon: ShieldUser },
   { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck },
   { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound },
-  { title: "Usuario / Rol", to: "/app/user-roles", description: "Gestion de asignaciones", icon: UserCog },
-  { title: "Rol / Permiso", to: "/app/role-permissions", description: "Gestion de permisos por rol", icon: ShieldCheck },
 ];
 
 const homeMenuItem: MenuItem = {

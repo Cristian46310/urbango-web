@@ -1,3 +1,5 @@
+import type { User } from "@/core/domain/entities/security/User";
+
 export interface login {
     email: string;
     password: string;
@@ -45,5 +47,5 @@ export interface LoginGithubResponse {
     registrationToken: string | null;
     linked: boolean;
     created: boolean;
-    user: unknown | null;
+    user: User | null;
 }

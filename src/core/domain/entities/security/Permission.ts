@@ -4,6 +4,7 @@ export interface Permission {
   id: string;
   url: string;
   method: HttpMethod;
+  relationId?: string;
 }
 
 export type CreatePermissionDTO = Omit<Permission, "id">;

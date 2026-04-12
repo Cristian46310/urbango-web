@@ -1,5 +1,5 @@
 import { useUserRoleStore } from "@/store";
-import type { AssignRolesDTO } from "@/core/domain/entities/security/UserRole";
+import type { AssignRolesDTO } from "@/core/domain/entities/security/User";
 
 export function useUserRole() {
   const {

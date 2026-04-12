@@ -1,9 +1,11 @@
 import { useUserStore } from "@/store";
 import type { CreateUserDTO, UpdateUserDTO } from "@/core/domain/entities/security/User";
+import type { PageableQuery } from "@/core/types/Page";
 
 export function useUser() {
   const {
     users,
+    usersPage,
     loading,
     error,
     fetchUser,
@@ -19,9 +21,10 @@ export function useUser() {
 
   return {
     users,
+    usersPage,
     loading,
     error,
-    loadUsers: () => fetchAllUsers(),
+    loadUsers: (pageable?: PageableQuery) => fetchAllUsers(pageable),
     getUserById: (userId: string) => fetchUser(userId),
     addUser: (userData: CreateUserDTO) => createUser(userData),
     editUser: (userId: string, userData: UpdateUserDTO) => updateUser(userId, userData),

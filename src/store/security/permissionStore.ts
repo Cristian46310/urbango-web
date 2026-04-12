@@ -11,6 +11,7 @@ import { PostPermissionUseCase } from "@/core/applications/security/permission/p
 import { PutPermissionUseCase } from "@/core/applications/security/permission/putPermissionUseCase";
 import { DeletePermissionUseCase } from "@/core/applications/security/permission/deletePermissionUseCase";
 import { PermissionRepository } from "@/infra/repository/security";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 const permissionRepository = new PermissionRepository();
 const getPermissionUseCase = new GetPermissionUseCase(permissionRepository);
@@ -21,10 +22,11 @@ const deletePermissionUseCase = new DeletePermissionUseCase(permissionRepository
 
 interface PermissionStoreState {
   permissions: Permission[];
+  permissionsPage: Page<Permission> | null;
   loading: boolean;
   error: string | null;
   fetchPermission: (permissionId: string) => Promise<Permission>;
-  fetchAllPermissions: () => Promise<Permission[]>;
+  fetchAllPermissions: (pageable?: PageableQuery) => Promise<Page<Permission>>;
   createPermission: (permissionData: CreatePermissionDTO) => Promise<Permission>;
   updatePermission: (permissionId: string, permissionData: UpdatePermissionDTO) => Promise<Permission>;
   deletePermission: (permissionId: string) => Promise<void>;
@@ -32,6 +34,7 @@ interface PermissionStoreState {
 
 export const usePermissionStore = create<PermissionStoreState>((set) => ({
   permissions: [],
+  permissionsPage: null,
   loading: false,
   error: null,
   fetchPermission: async (permissionId: string) => {
@@ -54,13 +57,13 @@ export const usePermissionStore = create<PermissionStoreState>((set) => ({
       dismissToast(loadingToastId);
     }
   },
-  fetchAllPermissions: async () => {
+  fetchAllPermissions: async (pageable = { page: 0, size: 10 }) => {
     const loadingToastId = showLoadingToast("Cargando permisos...");
     set({ loading: true, error: null });
     try {
-      const permissions = await getAllPermissionsUseCase.execute();
-      set({ loading: false, permissions });
-      return permissions;
+      const permissionsPage = await getAllPermissionsUseCase.execute(pageable);
+      set({ loading: false, permissions: permissionsPage.content, permissionsPage });
+      return permissionsPage;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Error fetching permissions: ${(error as Error).message}`);

@@ -12,6 +12,7 @@ import { PostUserSessionUseCase } from "@/core/applications/security/user/postUs
 import { DeleteUserSessionUseCase } from "@/core/applications/security/user/deleteUserSessionUseCase";
 import { UserRepository } from "@/infra/repository/security";
 import type { MessageResponse } from "@/core/types/MessageResponse";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 const userRepository = new UserRepository();
 const getUserUseCase = new GetUserUseCase(userRepository);
@@ -26,10 +27,11 @@ const deleteUserSessionUseCase = new DeleteUserSessionUseCase(userRepository);
 
 interface UserStoreState {
   users: User[];
+  usersPage: Page<User> | null;
   loading: boolean;
   error: string | null;
   fetchUser: (userId: string) => Promise<User>;
-  fetchAllUsers: () => Promise<User[]>;
+  fetchAllUsers: (pageable?: PageableQuery) => Promise<Page<User>>;
   createUser: (userData: CreateUserDTO) => Promise<User>;
   updateUser: (userId: string, userData: UpdateUserDTO) => Promise<User>;
   deleteUser: (userId: string) => Promise<void>;
@@ -41,6 +43,7 @@ interface UserStoreState {
 
 export const useUserStore = create<UserStoreState>((set) => ({
   users: [],
+  usersPage: null,
   loading: false,
   error: null,
   fetchUser: async (userId: string) => {
@@ -64,14 +67,14 @@ export const useUserStore = create<UserStoreState>((set) => ({
       dismissToast(loadingToastId);
     }
   },
-  fetchAllUsers: async () => {
+  fetchAllUsers: async (pageable = { page: 0, size: 10 }) => {
     const loadingToastId = showLoadingToast("Cargando usuarios...");
     set({ loading: true, error: null });
     try {
-      const users = await getAllUsersUseCase.execute();
-      set({ loading: false, users });
+      const usersPage = await getAllUsersUseCase.execute(pageable);
+      set({ loading: false, users: usersPage.content, usersPage });
       showSuccessToast("Users fetched successfully");
-      return users;
+      return usersPage;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Error fetching users: ${(error as Error).message}`);

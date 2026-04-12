@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Eye, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, MoreVertical, Pencil, Plus, Trash2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { createColumnHelper } from "@tanstack/react-table";
 
 import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/hooks/security";
+import { useRole, useUserRole } from "@/hooks/security";
 import type { User } from "@/core/domain/entities/security/User";
 
 type UserDialogMode = "create" | "edit" | "view";
@@ -34,6 +36,18 @@ interface UserForm {
   password: string;
 }
 
+interface UserRoleDetail {
+  id: string;
+  name: string;
+  relationId?: string;
+}
+
+interface UserDetail extends User {
+  roles: UserRoleDetail[];
+}
+
+type UserSelection = UserDetail;
+
 const initialForm: UserForm = {
   id: "",
   name: "",
@@ -41,15 +55,28 @@ const initialForm: UserForm = {
   password: "",
 };
 
+const PAGE_SIZE = 10;
+const LOOKUP_PAGE_SIZE = 10;
+
 export default function UsersPage() {
-  const { users, loading, error, loadUsers, addUser, editUser, removeUser } = useUser();
+  const { users, usersPage, loading, error, loadUsers, getUserById, addUser, editUser, removeUser } = useUser();
+  const { roles, loadRoles } = useRole();
+  const { assignMultipleRolesToUser, removeRoleFromUser } = useUserRole();
 
   const [form, setForm] = useState<UserForm>(initialForm);
   const [dialogMode, setDialogMode] = useState<UserDialogMode>("create");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignRolesDialogOpen, setIsAssignRolesDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSelection | null>(null);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    void loadUsers();
+    void loadUsers({ page: currentPage, size: PAGE_SIZE });
+  }, [currentPage]);
+
+  useEffect(() => {
+    void loadRoles({ page: 0, size: LOOKUP_PAGE_SIZE });
   }, []);
 
   const openCreateDialog = () => {
@@ -58,11 +85,12 @@ export default function UsersPage() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = async (user: User) => {
+    const detailedUser = await getUserById(user.id);
     setForm({
-      id: user.id,
-      name: user.name,
-      email: user.email,
+      id: detailedUser.id,
+      name: detailedUser.name,
+      email: detailedUser.email,
       password: "",
     });
     setDialogMode("edit");
@@ -78,6 +106,33 @@ export default function UsersPage() {
     });
     setDialogMode("view");
     setIsDialogOpen(true);
+  };
+
+  const openAssignRolesDialog = async (user: User) => {
+    const detailedUser = await getUserById(user.id) as UserDetail;
+    const assignedRoles = detailedUser.roles;
+    setSelectedUser({
+      ...detailedUser,
+      roles: assignedRoles,
+    });
+    setSelectedRoleIds(assignedRoles.map((role) => role.id));
+    setIsAssignRolesDialogOpen(true);
+  };
+
+  const closeAssignRolesDialog = () => {
+    setIsAssignRolesDialogOpen(false);
+    setSelectedUser(null);
+    setSelectedRoleIds([]);
+  };
+
+  const toggleRoleSelection = (roleId: string, checked: boolean) => {
+    setSelectedRoleIds((current) => {
+      if (checked) {
+        return current.includes(roleId) ? current : [...current, roleId];
+      }
+
+      return current.filter((currentRoleId) => currentRoleId !== roleId);
+    });
   };
 
   const handleSave = async () => {
@@ -111,7 +166,7 @@ export default function UsersPage() {
 
       setIsDialogOpen(false);
       setForm(initialForm);
-      await loadUsers();
+      await loadUsers({ page: currentPage, size: PAGE_SIZE });
     } catch (submitError) {
       toast.error((submitError as Error).message);
     }
@@ -119,8 +174,39 @@ export default function UsersPage() {
 
   const handleDelete = async (userId: string) => {
     await removeUser(userId);
-    await loadUsers();
+    await loadUsers({ page: currentPage, size: PAGE_SIZE });
     toast.success("Usuario eliminado");
+  };
+
+  const handleAssignRoles = async () => {
+    if (!selectedUser) {
+      toast.error("Selecciona un usuario.");
+      return;
+    }
+
+    const currentRoleIds = (selectedUser.roles ?? []).map((role) => role.id);
+    const rolesToAdd = selectedRoleIds.filter((roleId) => !currentRoleIds.includes(roleId));
+    const rolesToRemove = (selectedUser.roles ?? []).filter((role) => !selectedRoleIds.includes(role.id));
+
+    if (rolesToAdd.length > 0) {
+      await assignMultipleRolesToUser({
+        userId: selectedUser.id,
+        roleIds: rolesToAdd,
+      });
+    }
+
+    const removableRoles = rolesToRemove.filter((role) => Boolean(role.relationId));
+    if (rolesToRemove.length > removableRoles.length) {
+      toast.error("No se pudieron quitar algunos roles porque el backend no expone el id de relacion.");
+    }
+
+    for (const role of removableRoles) {
+      await removeRoleFromUser(role.relationId as string);
+    }
+
+    await loadUsers({ page: currentPage, size: PAGE_SIZE });
+    closeAssignRolesDialog();
+    toast.success("Roles actualizados correctamente");
   };
 
   const columnHelper = createColumnHelper<User>();
@@ -155,7 +241,11 @@ export default function UsersPage() {
                   <Eye className="size-4" />
                   Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { openEditDialog(user); }}>
+                <DropdownMenuItem onClick={() => { void openAssignRolesDialog(user); }}>
+                  <UserCog className="size-4" />
+                  Asignar roles
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { void openEditDialog(user); }}>
                   <Pencil className="size-4" />
                   Actualizar
                 </DropdownMenuItem>
@@ -190,8 +280,13 @@ export default function UsersPage() {
         loading={loading}
         error={error}
         onRefresh={() => {
-          void loadUsers();
+          void loadUsers({ page: currentPage, size: PAGE_SIZE });
         }}
+        pageIndex={currentPage}
+        pageSize={PAGE_SIZE}
+        pageCount={usersPage?.totalPages ?? 1}
+        totalItems={usersPage?.totalElements}
+        onPageChange={setCurrentPage}
         filterField="name"
         filterPlaceholder="Buscar por nombre"
         emptyMessage="No hay usuarios registrados."
@@ -272,6 +367,68 @@ export default function UsersPage() {
                 Guardar
               </Button>
             ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAssignRolesDialogOpen} onOpenChange={setIsAssignRolesDialogOpen}>
+        <DialogContent className="max-w-4xl border-(--security-border)">
+          <DialogHeader>
+            <DialogTitle>Asignar roles</DialogTitle>
+            <DialogDescription>
+              Marca o desmarca los roles que deben quedar asociados al usuario.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="text-sm text-(--security-muted-foreground)">
+              {selectedUser ? (
+                <span>
+                  Usuario seleccionado: <span className="font-medium text-(--security-foreground)">{selectedUser.name}</span>
+                </span>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-(--security-border)">
+              <table className="min-w-full text-sm">
+                <thead className="bg-(--security-surface)">
+                  <tr className="border-b border-(--security-border)">
+                    <th className="w-14 px-4 py-3 text-left font-semibold">Sel.</th>
+                    <th className="px-4 py-3 text-left font-semibold">Rol</th>
+                    <th className="px-4 py-3 text-left font-semibold">Descripcion</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-(--security-border)">
+                  {roles.map((role) => {
+                    const checked = selectedRoleIds.includes(role.id);
+
+                    return (
+                      <tr key={role.id} className="hover:bg-(--security-surface)">
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(value) => {
+                              toggleRoleSelection(role.id, Boolean(value));
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-medium text-(--security-foreground)">{role.name}</td>
+                        <td className="px-4 py-3 text-(--security-muted-foreground)">{role.description}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeAssignRolesDialog}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={() => { void handleAssignRoles(); }}>
+              Guardar cambios
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

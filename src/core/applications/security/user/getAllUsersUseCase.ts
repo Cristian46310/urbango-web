@@ -1,5 +1,6 @@
 import type { User } from "@/core/domain/entities/security/User";
 import type { IUserRepository } from "@/core/domain/interfaces/security/IUserRepository";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 export class GetAllUsersUseCase {
   private userRepository: IUserRepository;
@@ -8,7 +9,7 @@ export class GetAllUsersUseCase {
     this.userRepository = userRepository;
   }
 
-  async execute(): Promise<User[]> {
-    return await this.userRepository.getAllUsers();
+  async execute(pageable: PageableQuery): Promise<Page<User>> {
+    return await this.userRepository.getAllUsers(pageable);
   }
 }

@@ -1,5 +1,5 @@
 import type { IUserRoleRepository } from "@/core/domain/interfaces/security/IUserRoleRepository";
-import type { AssignRolesDTO } from "@/core/domain/entities/security/UserRole";
+import type { AssignRolesDTO } from "@/core/domain/entities/security/User";
 import type { MessageResponse } from "@/core/types/MessageResponse";
 
 export class AssignMultipleRolesUseCase {

@@ -7,6 +7,7 @@ import { PostProfileUseCase } from "@/core/applications/security/profile/postPro
 import { PutProfileUseCase } from "@/core/applications/security/profile/putProfileUseCase";
 import { DeleteProfileUseCase } from "@/core/applications/security/profile/deleteProfileUseCase";
 import { ProfileRepository } from "@/infra/repository/security";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 const profileRepository = new ProfileRepository();
 const getProfileUseCase = new GetProfileUseCase(profileRepository);
@@ -17,10 +18,11 @@ const deleteProfileUseCase = new DeleteProfileUseCase(profileRepository);
 
 interface ProfileStoreState {
   profiles: Profile[];
+  profilesPage: Page<Profile> | null;
   loading: boolean;
   error: string | null;
   fetchProfile: (profileId: string) => Promise<Profile>;
-  fetchAllProfiles: () => Promise<Profile[]>;
+  fetchAllProfiles: (pageable?: PageableQuery) => Promise<Page<Profile>>;
   createProfile: (profileData: CreateProfileDTO) => Promise<Profile>;
   updateProfile: (profileId: string, profileData: UpdateProfileDTO) => Promise<Profile>;
   deleteProfile: (profileId: string) => Promise<void>;
@@ -28,6 +30,7 @@ interface ProfileStoreState {
 
 export const useProfileStore = create<ProfileStoreState>((set) => ({
   profiles: [],
+  profilesPage: null,
   loading: false,
   error: null,
   fetchProfile: async (profileId: string) => {
@@ -50,13 +53,13 @@ export const useProfileStore = create<ProfileStoreState>((set) => ({
       dismissToast(loadingToastId);
     }
   },
-  fetchAllProfiles: async () => {
+  fetchAllProfiles: async (pageable = { page: 0, size: 10 }) => {
     const loadingToastId = showLoadingToast("Cargando perfiles...");
     set({ loading: true, error: null });
     try {
-      const profiles = await getAllProfilesUseCase.execute();
-      set({ loading: false, profiles });
-      return profiles;
+      const profilesPage = await getAllProfilesUseCase.execute(pageable);
+      set({ loading: false, profiles: profilesPage.content, profilesPage });
+      return profilesPage;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Error fetching profiles: ${(error as Error).message}`);

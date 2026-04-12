@@ -4,7 +4,7 @@ import { PostUserRoleUseCase } from "@/core/applications/security/userRole/postU
 import { DeleteUserRoleUseCase } from "@/core/applications/security/userRole/deleteUserRoleUseCase";
 import { AssignMultipleRolesUseCase } from "@/core/applications/security/userRole/assignMultipleRolesUseCase";
 import { UserRoleRepository } from "@/infra/repository/security";
-import type { AssignRolesDTO } from "@/core/domain/entities/security/UserRole";
+import type { AssignRolesDTO } from "@/core/domain/entities/security/User";
 
 const userRoleRepository = new UserRoleRepository();
 const postUserRoleUseCase = new PostUserRoleUseCase(userRoleRepository);

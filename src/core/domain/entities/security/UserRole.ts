@@ -1,10 +1,3 @@
-export interface UserRole {
-  id: string;
-  userId: string;
-  roleId: string;
-}
+import type { AssignRolesDTO } from "@/core/domain/entities/security/User";
 
-export interface AssignRolesDTO {
-  userId: string;
-  roleIds: string[];
-}
+export type { AssignRolesDTO };

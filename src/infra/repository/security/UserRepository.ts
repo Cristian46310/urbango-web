@@ -3,6 +3,7 @@ import { ENDPOINTS } from "@/infra/api/endpoints";
 import type { CreateUserDTO, UpdateUserDTO, User } from "@/core/domain/entities/security/User";
 import type { IUserRepository } from "@/core/domain/interfaces/security/IUserRepository";
 import type { MessageResponse } from "@/core/types/MessageResponse";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 export class UserRepository implements IUserRepository {
   async deleteUser(userId: string): Promise<void> {
@@ -17,8 +18,10 @@ export class UserRepository implements IUserRepository {
     return await httpMsSecurity.get<User>(ENDPOINTS.USER.BY_ID(userId));
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await httpMsSecurity.get<User[]>(ENDPOINTS.USER.BASE);
+  async getAllUsers(pageable: PageableQuery): Promise<Page<User>> {
+    return await httpMsSecurity.get<Page<User>>(ENDPOINTS.USER.BASE, {
+      params: pageable,
+    });
   }
 
   async postUser(userData: CreateUserDTO): Promise<User> {

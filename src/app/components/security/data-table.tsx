@@ -3,9 +3,11 @@
 import type {
   ColumnDef,
   ColumnFiltersState,
+  PaginationState,
   SortingState,
 } from "@tanstack/react-table";
 import {
+  functionalUpdate,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -41,6 +43,11 @@ interface DataTableProps<TData> {
   filterPlaceholder?: string;
   filterField?: string;
   toolbarAction?: ReactNode;
+  pageIndex?: number;
+  pageSize?: number;
+  pageCount?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function DataTable<TData>({
@@ -55,15 +62,42 @@ export function DataTable<TData>({
   filterPlaceholder = "Filtrar...",
   filterField,
   toolbarAction,
+  pageIndex,
+  pageSize = 10,
+  pageCount,
+  totalItems,
+  onPageChange,
 }: DataTableProps<TData>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [localPagination, setLocalPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize,
+  });
+
+  const isServerPagination = typeof onPageChange === "function";
+  const paginationState: PaginationState = isServerPagination
+    ? {
+      pageIndex: pageIndex ?? 0,
+      pageSize,
+    }
+    : localPagination;
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: isServerPagination ? undefined : getPaginationRowModel(),
+    manualPagination: isServerPagination,
+    pageCount: isServerPagination ? (pageCount ?? 1) : undefined,
+    onPaginationChange: isServerPagination
+      ? (updater) => {
+        const next = functionalUpdate(updater, paginationState);
+        if (next.pageIndex !== paginationState.pageIndex) {
+          onPageChange(next.pageIndex);
+        }
+      }
+      : setLocalPagination,
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
@@ -71,6 +105,7 @@ export function DataTable<TData>({
     state: {
       sorting,
       columnFilters,
+      pagination: paginationState,
     },
   });
 
@@ -201,20 +236,38 @@ export function DataTable<TData>({
 
             <div className="flex items-center gap-2 border-t border-(--security-border) px-6 py-4">
               <Button
-                onClick={() => { table.previousPage(); }}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => {
+                  if (isServerPagination && onPageChange) {
+                    onPageChange(Math.max(0, paginationState.pageIndex - 1));
+                    return;
+                  }
+
+                  table.previousPage();
+                }}
+                disabled={isServerPagination ? paginationState.pageIndex <= 0 : !table.getCanPreviousPage()}
                 variant="outline"
                 size="sm"
               >
                 Anterior
               </Button>
               <div className="flex-1 text-center text-sm text-(--security-muted-foreground)">
-                Página {table.getState().pagination.pageIndex + 1} de{" "}
-                {table.getPageCount() || 1}
+                Pagina {paginationState.pageIndex + 1} de {isServerPagination ? pageCount ?? 1 : table.getPageCount() || 1}
+                {typeof totalItems === "number" ? ` (${totalItems} registros)` : ""}
               </div>
               <Button
-                onClick={() => { table.nextPage(); }}
-                disabled={!table.getCanNextPage()}
+                onClick={() => {
+                  if (isServerPagination && onPageChange) {
+                    onPageChange(paginationState.pageIndex + 1);
+                    return;
+                  }
+
+                  table.nextPage();
+                }}
+                disabled={
+                  isServerPagination
+                    ? paginationState.pageIndex + 1 >= (pageCount ?? 1)
+                    : !table.getCanNextPage()
+                }
                 variant="outline"
                 size="sm"
               >
