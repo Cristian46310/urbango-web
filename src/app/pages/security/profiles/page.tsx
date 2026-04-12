@@ -34,6 +34,10 @@ type ProfileWithOptionalUser = Profile & {
   userId?: string;
 };
 
+const displayOptionalValue = (value: string | null | undefined) => {
+  return value?.trim() ? value : "";
+};
+
 const initialForm: ProfileForm = {
   id: "",
   phone: "",
@@ -53,7 +57,8 @@ export default function ProfilesPage() {
   useEffect(() => {
     void loadProfiles({ page: currentPage, size: SECURITY_PAGE_SIZE });
     void loadUsers({ page: 0, size: SECURITY_LOOKUP_LARGE_PAGE_SIZE });
-  }, [currentPage, loadProfiles, loadUsers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const usersById = useMemo(() => {
     return new Map(users.map((user) => [user.id, user]));
@@ -64,9 +69,9 @@ export default function ProfilesPage() {
 
     return {
       id: profile.id,
-      phone: profile.phone,
-      photo: profile.photo,
-      userId: profileWithOptionalUser.userId ?? profile.user.id,
+      phone: profile.phone ?? "",
+      photo: profile.photo ?? "",
+        userId: profileWithOptionalUser.userId ?? profile.user?.userId ?? "",
     };
   };
 
@@ -135,11 +140,11 @@ export default function ProfilesPage() {
     }),
     columnHelper.accessor("phone", {
       header: "Telefono",
-      cell: (info) => info.getValue(),
+      cell: (info) => displayOptionalValue(info.getValue()),
     }),
     columnHelper.accessor("photo", {
       header: "Foto",
-      cell: (info) => info.getValue(),
+      cell: (info) => displayOptionalValue(info.getValue()),
     }),
     columnHelper.display({
       id: "usuario",
@@ -147,7 +152,7 @@ export default function ProfilesPage() {
       cell: (info) => {
         const profile = info.row.original as ProfileWithOptionalUser;
         const user = profile.user;
-        return user.name || user.email;
+        return user?.userName || "Sin usuario";
       },
     }),
     columnHelper.display({

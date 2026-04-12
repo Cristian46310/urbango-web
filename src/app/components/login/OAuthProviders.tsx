@@ -20,9 +20,26 @@ function GithubMark(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+function MicrosoftMark(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M2 2h9v9H2z" />
+      <path d="M13 2h9v9h-9z" />
+      <path d="M2 13h9v9H2z" />
+      <path d="M13 13h9v9h-9z" />
+    </svg>
+  );
+}
+
 export function OAuthProviders() {
   const navigate = useNavigate();
-  const { error, authorizeGithubLogin, loginWithGoogle } = useLogin();
+  const { error, authorizeGithubLogin, authorizeMicrosoftLogin, loginWithGoogle } = useLogin();
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,23 +92,37 @@ export function OAuthProviders() {
     }
   };
 
+  const handleMicrosoftLogin = async () => {
+    try {
+      setLocalError(null);
+      const response = await authorizeMicrosoftLogin();
+      window.location.href = response.authorizationUrl;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Error en login con Microsoft";
+      setLocalError(message);
+      toast.error(message);
+    }
+  };
+
   return (
-    <div className="flex flex-row items-center justify-between">
+    <div className="space-y-4">
       {localError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {localError}
         </div>
       )}
 
-      <div className="flex justify-center">
-        <GoogleLogin
-          onSuccess={(credentialResponse) => {
-            void handleGoogleSuccess(credentialResponse);
-          }}
-          onError={handleGoogleError}
-        />
-      </div>
-      <div className="flex justify-center">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              void handleGoogleSuccess(credentialResponse);
+            }}
+            onError={handleGoogleError}
+          />
+        </div>
+
         <Button
           type="button"
           variant="outline"
@@ -102,6 +133,18 @@ export function OAuthProviders() {
         >
           <GithubMark className="mr-2 size-4" />
           Continuar con GitHub
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          onClick={() => {
+            void handleMicrosoftLogin();
+          }}
+        >
+          <MicrosoftMark className="mr-2 size-4" />
+          Continuar con Microsoft
         </Button>
       </div>
     </div>

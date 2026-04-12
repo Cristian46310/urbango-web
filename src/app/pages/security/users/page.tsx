@@ -38,6 +38,7 @@ interface UserForm {
 }
 
 interface UserRoleDetail {
+  id: string;
   name: string;
   description: string;
 }
@@ -54,8 +55,6 @@ const initialForm: UserForm = {
   email: "",
   password: "",
 };
-
-const normalizeRoleName = (name: string) => name.trim().toLowerCase();
 
 const dedupeRolesById = (roles: Role[]) => {
   const seen = new Set<string>();
@@ -83,42 +82,33 @@ export default function UsersPage() {
   const [assignRolesPage, setAssignRolesPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const assignRolesPageCount = Math.max(1, Math.ceil(availableRoles.length / SECURITY_ASSIGNMENT_PAGE_SIZE));
+  const [totalRolePages, setTotalRolePages] = useState(0);
+  const [loadedRolePages, setLoadedRolePages] = useState<Set<number>>(new Set());
+
+  const assignRolesPageCount = totalRolePages || 1;
   const visibleRoles = availableRoles.slice(
     assignRolesPage * SECURITY_ASSIGNMENT_PAGE_SIZE,
     (assignRolesPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
-  const ensureRolesLoaded = useCallback(async () => {
-    if (availableRoles.length > 0) {
-      return availableRoles;
+  const loadRolePageIfNeeded = useCallback(async (pageNum: number) => {
+    if (loadedRolePages.has(pageNum)) {
+      return;
     }
 
-    const collected: Role[] = [];
-    let page = 0;
-    let totalPages = 1;
-
-    do {
-      const response = await loadRoles({ page, size: SECURITY_LOOKUP_PAGE_SIZE });
-      collected.push(...response.content);
-      totalPages = response.totalPages;
-      page += 1;
-    } while (page < totalPages);
-
-    const allRoles = dedupeRolesById(collected);
-    setAvailableRoles(allRoles);
-    return allRoles;
-  }, [availableRoles, loadRoles]);
+    const response = await loadRoles({ page: pageNum, size: SECURITY_LOOKUP_PAGE_SIZE });
+    setTotalRolePages(response.totalPages);
+    setAvailableRoles((current) => {
+      const updated = [...current, ...response.content];
+      return dedupeRolesById(updated);
+    });
+    setLoadedRolePages((current) => new Set(current).add(pageNum));
+  }, [loadRoles, loadedRolePages]);
 
   useEffect(() => {
     void loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage, loadUsers]);
-
-  useEffect(() => {
-    void (async () => {
-      await ensureRolesLoaded();
-    })();
-  }, [ensureRolesLoaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const openCreateDialog = () => {
     setForm(initialForm);
@@ -150,23 +140,14 @@ export default function UsersPage() {
   };
 
   const openAssignRolesDialog = async (user: User) => {
-    const [detailedUser, allRoles] = await Promise.all([
-      getUserById(user.id) as Promise<UserDetail>,
-      ensureRolesLoaded(),
-    ]);
-
-    const assignedRoles = detailedUser.roles;
-    const assignedRoleNames = assignedRoles.map((role) => normalizeRoleName(role.name));
-    const assignedRoleNamesSet = new Set(assignedRoleNames);
-    const assignedRoleIds = allRoles
-      .filter((role) => assignedRoleNamesSet.has(normalizeRoleName(role.name)))
-      .map((role) => role.id);
+    const detailedUser = await getUserById(user.id) as UserDetail;
+    await loadRolePageIfNeeded(0);
 
     setSelectedUser({
       ...detailedUser,
-      roles: assignedRoles,
+      roles: detailedUser.roles,
     });
-    setSelectedRoleIds(assignedRoleIds);
+    setSelectedRoleIds(detailedUser.roles.map((role) => role.id));
     setAssignRolesPage(0);
     setIsAssignRolesDialogOpen(true);
   };
@@ -445,7 +426,8 @@ export default function UsersPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setAssignRolesPage((current) => Math.max(0, current - 1));
+                     const newPage = Math.max(0, assignRolesPage - 1);
+                     setAssignRolesPage(newPage);
                   }}
                   disabled={assignRolesPage === 0}
                 >
@@ -456,7 +438,9 @@ export default function UsersPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setAssignRolesPage((current) => Math.min(assignRolesPageCount - 1, current + 1));
+                     const newPage = Math.min(assignRolesPageCount - 1, assignRolesPage + 1);
+                     void loadRolePageIfNeeded(newPage);
+                     setAssignRolesPage(newPage);
                   }}
                   disabled={assignRolesPage >= assignRolesPageCount - 1}
                 >

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useSessionStore } from "@/store";
 import type { CreateSessionDTO, UpdateSessionDTO } from "@/core/domain/entities/security/Session";
 
@@ -13,7 +14,7 @@ export function useSession() {
     deleteSession,
   } = useSessionStore();
 
-  return {
+  return useMemo(() => ({
     sessions,
     loading,
     error,
@@ -22,5 +23,5 @@ export function useSession() {
     addSession: (sessionData: CreateSessionDTO) => createSession(sessionData),
     editSession: (sessionId: string, sessionData: UpdateSessionDTO) => updateSession(sessionId, sessionData),
     removeSession: (sessionId: string) => deleteSession(sessionId),
-  };
+  }), [sessions, loading, error]);
 }

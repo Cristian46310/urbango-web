@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { usePermissionStore } from "@/store";
 import type {
   CreatePermissionDTO,
@@ -18,7 +19,7 @@ export function usePermission() {
     deletePermission,
   } = usePermissionStore();
 
-  return {
+  return useMemo(() => ({
     permissions,
     permissionsPage,
     loading,
@@ -29,5 +30,5 @@ export function usePermission() {
     editPermission: (permissionId: string, permissionData: UpdatePermissionDTO) =>
       updatePermission(permissionId, permissionData),
     removePermission: (permissionId: string) => deletePermission(permissionId),
-  };
+  }), [permissions, permissionsPage, loading, error]);
 }

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useRolePermissionStore } from "@/store";
 import type { AssignMultipleRolePermissionsDTO } from "@/core/domain/entities/security/Role";
 
@@ -10,7 +11,7 @@ export function useRolePermission() {
     removePermissionFromRole,
   } = useRolePermissionStore();
 
-  return {
+  return useMemo(() => ({
     loading,
     error,
     assignPermissionToRole: (roleId: string, permissionId: string) =>
@@ -19,5 +20,5 @@ export function useRolePermission() {
       assignMultiplePermissionsToRole(payload),
     removePermissionRoleLink: (rolePermissionId: string) =>
       removePermissionFromRole(rolePermissionId),
-  };
+  }), [loading, error]);
 }

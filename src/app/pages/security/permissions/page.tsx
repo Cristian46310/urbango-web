@@ -53,7 +53,8 @@ export default function PermissionsPage() {
 
   useEffect(() => {
     void loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage, loadPermissions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const openCreateDialog = () => {
     setForm(initialForm);

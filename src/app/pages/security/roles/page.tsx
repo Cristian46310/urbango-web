@@ -41,50 +41,40 @@ export default function RolesPage() {
   const [assignPermissionsPage, setAssignPermissionsPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const assignPermissionsPageCount = Math.max(1, Math.ceil(availablePermissions.length / SECURITY_ASSIGNMENT_PAGE_SIZE));
+  const [totalPermissionPages, setTotalPermissionPages] = useState(0);
+  const [loadedPermissionPages, setLoadedPermissionPages] = useState<Set<number>>(new Set());
+
+  const assignPermissionsPageCount = totalPermissionPages || 1;
   const visiblePermissions = availablePermissions.slice(
     assignPermissionsPage * SECURITY_ASSIGNMENT_PAGE_SIZE,
     (assignPermissionsPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
-  const ensurePermissionsLoaded = useCallback(async () => {
-    if (availablePermissions.length > 0) {
-      return availablePermissions;
+  const loadPermissionPageIfNeeded = useCallback(async (pageNum: number) => {
+    if (loadedPermissionPages.has(pageNum)) {
+      return;
     }
 
-    const collected: Permission[] = [];
-    let page = 0;
-    let totalPages = 1;
-
-    do {
-      const response = await loadPermissions({ page, size: SECURITY_LOOKUP_PAGE_SIZE });
-      collected.push(...response.content);
-      totalPages = response.totalPages;
-      page += 1;
-    } while (page < totalPages);
-
-    const seen = new Set<string>();
-    const allPermissions = collected.filter((permission) => {
-      if (seen.has(permission.id)) {
-        return false;
-      }
-      seen.add(permission.id);
-      return true;
+    const response = await loadPermissions({ page: pageNum, size: SECURITY_LOOKUP_PAGE_SIZE });
+    setTotalPermissionPages(response.totalPages);
+    setAvailablePermissions((current) => {
+      const updated = [...current, ...response.content];
+      const seen = new Set<string>();
+      return updated.filter((permission) => {
+        if (seen.has(permission.id)) {
+          return false;
+        }
+        seen.add(permission.id);
+        return true;
+      });
     });
-
-    setAvailablePermissions(allPermissions);
-    return allPermissions;
-  }, [availablePermissions, loadPermissions]);
+    setLoadedPermissionPages((current) => new Set(current).add(pageNum));
+  }, [loadPermissions, loadedPermissionPages]);
 
   useEffect(() => {
     void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage, loadRoles]);
-
-  useEffect(() => {
-    void (async () => {
-      await ensurePermissionsLoaded();
-    })();
-  }, [ensurePermissionsLoaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const openViewDialog = async (role: Role) => {
     const detailedRole = await getRoleById(role.id) as RoleDetail;
@@ -93,22 +83,14 @@ export default function RolesPage() {
   };
 
   const openAssignPermissionsDialog = async (role: Role) => {
-    const [detailedRole, allPermissions] = await Promise.all([
-      getRoleById(role.id) as Promise<RoleDetail>,
-      ensurePermissionsLoaded(),
-    ]);
-
-    const assignedPermissions = detailedRole.permissions;
-    const availablePermissionIds = new Set(allPermissions.map((permission) => permission.id));
-    const assignedPermissionIds = assignedPermissions
-      .map((permission) => permission.id)
-      .filter((permissionId) => availablePermissionIds.has(permissionId));
+    const detailedRole = await getRoleById(role.id) as RoleDetail;
+    await loadPermissionPageIfNeeded(0);
 
     setSelectedRole({
       ...detailedRole,
-      permissions: assignedPermissions,
+      permissions: detailedRole.permissions,
     });
-    setSelectedPermissionIds(assignedPermissionIds);
+    setSelectedPermissionIds(detailedRole.permissions.map((permission) => permission.id));
     setAssignPermissionsPage(0);
     setIsAssignPermissionsOpen(true);
   };
@@ -302,7 +284,8 @@ export default function RolesPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setAssignPermissionsPage((current) => Math.max(0, current - 1));
+                     const newPage = Math.max(0, assignPermissionsPage - 1);
+                     setAssignPermissionsPage(newPage);
                   }}
                   disabled={assignPermissionsPage === 0}
                 >
@@ -313,7 +296,9 @@ export default function RolesPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setAssignPermissionsPage((current) => Math.min(assignPermissionsPageCount - 1, current + 1));
+                     const newPage = Math.min(assignPermissionsPageCount - 1, assignPermissionsPage + 1);
+                     void loadPermissionPageIfNeeded(newPage);
+                     setAssignPermissionsPage(newPage);
                   }}
                   disabled={assignPermissionsPage >= assignPermissionsPageCount - 1}
                 >
