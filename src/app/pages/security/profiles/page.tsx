@@ -53,7 +53,7 @@ export default function ProfilesPage() {
   useEffect(() => {
     void loadProfiles({ page: currentPage, size: SECURITY_PAGE_SIZE });
     void loadUsers({ page: 0, size: SECURITY_LOOKUP_LARGE_PAGE_SIZE });
-  }, [currentPage]);
+  }, [currentPage, loadProfiles, loadUsers]);
 
   const usersById = useMemo(() => {
     return new Map(users.map((user) => [user.id, user]));

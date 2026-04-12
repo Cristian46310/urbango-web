@@ -13,7 +13,7 @@ export const useHttpErrorHandler = () => {
         // Limpiar token del localStorage
         localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
         // Redirigir al login
-        navigate('/login', { replace: true });
+        void navigate('/login', { replace: true });
       }
     });
   }, [navigate]);

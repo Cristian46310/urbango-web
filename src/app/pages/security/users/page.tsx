@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye, Pencil, Plus, Trash2, UserCog } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
@@ -89,17 +89,7 @@ export default function UsersPage() {
     (assignRolesPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
-  useEffect(() => {
-    void loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage]);
-
-  useEffect(() => {
-    void (async () => {
-      await ensureRolesLoaded();
-    })();
-  }, []);
-
-  const ensureRolesLoaded = async () => {
+  const ensureRolesLoaded = useCallback(async () => {
     if (availableRoles.length > 0) {
       return availableRoles;
     }
@@ -118,7 +108,17 @@ export default function UsersPage() {
     const allRoles = dedupeRolesById(collected);
     setAvailableRoles(allRoles);
     return allRoles;
-  };
+  }, [availableRoles, loadRoles]);
+
+  useEffect(() => {
+    void loadUsers({ page: currentPage, size: SECURITY_PAGE_SIZE });
+  }, [currentPage, loadUsers]);
+
+  useEffect(() => {
+    void (async () => {
+      await ensureRolesLoaded();
+    })();
+  }, [ensureRolesLoaded]);
 
   const openCreateDialog = () => {
     setForm(initialForm);
@@ -155,7 +155,7 @@ export default function UsersPage() {
       ensureRolesLoaded(),
     ]);
 
-    const assignedRoles = detailedUser.roles ?? [];
+    const assignedRoles = detailedUser.roles;
     const assignedRoleNames = assignedRoles.map((role) => normalizeRoleName(role.name));
     const assignedRoleNamesSet = new Set(assignedRoleNames);
     const assignedRoleIds = allRoles

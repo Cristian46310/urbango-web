@@ -33,11 +33,17 @@ class HttpClient {
   setErrorHandler(handler: ErrorHandler) {
     this.instance.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          handler(error.response.status);
+      (error: unknown) => {
+        if (axios.isAxiosError(error)) {
+          const status = error.response?.status;
+          if (status === 401 || status === 403) {
+            handler(status);
+          }
+
+          throw error;
         }
-        return Promise.reject(error);
+
+        throw new Error('Unexpected HTTP client error');
       }
     );
   }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { SyntheticEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -18,17 +18,16 @@ export default function GithubCallbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [registrationToken, setRegistrationToken] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const code = searchParams.get("code");
+  const state = searchParams.get("state");
+  const missingParamsError = (!code || !state) ? "No se recibieron los parametros de GitHub." : null;
 
   useEffect(() => {
     if (hasProcessed.current) {
       return;
     }
 
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
-
     if (!code || !state) {
-      setError("No se recibieron los parametros de GitHub.");
       return;
     }
 
@@ -61,9 +60,9 @@ export default function GithubCallbackPage() {
     };
 
     void processGithubCallback();
-  }, [loginWithGithub, navigate, searchParams]);
+  }, [code, loginWithGithub, navigate, state]);
 
-  const handleCompleteRegistration = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCompleteRegistration = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!registrationToken) {
@@ -108,13 +107,13 @@ export default function GithubCallbackPage() {
             </div>
           )}
 
-          {error && (
+          {(error ?? missingParamsError) && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               <div className="flex items-center gap-2 font-medium">
                 <AlertCircle className="size-4" />
                 Ocurrio un error
               </div>
-              <p className="mt-1">{error}</p>
+              <p className="mt-1">{error ?? missingParamsError}</p>
               <Link className="mt-3 inline-block text-sm font-medium text-red-700 underline" to="/login">
                 Volver al login
               </Link>

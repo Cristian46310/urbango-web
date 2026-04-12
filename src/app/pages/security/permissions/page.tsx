@@ -53,7 +53,7 @@ export default function PermissionsPage() {
 
   useEffect(() => {
     void loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage]);
+  }, [currentPage, loadPermissions]);
 
   const openCreateDialog = () => {
     setForm(initialForm);

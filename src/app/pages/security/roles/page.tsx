@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye, ShieldCheck } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
@@ -47,17 +47,7 @@ export default function RolesPage() {
     (assignPermissionsPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
   );
 
-  useEffect(() => {
-    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
-  }, [currentPage]);
-
-  useEffect(() => {
-    void (async () => {
-      await ensurePermissionsLoaded();
-    })();
-  }, []);
-
-  const ensurePermissionsLoaded = async () => {
+  const ensurePermissionsLoaded = useCallback(async () => {
     if (availablePermissions.length > 0) {
       return availablePermissions;
     }
@@ -84,7 +74,17 @@ export default function RolesPage() {
 
     setAvailablePermissions(allPermissions);
     return allPermissions;
-  };
+  }, [availablePermissions, loadPermissions]);
+
+  useEffect(() => {
+    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
+  }, [currentPage, loadRoles]);
+
+  useEffect(() => {
+    void (async () => {
+      await ensurePermissionsLoaded();
+    })();
+  }, [ensurePermissionsLoaded]);
 
   const openViewDialog = async (role: Role) => {
     const detailedRole = await getRoleById(role.id) as RoleDetail;

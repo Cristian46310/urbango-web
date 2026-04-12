@@ -83,6 +83,8 @@ export function DataTable<TData>({
     }
     : localPagination;
 
+  // TanStack Table exposes non-memoizable functions; keep this scoped suppression local.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -237,7 +239,7 @@ export function DataTable<TData>({
             <div className="flex items-center gap-2 border-t border-(--security-border) px-6 py-4">
               <Button
                 onClick={() => {
-                  if (isServerPagination && onPageChange) {
+                  if (isServerPagination) {
                     onPageChange(Math.max(0, paginationState.pageIndex - 1));
                     return;
                   }
@@ -251,12 +253,12 @@ export function DataTable<TData>({
                 Anterior
               </Button>
               <div className="flex-1 text-center text-sm text-(--security-muted-foreground)">
-                Pagina {paginationState.pageIndex + 1} de {isServerPagination ? pageCount ?? 1 : table.getPageCount() || 1}
-                {typeof totalItems === "number" ? ` (${totalItems} registros)` : ""}
+                Pagina {paginationState.pageIndex + 1} de {isServerPagination ? (pageCount ?? 1) : Math.max(1, table.getPageCount())}
+                {typeof totalItems === "number" ? ` (${String(totalItems)} registros)` : ""}
               </div>
               <Button
                 onClick={() => {
-                  if (isServerPagination && onPageChange) {
+                  if (isServerPagination) {
                     onPageChange(paginationState.pageIndex + 1);
                     return;
                   }

@@ -36,12 +36,12 @@ function waitForGrecaptcha(timeoutMs = 5000): Promise<void> {
 
 function loadRecaptchaScript(): Promise<void> {
   if (typeof window === "undefined") {
-    return Promise.reject(new Error("reCAPTCHA only runs in the browser"));
+    throw new Error("reCAPTCHA only runs in the browser");
   }
 
-  const { siteKey } = recaptchaConfig;
+  const siteKey = recaptchaConfig.siteKey;
   if (!siteKey) {
-    return Promise.reject(new Error("VITE_RECAPTCHA_SITE_KEY is not configured"));
+    throw new Error("VITE_RECAPTCHA_SITE_KEY is not configured");
   }
 
   if (window.grecaptcha) {
@@ -58,9 +58,9 @@ function loadRecaptchaScript(): Promise<void> {
     const handleResolve = () => {
       waitForGrecaptcha()
         .then(() => { resolve(); })
-        .catch((error) => {
+        .catch((error: unknown) => {
           scriptLoadPromise = null;
-          reject(error);
+          reject(error instanceof Error ? error : new Error("Failed to initialize reCAPTCHA"));
         });
     };
 
@@ -97,7 +97,7 @@ function loadRecaptchaScript(): Promise<void> {
 export async function executeRecaptcha(action: string): Promise<string> {
   await loadRecaptchaScript();
 
-  const { siteKey } = recaptchaConfig;
+  const siteKey = recaptchaConfig.siteKey;
   const grecaptcha = window.grecaptcha;
 
   if (!siteKey || !grecaptcha) {

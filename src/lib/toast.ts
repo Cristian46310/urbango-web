@@ -47,15 +47,15 @@ export const updateToast = (
   }
 ) => {
   if (options.type === "success") {
-    toast.success(options.message || "Success", { id });
+    toast.success(options.message ?? "Success", { id });
   } else if (options.type === "error") {
-    toast.error(options.message || "Error", { id });
+    toast.error(options.message ?? "Error", { id });
   } else if (options.type === "warning") {
-    toast.warning(options.message || "Warning", { id });
+    toast.warning(options.message ?? "Warning", { id });
   } else if (options.type === "info") {
-    toast.info(options.message || "Info", { id });
+    toast.info(options.message ?? "Info", { id });
   } else if (options.type === "loading") {
-    toast.loading(options.message || "Loading", { id });
+    toast.loading(options.message ?? "Loading", { id });
   }
 };
 
