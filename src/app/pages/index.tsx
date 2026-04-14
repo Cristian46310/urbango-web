@@ -1,21 +1,25 @@
 import LoginPage from './login/page'
+import ForgotPasswordPage from './login/forgot-password/page'
+import ResetPasswordPage from './login/reset-password/page'
+import GithubCallbackPage from './login/github-callback/page'
+import MicrosoftCallbackPage from './login/microsoft-callback/page'
 import TeamPage from './team/page'
 import DashboardPage from './security/dashboard/page'
 import PermissionsPage from './security/permissions/page'
 import ProfilesPage from './security/profiles/page'
 import RolesPage from './security/roles/page'
-import RolePermissionsPage from './security/role-permissions/page'
-import UserRolesPage from './security/user-roles/page'
 import UsersPage from './security/users/page'
 
 export {
   DashboardPage,
+  ForgotPasswordPage,
+  GithubCallbackPage,
   LoginPage,
+  MicrosoftCallbackPage,
   PermissionsPage,
   ProfilesPage,
-  RolePermissionsPage,
+  ResetPasswordPage,
   RolesPage,
   TeamPage,
-  UserRolesPage,
   UsersPage
 }

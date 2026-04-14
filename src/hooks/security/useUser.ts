@@ -1,9 +1,12 @@
+import { useMemo } from "react";
 import { useUserStore } from "@/store";
 import type { CreateUserDTO, UpdateUserDTO } from "@/core/domain/entities/security/User";
+import type { PageableQuery } from "@/core/types/Page";
 
 export function useUser() {
   const {
     users,
+    usersPage,
     loading,
     error,
     fetchUser,
@@ -17,11 +20,12 @@ export function useUser() {
     removeSessionFromUser,
   } = useUserStore();
 
-  return {
+  return useMemo(() => ({
     users,
+    usersPage,
     loading,
     error,
-    loadUsers: () => fetchAllUsers(),
+    loadUsers: (pageable?: PageableQuery) => fetchAllUsers(pageable),
     getUserById: (userId: string) => fetchUser(userId),
     addUser: (userData: CreateUserDTO) => createUser(userData),
     editUser: (userId: string, userData: UpdateUserDTO) => updateUser(userId, userData),
@@ -30,5 +34,5 @@ export function useUser() {
     unassignProfile: (userId: string, profileId: string) => removeProfileFromUser(userId, profileId),
     assignSession: (userId: string, sessionId: string) => assignSessionToUser(userId, sessionId),
     unassignSession: (userId: string, sessionId: string) => removeSessionFromUser(userId, sessionId),
-  };
+  }), [users, usersPage, loading, error]);
 }

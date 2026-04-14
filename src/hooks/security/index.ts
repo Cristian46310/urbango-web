@@ -6,3 +6,4 @@ export { useRole } from './useRole';
 export { useRolePermission } from './useRolePermission';
 export { useSession } from './useSession';
 export { useUserRole } from './useUserRole';
+export { useHttpErrorHandler } from './useHttpErrorHandler';

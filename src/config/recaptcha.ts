@@ -2,8 +2,15 @@
  * reCAPTCHA v3 Configuration
  */
 
-export const recaptchaConfig = {
-  siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY || "",
+interface RecaptchaConfig {
+  siteKey: string;
+  actions: {
+    login: string;
+  };
+}
+
+export const recaptchaConfig: RecaptchaConfig = {
+  siteKey: (import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined) ?? "",
   actions: {
     login: "login",
   },

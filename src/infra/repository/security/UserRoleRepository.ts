@@ -2,11 +2,11 @@ import { httpMsSecurity } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
 import type { IUserRoleRepository } from "@/core/domain/interfaces/security/IUserRoleRepository";
 import type { MessageResponse } from "@/core/types/MessageResponse";
-import type { AssignRolesDTO } from "@/core/domain/entities/security/UserRole";
+import type { AssignRolesDTO } from "@/core/domain/entities/security/User";
 
 export class UserRoleRepository implements IUserRoleRepository {
-  async deleteUserRole(userRoleId: string): Promise<void> {
-    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER_ROLE.BY_ID(userRoleId));
+  async deleteUserRole(userId: string, roleId: string): Promise<void> {
+    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER_ROLE.BASE(userId, roleId));
   }
 
   async postUserRole(userId: string, roleId: string): Promise<MessageResponse> {

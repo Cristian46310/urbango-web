@@ -6,6 +6,7 @@ import type {
   UpdatePermissionDTO,
 } from "@/core/domain/entities/security/Permission";
 import type { IPermissionRepository } from "@/core/domain/interfaces/security/IPermissionRepository";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 export class PermissionRepository implements IPermissionRepository {
   async deletePermission(permissionId: string): Promise<void> {
@@ -23,8 +24,10 @@ export class PermissionRepository implements IPermissionRepository {
     return await httpMsSecurity.get<Permission>(ENDPOINTS.PERMISSION.BY_ID(permissionId));
   }
 
-  async getAllPermissions(): Promise<Permission[]> {
-    return await httpMsSecurity.get<Permission[]>(ENDPOINTS.PERMISSION.BASE);
+  async getAllPermissions(pageable: PageableQuery): Promise<Page<Permission>> {
+    return await httpMsSecurity.get<Page<Permission>>(ENDPOINTS.PERMISSION.BASE, {
+      params: pageable,
+    });
   }
 
   async postPermission(permissionData: CreatePermissionDTO): Promise<Permission> {

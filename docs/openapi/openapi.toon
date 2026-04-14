@@ -1,684 +1,1058 @@
-openapi,3.1.0
-info,
-  title,Micro Servicio de Seguridad
-  description,API para la gestion de autenticación y autorización utilizando JWT
-  contact,
-    name,Los Tres Mosqueteros
-    url,https,//github.com/JuManoel/dev-backend-uc.git
-    email,cristian.grisales46310@ucaldas.edu.co
-  license,
-    name,MIT
-    url,https,//opensource.org/licenses/MIT
-  version,1.0.0
-servers[1]{url,description},
-  http,//localhost,8080,Generated server url
-security[1],
-  -
-    bearer-jwt[0],
-paths,
-  /api/roles/{id},
-    get,
-      tags[1],role-controller
-      operationId,findById
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetRoleDTO
-    put,
-      tags[1],role-controller
-      operationId,update
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostRoleDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetRoleDTO
-    delete,
-      tags[1],role-controller
-      operationId,delete
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/public/users/{id},
-    get,
-      tags[1],user-controller
-      operationId,getById
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetUserDTO
-    put,
-      tags[1],user-controller
-      operationId,update_1
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostUserDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetUserDTO
-    delete,
-      tags[1],user-controller
-      operationId,delete_1
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/profiles/{id},
-    get,
-      tags[1],profile-controller
-      operationId,findById_1
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetProfileDTO
-    put,
-      tags[1],profile-controller
-      operationId,update_2
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostProfileDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetProfileDTO
-    delete,
-      tags[1],profile-controller
-      operationId,delete_2
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/permissions/{id},
-    get,
-      tags[1],permission-controller
-      operationId,findById_2
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetPermissionDTO
-    put,
-      tags[1],permission-controller
-      operationId,update_3
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostPermissionDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetPermissionDTO
-    delete,
-      tags[1],permission-controller
-      operationId,delete_3
-      parameters[1],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/roles,
-    get,
-      tags[1],role-controller
-      operationId,find
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                type,array
-                items,
-                  $ref,#/components/schemas/GetRoleDTO
-    post,
-      tags[1],role-controller
-      operationId,create
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostRoleDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetRoleDTO
-  /api/role-permission/role/{roleId}/permission/{permissionId},
-    post,
-      tags[1],role-permission-controller
-      operationId,addRolePermission
-      parameters[2],
-        -
-          name,roleId
-          in,path
-          required,true
-          schema,
-            type,string
-        -
-          name,permissionId
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/ResponseMessage
-  /api/public/users,
-    get,
-      tags[1],user-controller
-      operationId,getAllUsers
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                type,array
-                items,
-                  $ref,#/components/schemas/GetUserDTO
-    post,
-      tags[1],user-controller
-      operationId,createUser
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostUserDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetUserDTO
-  /api/public/users/{id}/profile/{profileID},
-    post,
-      tags[1],user-controller
-      operationId,addProfile
-      parameters[2],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-        -
-          name,profileID
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/ResponseMessage
-    delete,
-      tags[1],user-controller
-      operationId,removeProfile
-      parameters[2],
-        -
-          name,id
-          in,path
-          required,true
-          schema,
-            type,string
-        -
-          name,profileID
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/public/user-role/user/{userId}/role/{roleId},
-    post,
-      tags[1],user-role-controller
-      operationId,addUserRole
-      parameters[2],
-        -
-          name,userId
-          in,path
-          required,true
-          schema,
-            type,string
-        -
-          name,roleId
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/ResponseMessage
-  /api/public/user-role/assign-multiple,
-    post,
-      tags[1],user-role-controller
-      operationId,assignMultipleRoles
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/AssignRolesDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/ResponseMessage
-  /api/public/security/verify-2fa,
-    post,
-      tags[1],security-controller
-      operationId,verifyTwoFactor
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/Verify2FADTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/TokenDTO
-  /api/public/security/login,
-    post,
-      tags[1],security-controller
-      operationId,login
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/LoginDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/LoginChallengeDTO
-  /api/profiles,
-    get,
-      tags[1],profile-controller
-      operationId,find_1
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                type,array
-                items,
-                  $ref,#/components/schemas/GetProfileDTO
-    post,
-      tags[1],profile-controller
-      operationId,create_1
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostProfileDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetProfileDTO
-  /api/permissions,
-    get,
-      tags[1],permission-controller
-      operationId,find_2
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                type,array
-                items,
-                  $ref,#/components/schemas/GetPermissionDTO
-    post,
-      tags[1],permission-controller
-      operationId,create_2
-      requestBody,
-        content,
-          application/json,
-            schema,
-              $ref,#/components/schemas/PostPermissionDTO
-        required,true
-      responses,
-        200,
-          description,OK
-          content,
-            */*,
-              schema,
-                $ref,#/components/schemas/GetPermissionDTO
-  /api/role-permission/{rolePermissionId},
-    delete,
-      tags[1],role-permission-controller
-      operationId,removeRolePermission
-      parameters[1],
-        -
-          name,rolePermissionId
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-  /api/public/user-role/{userRoleId},
-    delete,
-      tags[1],user-role-controller
-      operationId,removeUserRole
-      parameters[1],
-        -
-          name,userRoleId
-          in,path
-          required,true
-          schema,
-            type,string
-      responses,
-        200,
-          description,OK
-components,
-  schemas,
-    PostRoleDTO,
-      type,object
-      properties,
-        name,
-          type,string
-          minLength,1
-        description,
-          type,string
-          minLength,1
-      required[2],description,name
-    GetRoleDTO,
-      type,object
-      properties,
-        id,
-          type,string
-        name,
-          type,string
-        description,
-          type,string
-    PostUserDTO,
-      type,object
-      properties,
-        name,
-          type,string
-          minLength,1
-        email,
-          type,string
-          format,email
-          minLength,1
-        password,
-          type,string
-          minLength,1
-          pattern,^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$
-      required[3],email,name,password
-    GetUserDTO,
-      type,object
-      properties,
-        id,
-          type,string
-        name,
-          type,string
-        email,
-          type,string
-        roles,
-          type,array
-          items,
-            $ref,#/components/schemas/UserRoleDTO
-    UserRoleDTO,
-      type,object
-      properties,
-        id,
-          type,string
-        userId,
-          type,string
-        roleId,
-          type,string
-    PostProfileDTO,
-      type,object
-      properties,
-        phone,
-          type,string
-          maxLength,10
-          minLength,10
-          pattern,^[0-9]+$
-        photo,
-          type,string
-          minLength,1
-      required[2],phone,photo
-    GetProfileDTO,
-      type,object
-      properties,
-        id,
-          type,string
-        phone,
-          type,string
-        photo,
-          type,string
-        userId,
-          type,string
-    PostPermissionDTO,
-      type,object
-      properties,
-        url,
-          type,string
-          minLength,1
-          pattern,^/[^\\s]*$
-        method,
-          type,string
-          enum[4],GET,POST,PUT,DELETE
-      required[1],url
-    GetPermissionDTO,
-      type,object
-      properties,
-        id,
-          type,string
-        url,
-          type,string
-        method,
-          type,string
-          enum[4],GET,POST,PUT,DELETE
-    ResponseMessage,
-      type,object
-      properties,
-        message,
-          type,string
-    AssignRolesDTO,
-      type,object
-      properties,
-        userId,
-          type,string
-          minLength,1
-        roleIds,
-          type,array
-          items,
-            type,string
-          maxItems,2147483647
-          minItems,1
-      required[1],userId
-    Verify2FADTO,
-      type,object
-      properties,
-        challengeToken,
-          type,string
-          minLength,1
-        code,
-          type,string
-          minLength,1
-          pattern,^\\d+$
-      required[2],challengeToken,code
-    TokenDTO,
-      type,object
-      properties,
-        token,
-          type,string
-    LoginDTO,
-      type,object
-      properties,
-        email,
-          type,string
-          format,email
-          minLength,1
-        password,
-          type,string
-          minLength,1
-          pattern,^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$
-      required[2],email,password
-    LoginChallengeDTO,
-      type,object
-      properties,
-        challengeToken,
-          type,string
-        expiration,
-          type,string
-          format,date-time
-        message,
-          type,string
-  securitySchemes,
-    bearer-jwt,
-      type,http
-      description,JWT token obtenido del endpoint /auth/login
-      scheme,bearer
-      bearerFormat,JWT
+openapi: 3.1.0
+info:
+  title: "Micro Servicio de Seguridad"
+  description: "API para la gestion de autenticación y autorización utilizando JWT"
+  contact:
+    name: "Los Tres Mosqueteros"
+    url: "https://github.com/JuManoel/dev-backend-uc.git"
+    email: cristian.grisales46310@ucaldas.edu.co
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+  version: 1.0.0
+servers[1]{url,description}:
+  "http://localhost:8080","Generated server url"
+security[1]{bearer-jwt}:
+  
+paths:
+  /api/roles/{id}:
+    get:
+      tags[1]: role-controller
+      operationId: findById
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetRoleDTO
+    put:
+      tags[1]: role-controller
+      operationId: update
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostRoleDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetRoleDTO
+    delete:
+      tags[1]: role-controller
+      operationId: delete
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/public/users/{id}:
+    get:
+      tags[1]: user-controller
+      operationId: getById
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetUserDetailDTO
+    put:
+      tags[1]: user-controller
+      operationId: update_1
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostUserDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetUserDTO
+    delete:
+      tags[1]: user-controller
+      operationId: delete_1
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/profiles/{id}:
+    get:
+      tags[1]: profile-controller
+      operationId: findById_1
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetProfileDTO
+    put:
+      tags[1]: profile-controller
+      operationId: update_2
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostProfileDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetProfileDTO
+    delete:
+      tags[1]: profile-controller
+      operationId: delete_2
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/permissions/{id}:
+    get:
+      tags[1]: permission-controller
+      operationId: findById_2
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetPermissionDTO
+    put:
+      tags[1]: permission-controller
+      operationId: update_3
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostPermissionDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetPermissionDTO
+    delete:
+      tags[1]: permission-controller
+      operationId: delete_3
+      parameters[1]{name,in,required,schema}:
+        id,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/roles:
+    get:
+      tags[1]: role-controller
+      operationId: find
+      parameters[1]{name,in,required,schema}:
+        pageable,query,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/PageGetRoleDTO
+    post:
+      tags[1]: role-controller
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostRoleDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetRoleDTO
+  /api/role-permission/role/{roleId}/permission/{permissionId}:
+    post:
+      tags[1]: role-permission-controller
+      operationId: addRolePermission
+      parameters[2]{name,in,required,schema}:
+        roleId,path,true,[object Object]
+        permissionId,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+  /api/public/users:
+    get:
+      tags[1]: user-controller
+      operationId: getAllUsers
+      parameters[1]{name,in,required,schema}:
+        pageable,query,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/PageGetUserDTO
+    post:
+      tags[1]: user-controller
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostUserDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetUserDTO
+  /api/public/users/{id}/profile/{profileID}:
+    post:
+      tags[1]: user-controller
+      operationId: addProfile
+      parameters[2]{name,in,required,schema}:
+        id,path,true,[object Object]
+        profileID,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+    delete:
+      tags[1]: user-controller
+      operationId: removeProfile
+      parameters[2]{name,in,required,schema}:
+        id,path,true,[object Object]
+        profileID,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/public/user-role/user/{userId}/role/{roleId}:
+    post:
+      tags[1]: user-role-controller
+      operationId: addUserRole
+      parameters[2]{name,in,required,schema}:
+        userId,path,true,[object Object]
+        roleId,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+  /api/public/user-role/assign-multiple:
+    post:
+      tags[1]: user-role-controller
+      operationId: assignMultipleRoles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/AssignRolesDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+  /api/public/security/verify-2fa:
+    post:
+      tags[1]: security-controller
+      operationId: verifyTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Verify2FADTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/TokenDTO
+  /api/public/security/reset-password:
+    post:
+      tags[1]: security-controller
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/ResetPasswordDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+  /api/public/security/login:
+    post:
+      tags[1]: security-controller
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/LoginDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/LoginChallengeDTO
+  /api/public/security/login/google:
+    post:
+      tags[1]: security-controller
+      operationId: loginWithGoogle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/GoogleTokenDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/TokenDTO
+  /api/public/security/login/github:
+    post:
+      tags[1]: security-controller
+      operationId: loginWithGitHub
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/GitHubCallbackDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthResultDTO
+  /api/public/security/login/github/complete:
+    post:
+      tags[1]: security-controller
+      operationId: completeGitHubLogin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CompleteGitHubRegistrationDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthResultDTO
+  /api/public/security/login/github/authorize:
+    post:
+      tags[1]: security-controller
+      operationId: authorizeGitHubLogin
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthorizeDTO
+  /api/public/security/github/link/authorize:
+    get:
+      tags[1]: git-hub-auth-controller
+      operationId: authorizeLink
+      responses:
+        200:
+          description: OK
+    post:
+      tags[1]: git-hub-auth-controller
+      operationId: authorizeLinkPost
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthorizeDTO
+  /api/public/security/github/complete-registration:
+    post:
+      tags[1]: git-hub-auth-controller
+      operationId: completeRegistration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CompleteGitHubRegistrationDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthResultDTO
+  /api/public/security/github/callback:
+    get:
+      tags[1]: git-hub-auth-controller
+      operationId: callback
+      parameters[2]{name,in,required,schema}:
+        code,query,true,[object Object]
+        state,query,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthResultDTO
+    post:
+      tags[1]: git-hub-auth-controller
+      operationId: callbackPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/GitHubCallbackDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthResultDTO
+  /api/public/security/github/authorize:
+    get:
+      tags[1]: git-hub-auth-controller
+      operationId: authorize
+      responses:
+        200:
+          description: OK
+    post:
+      tags[1]: git-hub-auth-controller
+      operationId: authorizePost
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GitHubAuthorizeDTO
+  /api/public/security/forgot-password:
+    post:
+      tags[1]: security-controller
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/ForgotPasswordDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+  /api/profiles:
+    get:
+      tags[1]: profile-controller
+      operationId: find_1
+      parameters[1]{name,in,required,schema}:
+        pageable,query,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/PageGetProfileDTO
+    post:
+      tags[1]: profile-controller
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostProfileDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetProfileDTO
+  /api/permissions:
+    get:
+      tags[1]: permission-controller
+      operationId: find_2
+      parameters[1]{name,in,required,schema}:
+        pageable,query,true,[object Object]
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/PageGetPermissionDTO
+    post:
+      tags[1]: permission-controller
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/PostPermissionDTO
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/GetPermissionDTO
+  /api/public/security/me:
+    get:
+      tags[1]: security-controller
+      operationId: me
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/MeDTO
+  /api/role-permission/{rolePermissionId}:
+    delete:
+      tags[1]: role-permission-controller
+      operationId: removeRolePermission
+      parameters[1]{name,in,required,schema}:
+        rolePermissionId,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/public/user-role/{userRoleId}:
+    delete:
+      tags[1]: user-role-controller
+      operationId: removeUserRole
+      parameters[1]{name,in,required,schema}:
+        userRoleId,path,true,[object Object]
+      responses:
+        200:
+          description: OK
+  /api/public/security/github/link:
+    delete:
+      tags[1]: git-hub-auth-controller
+      operationId: unlink
+      responses:
+        200:
+          description: OK
+          content:
+            */*:
+              schema:
+                $ref: #/components/schemas/ResponseMessage
+components:
+  schemas:
+    PostRoleDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+      required[2]: description,name
+    GetPermissionDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        method:
+          type: string
+          enum[4]: GET,POST,PUT,DELETE
+    GetRoleDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: #/components/schemas/GetPermissionDTO
+    PostUserDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$"
+      required[3]: email,name,password
+    GetUserDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        githubUsername:
+          type: string
+        githubLinked:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: #/components/schemas/GetRoleDTO
+    PostProfileDTO:
+      type: object
+      properties:
+        phone:
+          type: string
+          maxLength: 10
+          minLength: 10
+          pattern: "^[0-9]+$"
+        photo:
+          type: string
+          minLength: 1
+      required[2]: phone,photo
+    GetProfileDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+        userId:
+          type: string
+    PostPermissionDTO:
+      type: object
+      properties:
+        url:
+          type: string
+          minLength: 1
+          pattern: "^/[^\s]*$"
+        method:
+          type: string
+          enum[4]: GET,POST,PUT,DELETE
+      required[1]: url
+    ResponseMessage:
+      type: object
+      properties:
+        message:
+          type: string
+    AssignRolesDTO:
+      type: object
+      properties:
+        userId:
+          type: string
+          minLength: 1
+        roleIds:
+          type: array
+          items:
+            type: string
+          maxItems: 2147483647
+          minItems: 1
+      required[1]: userId
+    Verify2FADTO:
+      type: object
+      properties:
+        challengeToken:
+          type: string
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+          pattern: ^\d+$
+      required[2]: challengeToken,code
+    TokenDTO:
+      type: object
+      properties:
+        token:
+          type: string
+    ResetPasswordDTO:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 1
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$"
+      required[2]: newPassword,token
+    LoginDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$"
+        recaptchaToken:
+          type: string
+          minLength: 1
+      required[3]: email,password,recaptchaToken
+    LoginChallengeDTO:
+      type: object
+      properties:
+        challengeToken:
+          type: string
+        expiration:
+          type: string
+          format: date-time
+        message:
+          type: string
+    GoogleTokenDTO:
+      type: object
+      properties:
+        idToken:
+          type: string
+          minLength: 1
+      required[1]: idToken
+    GitHubCallbackDTO:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        state:
+          type: string
+          minLength: 1
+      required[2]: code,state
+    GitHubAuthResultDTO:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        token:
+          type: string
+        registrationToken:
+          type: string
+        linked:
+          type: boolean
+        created:
+          type: boolean
+        user:
+          $ref: #/components/schemas/GetUserDTO
+        idToken:
+          type: string
+    CompleteGitHubRegistrationDTO:
+      type: object
+      properties:
+        registrationToken:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required[2]: email,registrationToken
+    GitHubAuthorizeDTO:
+      type: object
+      properties:
+        authorizationUrl:
+          type: string
+    ForgotPasswordDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required[1]: email
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageGetRoleDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        pageable:
+          $ref: #/components/schemas/PageableObject
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: #/components/schemas/GetRoleDTO
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: #/components/schemas/SortObject
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        paged:
+          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: #/components/schemas/SortObject
+    SortObject:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
+    PageGetUserDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        pageable:
+          $ref: #/components/schemas/PageableObject
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: #/components/schemas/GetUserDTO
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: #/components/schemas/SortObject
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+    GetUserDetailDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        profile:
+          $ref: #/components/schemas/GetProfileDTO
+        roles:
+          type: array
+          items:
+            $ref: #/components/schemas/RoleSummaryDTO
+        permissions:
+          type: array
+          items:
+            $ref: #/components/schemas/GetPermissionDTO
+    RoleSummaryDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    MeDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        profile:
+          $ref: #/components/schemas/GetProfileDTO
+        roles:
+          type: array
+          items:
+            $ref: #/components/schemas/GetRoleDTO
+        permissions:
+          type: array
+          items:
+            $ref: #/components/schemas/GetPermissionDTO
+    PageGetProfileDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        pageable:
+          $ref: #/components/schemas/PageableObject
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: #/components/schemas/GetProfileDTO
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: #/components/schemas/SortObject
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+    PageGetPermissionDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        pageable:
+          $ref: #/components/schemas/PageableObject
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: #/components/schemas/GetPermissionDTO
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: #/components/schemas/SortObject
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+  securitySchemes:
+    bearer-jwt:
+      type: http
+      description: "JWT token obtenido del endpoint /auth/login"
+      scheme: bearer
+      bearerFormat: JWT

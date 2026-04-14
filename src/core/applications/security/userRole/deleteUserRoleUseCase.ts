@@ -7,10 +7,13 @@ export class DeleteUserRoleUseCase {
     this.userRoleRepository = userRoleRepository;
   }
 
-  async execute(userRoleId: string): Promise<void> {
-    if (!userRoleId) {
-      throw new Error("User Role ID is required");
+  async execute(userId: string, roleId: string): Promise<void> {
+    if (!userId) {
+      throw new Error("User ID is required");
     }
-    await this.userRoleRepository.deleteUserRole(userRoleId);
+    if (!roleId) {
+      throw new Error("Role ID is required");
+    }
+    await this.userRoleRepository.deleteUserRole(userId, roleId);
   }
 }

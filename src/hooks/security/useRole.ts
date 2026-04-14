@@ -1,12 +1,15 @@
+import { useMemo } from "react";
 import { useRoleStore } from "@/store";
+import type { PageableQuery } from "@/core/types/Page";
 export function useRole() {
-  const { roles, loading, error, fetchRole, fetchAllRoles } = useRoleStore();
+  const { roles, rolesPage, loading, error, fetchRole, fetchAllRoles } = useRoleStore();
 
-  return {
+  return useMemo(() => ({
     roles,
+    rolesPage,
     loading,
     error,
-    loadRoles: () => fetchAllRoles(),
+    loadRoles: (pageable?: PageableQuery) => fetchAllRoles(pageable),
     getRoleById: (roleId: string) => fetchRole(roleId),
-  };
+  }), [roles, rolesPage, loading, error]);
 }

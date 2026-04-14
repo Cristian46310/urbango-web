@@ -2,6 +2,8 @@ import axios, { AxiosHeaders, type AxiosInstance, type AxiosRequestConfig } from
 
 const AUTH_TOKEN_STORAGE_KEY = 'authToken';
 
+type ErrorHandler = (statusCode: number) => void;
+
 class HttpClient {
   private instance: AxiosInstance;
 
@@ -26,6 +28,24 @@ class HttpClient {
 
       return config;
     });
+  }
+
+  setErrorHandler(handler: ErrorHandler) {
+    this.instance.interceptors.response.use(
+      (response) => response,
+      (error: unknown) => {
+        if (axios.isAxiosError(error)) {
+          const status = error.response?.status;
+          if (status === 401 || status === 403) {
+            handler(status);
+          }
+
+          throw error;
+        }
+
+        throw new Error('Unexpected HTTP client error');
+      }
+    );
   }
 
   async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {

@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import { create } from "zustand";
+import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
 import type {
   CreatePermissionDTO,
   Permission,
@@ -11,6 +11,7 @@ import { PostPermissionUseCase } from "@/core/applications/security/permission/p
 import { PutPermissionUseCase } from "@/core/applications/security/permission/putPermissionUseCase";
 import { DeletePermissionUseCase } from "@/core/applications/security/permission/deletePermissionUseCase";
 import { PermissionRepository } from "@/infra/repository/security";
+import type { Page, PageableQuery } from "@/core/types/Page";
 
 const permissionRepository = new PermissionRepository();
 const getPermissionUseCase = new GetPermissionUseCase(permissionRepository);
@@ -21,10 +22,11 @@ const deletePermissionUseCase = new DeletePermissionUseCase(permissionRepository
 
 interface PermissionStoreState {
   permissions: Permission[];
+  permissionsPage: Page<Permission> | null;
   loading: boolean;
   error: string | null;
   fetchPermission: (permissionId: string) => Promise<Permission>;
-  fetchAllPermissions: () => Promise<Permission[]>;
+  fetchAllPermissions: (pageable?: PageableQuery) => Promise<Page<Permission>>;
   createPermission: (permissionData: CreatePermissionDTO) => Promise<Permission>;
   updatePermission: (permissionId: string, permissionData: UpdatePermissionDTO) => Promise<Permission>;
   deletePermission: (permissionId: string) => Promise<void>;
@@ -32,14 +34,16 @@ interface PermissionStoreState {
 
 export const usePermissionStore = create<PermissionStoreState>((set) => ({
   permissions: [],
+  permissionsPage: null,
   loading: false,
   error: null,
   fetchPermission: async (permissionId: string) => {
+    const loadingToastId = showLoadingToast("Cargando permiso...");
     set({ loading: true, error: null });
     try {
       if (!permissionId || permissionId.trim() === "") {
         set({ loading: false, error: "Permission ID is required" });
-        toast.error("Permission ID is required");
+        showErrorToast("Permission ID is required");
         throw new Error("Permission ID is required");
       }
       const permission = await getPermissionUseCase.execute(permissionId);
@@ -47,65 +51,82 @@ export const usePermissionStore = create<PermissionStoreState>((set) => ({
       return permission;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching permission: ${(error as Error).message}`);
+      showErrorToast(`Error fetching permission: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
-  fetchAllPermissions: async () => {
+  fetchAllPermissions: async (pageable = { page: 0, size: 10 }) => {
+    const loadingToastId = showLoadingToast("Cargando permisos...");
     set({ loading: true, error: null });
     try {
-      const permissions = await getAllPermissionsUseCase.execute();
-      set({ loading: false, permissions });
-      return permissions;
+      const permissionsPage = await getAllPermissionsUseCase.execute(pageable);
+      set({ loading: false, permissions: permissionsPage.content, permissionsPage });
+      return permissionsPage;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error fetching permissions: ${(error as Error).message}`);
+      showErrorToast(`Error fetching permissions: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   createPermission: async (permissionData: CreatePermissionDTO) => {
+    const loadingToastId = showLoadingToast("Creando permiso...");
     set({ loading: true, error: null });
     try {
       const permission = await postPermissionUseCase.execute(permissionData);
       set({ loading: false });
+      showSuccessToast("Permission created successfully");
       return permission;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error creating permission: ${(error as Error).message}`);
+      showErrorToast(`Error creating permission: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   updatePermission: async (permissionId: string, permissionData: UpdatePermissionDTO) => {
+    const loadingToastId = showLoadingToast("Actualizando permiso...");
     set({ loading: true, error: null });
     try {
       if (!permissionId || permissionId.trim() === "") {
         set({ loading: false, error: "Permission ID is required" });
-        toast.error("Permission ID is required");
+        showErrorToast("Permission ID is required");
         throw new Error("Permission ID is required");
       }
       const permission = await putPermissionUseCase.execute(permissionId, permissionData);
       set({ loading: false });
+      showSuccessToast("Permission updated successfully");
       return permission;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error updating permission: ${(error as Error).message}`);
+      showErrorToast(`Error updating permission: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
   deletePermission: async (permissionId: string) => {
+    const loadingToastId = showLoadingToast("Eliminando permiso...");
     set({ loading: true, error: null });
     try {
       if (!permissionId || permissionId.trim() === "") {
         set({ loading: false, error: "Permission ID is required" });
-        toast.error("Permission ID is required");
+        showErrorToast("Permission ID is required");
         throw new Error("Permission ID is required");
       }
       await deletePermissionUseCase.execute(permissionId);
       set({ loading: false });
+      showSuccessToast("Permission deleted successfully");
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      toast.error(`Error deleting permission: ${(error as Error).message}`);
+      showErrorToast(`Error deleting permission: ${(error as Error).message}`);
       throw error;
+    } finally {
+      dismissToast(loadingToastId);
     }
   },
 }));

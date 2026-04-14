@@ -18,7 +18,44 @@ import { recaptchaConfig } from "@/config/recaptcha";
 import { executeRecaptcha } from "@/lib/recaptcha";
 import { OAuthProviders } from "./OAuthProviders";
 
+type PasswordStrength = "debil" | "media" | "fuerte";
+
+function getPasswordStrength(password: string): { level: PasswordStrength; score: number } {
+  let score = 0;
+  if (password.length >= 8) {
+    score += 1;
+  }
+  if (/[A-Z]/.test(password)) {
+    score += 1;
+  }
+  if (/[a-z]/.test(password)) {
+    score += 1;
+  }
+  if (/\d/.test(password)) {
+    score += 1;
+  }
+  if (/[^A-Za-z\d]/.test(password)) {
+    score += 1;
+  }
+
+  if (score <= 2) {
+    return { level: "debil", score };
+  }
+
+  if (score <= 4) {
+    return { level: "media", score };
+  }
+
+  return { level: "fuerte", score };
+}
+
+function meetsPasswordPolicy(password: string): boolean {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password);
+}
+
 export function LoginForm() {
+  const [mode, setMode] = useState<"login" | "register">("login");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [challengeToken, setChallengeToken] = useState("");
@@ -29,8 +66,14 @@ export function LoginForm() {
     "credentials",
   );
 
+  const [registerName, setRegisterName] = useState("");
+  const [registerLastName, setRegisterLastName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
+
   const navigate = useNavigate();
-  const { loading, error, login, verify2FA } = useLogin();
+  const { loading, error, register, login, verify2FA } = useLogin();
 
   useEffect(() => {
     if (error) {
@@ -72,6 +115,54 @@ export function LoginForm() {
     }
   };
 
+  const handleRegisterSubmit = async () => {
+    const trimmedName = registerName.trim();
+    const trimmedLastName = registerLastName.trim();
+    const trimmedEmail = registerEmail.trim();
+
+    if (!trimmedName || !trimmedLastName || !trimmedEmail || !registerPassword || !registerConfirmPassword) {
+      toast.error("Completa todos los campos del registro");
+      return;
+    }
+
+    if (!meetsPasswordPolicy(registerPassword)) {
+      toast.error("La contrasena no cumple los requisitos de seguridad");
+      return;
+    }
+
+    if (registerPassword !== registerConfirmPassword) {
+      toast.error("La contrasena y su confirmacion no coinciden");
+      return;
+    }
+
+    try {
+      const response = await register({
+        name: trimmedName,
+        lastName: trimmedLastName,
+        email: trimmedEmail,
+        password: registerPassword,
+        confirmPassword: registerConfirmPassword,
+      });
+
+      toast.success(response.message);
+      setEmail(trimmedEmail);
+      setPassword("");
+      setMode("login");
+      setRegisterPassword("");
+      setRegisterConfirmPassword("");
+    } catch (submitError) {
+      toast.error((submitError as Error).message);
+    }
+  };
+
+  const strength = getPasswordStrength(registerPassword);
+  const strengthColor =
+    strength.level === "debil"
+      ? "bg-red-500"
+      : strength.level === "media"
+        ? "bg-amber-500"
+        : "bg-emerald-600";
+
   return (
     <div className="flex items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
       <div className="w-full max-w-md space-y-8">
@@ -94,7 +185,113 @@ export function LoginForm() {
           </CardHeader>
 
           <CardContent className="p-0">
-            {phase === "credentials" ? (
+            {mode === "register" ? (
+              <form
+                className="space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleRegisterSubmit();
+                }}
+              >
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="register-name">Nombre</Label>
+                    <Input
+                      id="register-name"
+                      type="text"
+                      placeholder="Cristian"
+                      value={registerName}
+                      onChange={(event) => { setRegisterName(event.target.value); }}
+                      className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-last-name">Apellido</Label>
+                    <Input
+                      id="register-last-name"
+                      type="text"
+                      placeholder="Marin"
+                      value={registerLastName}
+                      onChange={(event) => { setRegisterLastName(event.target.value); }}
+                      className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Correo electronico</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="correo@ucaldas.edu.co"
+                    value={registerEmail}
+                    onChange={(event) => { setRegisterEmail(event.target.value); }}
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Contrasena</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="........"
+                    value={registerPassword}
+                    onChange={(event) => { setRegisterPassword(event.target.value); }}
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
+                  />
+                  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em]">
+                      <span className="text-slate-500">Fortaleza</span>
+                      <span className="font-semibold text-slate-700">{strength.level}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-200">
+                      <div
+                        className={`h-2 rounded-full transition-all ${strengthColor}`}
+                        style={{ width: `${Math.max(12, Math.min(100, (strength.score / 5) * 100))}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      Minimo 8 caracteres, una mayuscula, una minuscula, un numero y un caracter especial.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm-password">Confirmar contrasena</Label>
+                  <Input
+                    id="register-confirm-password"
+                    type="password"
+                    placeholder="........"
+                    value={registerConfirmPassword}
+                    onChange={(event) => { setRegisterConfirmPassword(event.target.value); }}
+                    className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="h-12 w-full rounded-xl bg-accent text-base font-medium text-white hover:bg-accent-foreground"
+                  disabled={loading}
+                >
+                  {loading ? "Creando cuenta..." : "Crear cuenta"}
+                </Button>
+
+                <p className="text-center text-sm text-slate-600">
+                  Ya tienes cuenta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setPhase("credentials");
+                    }}
+                    className="font-semibold text-accent underline-offset-4 hover:underline"
+                  >
+                    Inicia sesion
+                  </button>
+                </p>
+              </form>
+            ) : phase === "credentials" ? (
               <form
                 className="space-y-5"
                 onSubmit={(event) => {
@@ -148,6 +345,15 @@ export function LoginForm() {
                     onChange={(event) => { setPassword(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
                   />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { void navigate("/forgot-password"); }}
+                      className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+                    >
+                      Olvide mi contrasena
+                    </button>
+                  </div>
                 </div>
 
                 <Button
@@ -168,6 +374,17 @@ export function LoginForm() {
                 </div>
 
                 <OAuthProviders />
+
+                <p className="pt-1 text-center text-sm text-slate-600">
+                  No tienes cuenta aca?{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setMode("register"); }}
+                    className="font-semibold text-accent underline-offset-4 hover:underline"
+                  >
+                    Crea una
+                  </button>
+                </p>
               </form>
             ) : (
               <form
