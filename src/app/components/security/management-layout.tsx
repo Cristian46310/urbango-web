@@ -7,6 +7,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  MapPin,
   ShieldCheck,
   ShieldUser,
   Users,
@@ -61,6 +62,13 @@ const teamMenuItem: MenuItem = {
   icon: BookUser,
 };
 
+const nearbyStopsMenuItem: MenuItem = {
+  title: "Paraderos",
+  to: "/app/nearby-stops",
+  description: "Buscar paraderos cercanos",
+  icon: MapPin,
+};
+
 function isActivePath(pathname: string, target: string) {
   if (target === "/app") {
     return pathname === "/app";
@@ -75,6 +83,7 @@ export function ManagementLayout() {
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
   const securityActive = securityMenuItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
+  const nearbyStopsActive = isActivePath(location.pathname, nearbyStopsMenuItem.to);
 
   const [isSecurityOpen, setIsSecurityOpen] = useState(securityActive);
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
@@ -185,6 +194,15 @@ export function ManagementLayout() {
                     </SidebarMenuSub>
                   ) : null}
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={nearbyStopsActive} title={nearbyStopsMenuItem.title} size="sm">
+                    <NavLink to={nearbyStopsMenuItem.to} end>
+                      <MapPin className="size-4" />
+                      <span className="font-medium">{nearbyStopsMenuItem.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -218,11 +236,13 @@ export function ManagementLayout() {
                 <h2 className="text-lg font-semibold text-(--security-foreground)">Gestión de módulos de seguridad</h2>
               </div>
             </div>
-            <div className="hidden rounded-full border border-(--security-border) bg-(--security-surface) px-4 py-2 text-sm text-(--security-muted-foreground) md:block">
-              <span className="flex items-center gap-2">
-                <img src={busLogo} alt="Bus UCaldas" className="size-5" />
-                Bus UCaldas
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="hidden rounded-full border border-(--security-border) bg-(--security-surface) px-4 py-2 text-sm text-(--security-muted-foreground) md:block">
+                <span className="flex items-center gap-2">
+                  <img src={busLogo} alt="Bus UCaldas" className="size-5" />
+                  Bus UCaldas
+                </span>
+              </div>
             </div>
           </div>
         </div>

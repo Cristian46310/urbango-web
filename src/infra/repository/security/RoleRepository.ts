@@ -1,6 +1,6 @@
 import { httpMsSecurity } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
-import type { Role } from "@/core/domain/entities/security/Role";
+import type { CreateRoleDTO, Role } from "@/core/domain/entities/security/Role";
 import type { IRoleRepository } from "@/core/domain/interfaces/security/IRoleRepository";
 import type { Page, PageableQuery } from "@/core/types/Page";
 
@@ -14,6 +14,11 @@ export class RoleRepository implements IRoleRepository {
       params: pageable,
     });
   }
+
+  async createRole(roleData: CreateRoleDTO): Promise<Role> {
+    return await httpMsSecurity.post<Role>(ENDPOINTS.ROLE.BASE, roleData);
+  }
+
 }
 
 export const roleRepository = new RoleRepository();

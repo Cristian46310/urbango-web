@@ -54,4 +54,7 @@ export const ENDPOINTS = {
     BY_ID: (rolePermissionId: string) =>
       `/api/role-permission/${rolePermissionId}`,
   },
+  STOPS: {
+    NEARBY: "/stop/nearby",
+  },
 };

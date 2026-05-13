@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Eye, ShieldCheck } from "lucide-react";
+import { Eye, ShieldCheck, Plus } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
 import {
@@ -11,6 +11,9 @@ import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
 import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CrudDialogShell } from "@/app/components/security/crud-dialog-shell";
+import { DialogField } from "@/app/components/security/dialog-field";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -29,13 +32,15 @@ interface RoleDetail extends Role {
 }
 
 export default function RolesPage() {
-  const { roles, rolesPage, loading, error, loadRoles, getRoleById } = useRole();
+  const { roles, rolesPage, loading, error, loadRoles, getRoleById, addRole } = useRole();
   const { loadPermissions } = usePermission();
   const { assignMultiplePermissionsToRole } = useRolePermission();
 
   const [selectedRole, setSelectedRole] = useState<RoleDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignPermissionsOpen, setIsAssignPermissionsOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", description: "" });
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [assignPermissionsPage, setAssignPermissionsPage] = useState(0);
@@ -75,6 +80,11 @@ export default function RolesPage() {
     void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
+
+  const openCreateDialog = () => {
+    setCreateForm({ name: "", description: "" });
+    setIsCreateDialogOpen(true);
+  };
 
   const openViewDialog = async (role: Role) => {
     const detailedRole = await getRoleById(role.id) as RoleDetail;
@@ -125,6 +135,32 @@ export default function RolesPage() {
     }
 
     closeAssignPermissionsDialog();
+    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
+  };
+
+  const handleCreateRole = async () => {
+    try {
+      const payload = {
+        name: createForm.name.trim(),
+        description: createForm.description.trim(),
+      };
+
+      if (!payload.name || !payload.description) {
+        throw new Error("Nombre y descripcion son obligatorios.");
+      }
+
+      const created = await addRole(payload);
+      setIsCreateDialogOpen(false);
+      // refresh list to include new role
+      void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
+
+      // open assign permissions flow for the created role
+      if (created) {
+        await openAssignPermissionsDialog(created as Role);
+      }
+    } catch {
+      // store handles feedback
+    }
   };
 
   const columnHelper = createColumnHelper<Role>();
@@ -185,6 +221,12 @@ export default function RolesPage() {
         onRefresh={() => {
           void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
+        toolbarAction={
+          <Button type="button" size="sm" onClick={openCreateDialog}>
+            <Plus className="mr-1 size-4" />
+            Adicionar
+          </Button>
+        }
         pageIndex={currentPage}
         pageSize={SECURITY_PAGE_SIZE}
         pageCount={rolesPage?.totalPages ?? 1}
@@ -194,6 +236,32 @@ export default function RolesPage() {
         filterPlaceholder="Buscar por nombre"
         emptyMessage="No hay roles disponibles."
       />
+
+      <CrudDialogShell
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        mode="create"
+        title="Adicionar rol"
+        description="Crea un nuevo rol y luego asigna permisos si lo deseas."
+        onClose={() => { setIsCreateDialogOpen(false); }}
+        onSave={() => { void handleCreateRole(); }}
+      >
+        <DialogField label="Nombre" htmlFor="role-name">
+          <Input
+            id="role-name"
+            value={createForm.name}
+            onChange={(e) => setCreateForm((c) => ({ ...c, name: e.target.value }))}
+          />
+        </DialogField>
+
+        <DialogField label="Descripcion" htmlFor="role-description">
+          <Input
+            id="role-description"
+            value={createForm.description}
+            onChange={(e) => setCreateForm((c) => ({ ...c, description: e.target.value }))}
+          />
+        </DialogField>
+      </CrudDialogShell>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-(--security-border)">

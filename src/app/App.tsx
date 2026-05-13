@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage } from './pages'
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage } from './pages'
 import { ManagementLayout } from './components/security/management-layout'
 import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
@@ -25,6 +25,7 @@ function AppContent() {
           <Route path="profiles" element={<ProfilesPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="team" element={<TeamPage />} />
+          <Route path="nearby-stops" element={<NearbyStopsPage />} />
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
