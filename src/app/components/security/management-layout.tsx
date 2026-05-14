@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BadgeCheck,
   BookUser,
+  ArrowDownToLine,
   ChevronDown,
   KeyRound,
   LayoutDashboard,
@@ -69,6 +70,13 @@ const nearbyStopsMenuItem: MenuItem = {
   icon: MapPin,
 };
 
+const ticketAlightMenuItem: MenuItem = {
+  title: "Descenso",
+  to: "/app/ticket/alight",
+  description: "Cerrar viaje y liberar cupo",
+  icon: ArrowDownToLine,
+};
+
 function isActivePath(pathname: string, target: string) {
   if (target === "/app") {
     return pathname === "/app";
@@ -84,6 +92,7 @@ export function ManagementLayout() {
   const securityActive = securityMenuItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
   const nearbyStopsActive = isActivePath(location.pathname, nearbyStopsMenuItem.to);
+  const ticketAlightActive = isActivePath(location.pathname, ticketAlightMenuItem.to);
 
   const [isSecurityOpen, setIsSecurityOpen] = useState(securityActive);
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
@@ -200,6 +209,15 @@ export function ManagementLayout() {
                     <NavLink to={nearbyStopsMenuItem.to} end>
                       <MapPin className="size-4" />
                       <span className="font-medium">{nearbyStopsMenuItem.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={ticketAlightActive} title={ticketAlightMenuItem.title} size="sm">
+                    <NavLink to={ticketAlightMenuItem.to} end>
+                      <ArrowDownToLine className="size-4" />
+                      <span className="font-medium">{ticketAlightMenuItem.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
