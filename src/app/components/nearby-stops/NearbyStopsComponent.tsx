@@ -64,10 +64,11 @@ export const NearbyStopsComponent: React.FC = () => {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(stops.length / itemsPerPage);
+  const stopsList = Array.isArray(stops) ? stops : [];
+  const totalPages = Math.ceil(stopsList.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedStops = stops.slice(startIndex, endIndex);
+  const paginatedStops = stopsList.slice(startIndex, endIndex);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 space-y-6">
@@ -175,7 +176,7 @@ export const NearbyStopsComponent: React.FC = () => {
                 </Marker>
 
                 {/* Stops markers */}
-                {stops.map((stop) => (
+                {stopsList.map((stop) => (
                   <Marker
                     key={stop.id}
                     position={[stop.latitude, stop.longitude]}
@@ -238,11 +239,11 @@ export const NearbyStopsComponent: React.FC = () => {
       )}
 
       {/* Stops List */}
-      {stops.length > 0 && !loading && (
+      {stopsList.length > 0 && !loading && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Paraderos Cercanos ({stops.length})</CardTitle>
+              <CardTitle>Paraderos Cercanos ({stopsList.length})</CardTitle>
               <p className="text-sm text-gray-600 mt-1">Página {currentPage} de {totalPages}</p>
             </div>
             <Button
@@ -331,7 +332,7 @@ export const NearbyStopsComponent: React.FC = () => {
       )}
 
       {/* Empty State */}
-      {coordinates && !loading && stops.length === 0 && !error && (
+      {coordinates && !loading && stopsList.length === 0 && !error && (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
