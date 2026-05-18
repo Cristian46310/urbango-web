@@ -86,30 +86,19 @@ export function ManagementLayout() {
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole, isInitialized, isAuthenticated } = useAuthStore();
 
-  // Debug logging
-  console.log('ManagementLayout - Auth State:', {
-    isInitialized,
-    isAuthenticated,
-    currentUser: currentUser?.email,
-    roles: currentUser?.roles,
-  });
-
   // Filter menu items based on user roles
   const visibleSecurityItems = securityMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
     const hasAccess = hasAnyRole(item.requiredRoles);
-    console.log(`Menu item "${item.title}" requires ${JSON.stringify(item.requiredRoles)} - hasAccess: ${hasAccess}`);
     return hasAccess;
   });
 
   const visibleBusinessItems = businessMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
     const hasAccess = hasAnyRole(item.requiredRoles);
-    console.log(`Menu item "${item.title}" requires ${JSON.stringify(item.requiredRoles)} - hasAccess: ${hasAccess}`);
     return hasAccess;
   });
 
-  console.log('Visible items - Security:', visibleSecurityItems.length, 'Business:', visibleBusinessItems.length);
 
   // Show all menu items - route guards handle access control
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
