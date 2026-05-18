@@ -96,13 +96,9 @@ export default function ProfilesPage() {
   const handleSave = async () => {
     try {
       const user = usersById.get(form.userId);
-
-      if (!form.phone.trim() || !form.photo.trim()) {
-        throw new Error("Telefono y foto son obligatorios.");
-      }
-
+      
       if (!user) {
-        throw new Error("Debes seleccionar un usuario valido.");
+        throw new Error("User not found");
       }
 
       if (dialogMode === "edit") {

@@ -57,4 +57,7 @@ export const ENDPOINTS = {
   STOPS: {
     NEARBY: "/stop/nearby",
   },
+  INCIDENT_REPORTS: {
+    BASE: '/incident-reports/driver',
+  },
 };

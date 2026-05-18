@@ -5,17 +5,22 @@ import GithubCallbackPage from './login/github-callback/page'
 import MicrosoftCallbackPage from './login/microsoft-callback/page'
 import TeamPage from './team/page'
 import NearbyStopsPage from './nearby-stops/page'
-import TicketAlightPage from './ticket/alight/page'
+import IncidentReportPage from './incident-report/page'
+import TicketAlightSearchPage from './ticket/alight/page'
+import TicketAlightValidationPage from './ticket/alight/[ticketId]/page'
 import DashboardPage from './security/dashboard/page'
 import PermissionsPage from './security/permissions/page'
 import ProfilesPage from './security/profiles/page'
 import RolesPage from './security/roles/page'
 import UsersPage from './security/users/page'
+import { AccessDeniedPage } from './access-denied'
 
 export {
+  AccessDeniedPage,
   DashboardPage,
   ForgotPasswordPage,
   GithubCallbackPage,
+  IncidentReportPage,
   LoginPage,
   MicrosoftCallbackPage,
   NearbyStopsPage,
@@ -23,7 +28,8 @@ export {
   ProfilesPage,
   ResetPasswordPage,
   RolesPage,
-  TicketAlightPage,
   TeamPage,
+  TicketAlightSearchPage,
+  TicketAlightValidationPage,
   UsersPage
 }

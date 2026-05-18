@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { stopRepository } from '@/infra/repository/stop';
-import type { NearbyStopDto } from '@/core/types/Stop';
+import type { NearbyStopDto } from '@/core/domain/entities/Stop';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
@@ -22,6 +22,8 @@ export const NearbyStopsComponent: React.FC = () => {
   const [stops, setStops] = useState<NearbyStopDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Fetch nearby stops when coordinates are available
   useEffect(() => {
@@ -35,12 +37,13 @@ export const NearbyStopsComponent: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setCurrentPage(1);
 
     try {
       const nearbyStops = await stopRepository.findNearbyStops(
         coordinates.latitude,
         coordinates.longitude,
-        5,
+        100,
         1000
       );
       setStops(nearbyStops);
@@ -54,10 +57,17 @@ export const NearbyStopsComponent: React.FC = () => {
   };
 
   const handleRefresh = () => {
+    setCurrentPage(1);
     if (coordinates) {
       fetchNearbyStops();
     }
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(stops.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedStops = stops.slice(startIndex, endIndex);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 space-y-6">
@@ -67,7 +77,7 @@ export const NearbyStopsComponent: React.FC = () => {
           <MapPin className="w-8 h-8" />
           Buscar Paraderos Cercanos
         </h1>
-        <p className="text-gray-600">Encontra los 5 paraderos más cercanos a tu ubicación</p>
+        <p className="text-gray-600">Encuentra los paraderos cercanos a tu ubicación (5 por página)</p>
       </div>
 
       {/* Location Permission Card */}
@@ -179,7 +189,7 @@ export const NearbyStopsComponent: React.FC = () => {
                     <Popup>
                       <div className="text-sm font-semibold">{stop.name}</div>
                       <div className="text-xs text-gray-600">
-                        {stop.distance?.toFixed(0)}m de distancia
+                        {(stop.distance ?? 0).toFixed(0)}m de distancia
                       </div>
                     </Popup>
                   </Marker>
@@ -231,7 +241,10 @@ export const NearbyStopsComponent: React.FC = () => {
       {stops.length > 0 && !loading && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Paraderos Cercanos ({stops.length})</CardTitle>
+            <div>
+              <CardTitle>Paraderos Cercanos ({stops.length})</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">Página {currentPage} de {totalPages}</p>
+            </div>
             <Button
               onClick={handleRefresh}
               disabled={loading}
@@ -243,19 +256,19 @@ export const NearbyStopsComponent: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stops.map((stop, index) => (
+              {paginatedStops.map((stop, index) => (
                 <div
                   key={stop.id}
                   className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition"
                 >
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-sm">
-                    {index + 1}
+                    {startIndex + index + 1}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{stop.name}</h3>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {stop.distance?.toFixed(0)}m de distancia
+                      {(stop.distance ?? 0).toFixed(0)}m de distancia
                     </p>
                     {stop.routes && stop.routes.length > 0 && (
                       <div className="mt-2">
@@ -276,6 +289,43 @@ export const NearbyStopsComponent: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6 pt-6 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

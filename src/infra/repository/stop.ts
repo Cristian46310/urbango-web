@@ -1,6 +1,6 @@
 import { httpMsBussines } from '../api/builderHttp';
 import { ENDPOINTS } from '../api/endpoints';
-import type { NearbyStopDto } from '@/core/types/Stop';
+import type { NearbyStopDto } from '@/core/domain/entities/Stop';
 
 export const stopRepository = {
   async findNearbyStops(

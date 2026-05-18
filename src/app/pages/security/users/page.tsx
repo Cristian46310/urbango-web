@@ -177,10 +177,6 @@ export default function UsersPage() {
         password: form.password.trim(),
       };
 
-      if (!payload.name || !payload.email || (dialogMode === "create" && !payload.password)) {
-        throw new Error("Nombre, correo y contraseña son obligatorios para crear.");
-      }
-
       if (dialogMode === "edit") {
         const updatePayload: { name?: string; email?: string; password?: string } = {
           name: payload.name,

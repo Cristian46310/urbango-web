@@ -76,10 +76,6 @@ export default function PermissionsPage() {
 
   const handleSave = async () => {
     try {
-      if (!form.url.trim()) {
-        throw new Error("La URL es obligatoria.");
-      }
-
       if (dialogMode === "edit") {
         await editPermission(form.id, {
           url: form.url.trim(),
@@ -96,7 +92,7 @@ export default function PermissionsPage() {
       setForm(initialForm);
       await loadPermissions({ page: currentPage, size: SECURITY_PAGE_SIZE });
     } catch {
-      // Store layer handles user feedback.
+      // Store layer handles user feedback and validation.
     }
   };
 

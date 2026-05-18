@@ -4,16 +4,23 @@ import { httpMsSecurity } from '@/infra/api/builderHttp';
 
 const AUTH_TOKEN_STORAGE_KEY = 'authToken';
 
+/**
+ * Hook to handle HTTP errors globally
+ * - 401 Unauthorized: Token missing, expired, or invalid → redirect to login
+ * - 403 Forbidden: User authenticated but lacks permission → redirect to access-denied
+ */
 export const useHttpErrorHandler = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     httpMsSecurity.setErrorHandler((statusCode: number) => {
-      if (statusCode === 401 || statusCode === 403) {
-        // Limpiar token del localStorage
+      if (statusCode === 401) {
+        // Unauthorized - clear token and redirect to login
         localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-        // Redirigir al login
         void navigate('/login', { replace: true });
+      } else if (statusCode === 403) {
+        // Forbidden - user authenticated but lacks permission
+        void navigate('/access-denied', { replace: true });
       }
     });
   }, [navigate]);
