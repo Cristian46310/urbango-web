@@ -60,4 +60,12 @@ export const ENDPOINTS = {
   INCIDENT_REPORTS: {
     BASE: '/incident-reports/driver',
   },
+  DRIVER: {
+    BASE: '/driver',
+    ME: '/driver/me',
+  },
+  CITIZEN: {
+    BASE: '/citizen',
+    ME: '/citizen/me',
+  },
 };

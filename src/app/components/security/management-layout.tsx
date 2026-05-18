@@ -11,6 +11,7 @@ import {
   LogOut,
   MapPin,
   Briefcase,
+  UserPlus,
   ShieldCheck,
   ShieldUser,
   Users,
@@ -60,6 +61,13 @@ const homeMenuItem: MenuItem = {
   icon: LayoutDashboard,
 };
 
+const registerProfileMenuItem: MenuItem = {
+  title: "Mi perfil",
+  to: "/app/register-profile",
+  description: "Registrarse como conductor o ciudadano",
+  icon: UserPlus,
+};
+
 const teamMenuItem: MenuItem = {
   title: "Team",
   to: "/app/team",
@@ -102,6 +110,10 @@ export function ManagementLayout() {
 
   // Show all menu items - route guards handle access control
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
+  const registerProfileActive = isActivePath(
+    location.pathname,
+    registerProfileMenuItem.to,
+  );
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
@@ -154,6 +166,20 @@ export function ManagementLayout() {
                     <NavLink to={homeMenuItem.to} end>
                       <LayoutDashboard className="size-4" />
                       <span className="font-medium">{homeMenuItem.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={registerProfileActive}
+                    title={registerProfileMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={registerProfileMenuItem.to}>
+                      <UserPlus className="size-4" />
+                      <span className="font-medium">{registerProfileMenuItem.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

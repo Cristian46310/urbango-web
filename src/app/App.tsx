@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage, IncidentReportPage, TicketAlightSearchPage, TicketAlightValidationPage, AccessDeniedPage } from './pages'
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage, IncidentReportPage, TicketAlightSearchPage, TicketAlightValidationPage, AccessDeniedPage, RegisterProfilePage } from './pages'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
@@ -38,6 +38,7 @@ function AppContent() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="register-profile" element={<RegisterProfilePage />} />
           <Route
             path="users"
             element={

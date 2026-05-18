@@ -50,8 +50,13 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       return;
     }
 
+    const userId =
+      typeof decodedToken.id === 'string'
+        ? decodedToken.id
+        : decodedToken.sub;
+
     const currentUser = {
-      id: decodedToken.sub,
+      id: userId,
       email: decodedToken.email,
       roles: decodedToken.roles || [],
     };
@@ -94,8 +99,13 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       return;
     }
 
+    const userId =
+      typeof decodedToken.id === 'string'
+        ? decodedToken.id
+        : decodedToken.sub;
+
     const currentUser = {
-      id: decodedToken.sub,
+      id: userId,
       email: decodedToken.email,
       roles: decodedToken.roles || [],
     };

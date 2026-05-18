@@ -14,6 +14,7 @@ import ProfilesPage from './security/profiles/page'
 import RolesPage from './security/roles/page'
 import UsersPage from './security/users/page'
 import { AccessDeniedPage } from './access-denied'
+import RegisterProfilePage from './register-profile/page'
 
 export {
   AccessDeniedPage,
@@ -26,6 +27,7 @@ export {
   NearbyStopsPage,
   PermissionsPage,
   ProfilesPage,
+  RegisterProfilePage,
   ResetPasswordPage,
   RolesPage,
   TeamPage,
