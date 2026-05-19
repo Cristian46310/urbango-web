@@ -15,6 +15,7 @@ import RolesPage from './security/roles/page'
 import UsersPage from './security/users/page'
 import { AccessDeniedPage } from './access-denied'
 import RegisterProfilePage from './register-profile/page'
+import RegisterBusPage from './fleet/register-bus/page'
 
 export {
   AccessDeniedPage,
@@ -28,6 +29,7 @@ export {
   PermissionsPage,
   ProfilesPage,
   RegisterProfilePage,
+  RegisterBusPage,
   ResetPasswordPage,
   RolesPage,
   TeamPage,

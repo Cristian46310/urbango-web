@@ -11,6 +11,7 @@ import {
   LogOut,
   MapPin,
   Briefcase,
+  BusFront,
   UserPlus,
   ShieldCheck,
   ShieldUser,
@@ -75,6 +76,16 @@ const teamMenuItem: MenuItem = {
   icon: BookUser,
 };
 
+const fleetMenuItems: MenuItem[] = [
+  {
+    title: "Registrar bus",
+    to: "/app/fleet/register-bus",
+    description: "Alta de vehículo en la flota",
+    icon: BusFront,
+    requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"],
+  },
+];
+
 const businessMenuItems: MenuItem[] = [
   { title: "Paraderos", to: "/app/nearby-stops", description: "Buscar paraderos cercanos", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje y liberar cupo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
@@ -101,12 +112,17 @@ export function ManagementLayout() {
     return hasAccess;
   });
 
-  const visibleBusinessItems = businessMenuItems.filter((item) => {
+  const visibleFleetItems = fleetMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
     const hasAccess = hasAnyRole(item.requiredRoles);
     return hasAccess;
   });
 
+  const visibleBusinessItems = businessMenuItems.filter((item) => {
+    if (!item.requiredRoles) return true;
+    const hasAccess = hasAnyRole(item.requiredRoles);
+    return hasAccess;
+  });
 
   // Show all menu items - route guards handle access control
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
@@ -116,14 +132,19 @@ export function ManagementLayout() {
   );
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
+  const fleetActive = visibleFleetItems.some((item) =>
+    isActivePath(location.pathname, item.to),
+  );
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
 
   const [isSecurityOpen, setIsSecurityOpen] = useState(securityActive);
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
+  const [isFleetOpen, setIsFleetOpen] = useState(fleetActive);
   const [isBusinessOpen, setIsBusinessOpen] = useState(businessActive);
 
   const securityOpen = securityActive || isSecurityOpen;
   const teamOpen = teamActive || isTeamOpen;
+  const fleetOpen = fleetActive || isFleetOpen;
   const businessOpen = businessActive || isBusinessOpen;
 
   const handleLogout = () => {
@@ -251,6 +272,44 @@ export function ManagementLayout() {
                     </SidebarMenuSub>
                   ) : null}
                 </SidebarMenuItem>
+
+                {visibleFleetItems.length > 0 && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={fleetActive}
+                    title="Flota"
+                    size="sm"
+                    className="justify-between"
+                    onClick={() => { setIsFleetOpen(!fleetOpen); }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <BusFront />
+                      <span className="font-medium">Flota</span>
+                    </span>
+                    <ChevronDown className={`size-4 transition-transform ${fleetOpen ? "rotate-180" : ""}`} />
+                  </SidebarMenuButton>
+
+                  {fleetOpen ? (
+                    <SidebarMenuSub>
+                      {visibleFleetItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActivePath(location.pathname, item.to);
+
+                          return (
+                            <SidebarMenuSubItem key={item.to}>
+                              <SidebarMenuSubButton asChild isActive={active}>
+                                <NavLink to={item.to}>
+                                  <Icon className="size-4" />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                )}
 
                 {/* Business menu - Only show if user has access to any business items */}
                 {visibleBusinessItems.length > 0 && (
