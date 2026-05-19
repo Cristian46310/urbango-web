@@ -54,4 +54,77 @@ export const ENDPOINTS = {
     BY_ID: (rolePermissionId: string) =>
       `/api/role-permission/${rolePermissionId}`,
   },
+  STOPS: {
+    BASE: "/stop",
+    NEARBY: "/stop/nearby",
+    BY_ID: (id: string) => `/stop/${id}`,
+  },
+  ROUTE: {
+    BASE: "/route",
+    BY_ID: (id: string) => `/route/${id}`,
+  },
+  NODE: {
+    BASE: "/node",
+    BY_ID: (id: string) => `/node/${id}`,
+    BY_ROUTE_STOP: (routeId: string, stopId: string) =>
+      `/node/route/${routeId}/stop/${stopId}`,
+  },
+  ADDRESS: {
+    BASE: "/address",
+    BY_ID: (id: string) => `/address/${id}`,
+  },
+  CITIZEN: {
+    BASE: "/citizen",
+    ME: "/citizen/me",
+    BY_ID: (id: string) => `/citizen/${id}`,
+  },
+  TICKET: {
+    BASE: "/ticket",
+    BY_ID: (id: string) => `/ticket/${id}`,
+    ALIGHT: (id: string) => `/ticket/${id}/alight`,
+  },
+  BUS: {
+    BASE: "/bus",
+    FLEET: "/bus/fleet",
+    BY_ID: (id: string) => `/bus/${id}`,
+    PHOTO: (id: string) => `/bus/${id}/photo`,
+  },
+  SCHEDULER: {
+    BASE: "/scheduler",
+    BY_ID: (id: string) => `/scheduler/${id}`,
+  },
+  PAYMENT_METHOD: {
+    BASE: "/payment-method",
+    BY_ID: (id: string) => `/payment-method/${id}`,
+  },
+  PAYMENT_METHOD_CITIZEN: {
+    BASE: "/payment-method-citizen",
+    BY_ID: (id: string) => `/payment-method-citizen/${id}`,
+  },
+  ENTERPRISE: {
+    BASE: "/enterprise",
+    BY_ID: (id: string) => `/enterprise/${id}`,
+  },
+  DRIVER: {
+    BASE: "/driver",
+    ME: "/driver/me",
+    BY_ID: (id: string) => `/driver/${id}`,
+  },
+  TURN: {
+    BASE: "/turn",
+    BY_ID: (id: string) => `/turn/${id}`,
+  },
+  INCIDENT_REPORTS: {
+    BASE: "/incident-reports/driver",
+    LIST: "/incident-reports",
+    BY_BUS: (busId: string) => `/incident-reports/bus/${busId}`,
+    COMMENTS: (incidentId: string) => `/incident-reports/${incidentId}/comments`,
+    STATUS: (incidentId: string) => `/incident-reports/${incidentId}/status`,
+  },
+  DASHBOARD: {
+    PAYMENT_METHOD_INCOME: "/dashboard/payment-method-income",
+    PAYMENT_METHOD_INCOME_EXPORT: "/dashboard/payment-method-income/export",
+    INCIDENT_TREND: "/dashboard/incident-trend-by-type",
+    INCIDENT_TREND_EXPORT: "/dashboard/incident-trend-by-type/export",
+  },
 };

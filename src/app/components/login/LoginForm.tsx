@@ -248,7 +248,9 @@ export function LoginForm() {
                     <div className="h-2 w-full rounded-full bg-slate-200">
                       <div
                         className={`h-2 rounded-full transition-all ${strengthColor}`}
-                        style={{ width: `${Math.max(12, Math.min(100, (strength.score / 5) * 100))}%` }}
+                        style={{
+                          width: `${String(Math.max(12, Math.min(100, (strength.score / 5) * 100)))}%`,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-slate-600">

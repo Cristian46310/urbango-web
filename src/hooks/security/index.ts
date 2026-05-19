@@ -1,3 +1,4 @@
+export { useAuth } from './useAuth';
 export { useLogin } from './useLogin';
 export { usePermission } from './usePermission';
 export { useProfile } from './useProfile';
@@ -7,3 +8,4 @@ export { useRolePermission } from './useRolePermission';
 export { useSession } from './useSession';
 export { useUserRole } from './useUserRole';
 export { useHttpErrorHandler } from './useHttpErrorHandler';
+export { useCanAccess } from './useCanAccess';
