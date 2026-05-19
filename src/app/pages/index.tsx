@@ -16,9 +16,15 @@ import UsersPage from './security/users/page'
 import { AccessDeniedPage } from './access-denied'
 import RegisterProfilePage from './register-profile/page'
 import RegisterBusPage from './fleet/register-bus/page'
+import CardRechargePage from './card-recharge/page'
+import CardRechargeStatusPage from './card-recharge/status/page'
+import CardRechargeReturnPage from './card-recharge/return/page'
 
 export {
   AccessDeniedPage,
+  CardRechargePage,
+  CardRechargeReturnPage,
+  CardRechargeStatusPage,
   DashboardPage,
   ForgotPasswordPage,
   GithubCallbackPage,

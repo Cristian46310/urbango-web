@@ -4,6 +4,7 @@ import {
   ArrowDownToLine,
   BadgeCheck,
   BookUser,
+  CreditCard,
   ChevronDown,
   AlertTriangle,
   KeyRound,
@@ -38,6 +39,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import busLogo from "@/assets/icons/images.png";
+import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePaymentReturn";
 import { useAuthStore } from "@/store/security/authStore";
 
 interface MenuItem {
@@ -87,6 +89,7 @@ const fleetMenuItems: MenuItem[] = [
 ];
 
 const businessMenuItems: MenuItem[] = [
+  { title: "Recargar tarjeta", to: "/app/card-recharge", description: "Recarga prepagada con ePayco", icon: CreditCard, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Paraderos", to: "/app/nearby-stops", description: "Buscar paraderos cercanos", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje y liberar cupo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Reportar", to: "/app/incident-report", description: "Registrar incidente", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
@@ -104,6 +107,7 @@ export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole } = useAuthStore();
+  useCardRechargePaymentReturn();
 
   // Filter menu items based on user roles
   const visibleSecurityItems = securityMenuItems.filter((item) => {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage, IncidentReportPage, TicketAlightSearchPage, TicketAlightValidationPage, AccessDeniedPage, RegisterProfilePage, RegisterBusPage } from './pages'
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage, IncidentReportPage, TicketAlightSearchPage, TicketAlightValidationPage, AccessDeniedPage, RegisterProfilePage, RegisterBusPage, CardRechargePage, CardRechargeStatusPage, CardRechargeReturnPage } from './pages'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
@@ -109,6 +109,30 @@ function AppContent() {
             element={
               <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
                 <TicketAlightValidationPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargePage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/return"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeReturnPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/status/:reference?"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeStatusPage />
               </RoleGuard>
             }
           />

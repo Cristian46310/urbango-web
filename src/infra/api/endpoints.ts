@@ -77,4 +77,12 @@ export const ENDPOINTS = {
   ENTERPRISE: {
     BASE: '/enterprise',
   },
+  CARD_RECHARGE: {
+    CONFIG: '/card-recharge/config',
+    CARDS: '/card-recharge/cards',
+    PREVIEW: '/card-recharge/preview',
+    CHECKOUT: '/card-recharge/checkout',
+    TRANSACTION_STATUS: (reference: string) =>
+      `/card-recharge/transactions/${reference}/status`,
+  },
 };
