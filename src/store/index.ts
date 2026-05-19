@@ -1,3 +1,4 @@
+export { useAuthStore } from "./security/authStore";
 export { useLoginStore } from "./security/loginStore";
 export { usePermissionStore } from "./security/permissionStore";
 export { useProfileStore } from "./security/profileStore";

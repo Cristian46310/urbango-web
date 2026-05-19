@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { Eye, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Eye, ShieldCheck, Plus } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
 import {
-  SECURITY_ASSIGNMENT_PAGE_SIZE,
   SECURITY_LOOKUP_PAGE_SIZE,
   SECURITY_PAGE_SIZE,
 } from "@/app/components/security/constants";
 import { DataTable } from "@/app/components/security/data-table";
 import { PageShell } from "@/app/components/security/page-shell";
 import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
+import { RoleCreateDialog } from "@/app/components/security/role-create-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,53 +28,75 @@ interface RoleDetail extends Role {
   permissions: Permission[];
 }
 
+const dedupePermissionsById = (permissions: Permission[]) => {
+  const seen = new Set<string>();
+
+  return permissions.filter((permission) => {
+    if (!permission.id || seen.has(permission.id)) {
+      return false;
+    }
+
+    seen.add(permission.id);
+    return true;
+  });
+};
+
 export default function RolesPage() {
-  const { roles, rolesPage, loading, error, loadRoles, getRoleById } = useRole();
+  const { roles, rolesPage, loading, error, loadRoles, getRoleById, addRole } = useRole();
   const { loadPermissions } = usePermission();
   const { assignMultiplePermissionsToRole } = useRolePermission();
 
   const [selectedRole, setSelectedRole] = useState<RoleDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignPermissionsOpen, setIsAssignPermissionsOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [assignPermissionsPage, setAssignPermissionsPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
   const [totalPermissionPages, setTotalPermissionPages] = useState(0);
-  const [loadedPermissionPages, setLoadedPermissionPages] = useState<Set<number>>(new Set());
+  const [isLoadingAssignPermissions, setIsLoadingAssignPermissions] = useState(false);
+  const loadedPermissionPagesRef = useRef<Set<number>>(new Set());
 
   const assignPermissionsPageCount = totalPermissionPages || 1;
   const visiblePermissions = availablePermissions.slice(
-    assignPermissionsPage * SECURITY_ASSIGNMENT_PAGE_SIZE,
-    (assignPermissionsPage + 1) * SECURITY_ASSIGNMENT_PAGE_SIZE,
+    assignPermissionsPage * SECURITY_LOOKUP_PAGE_SIZE,
+    (assignPermissionsPage + 1) * SECURITY_LOOKUP_PAGE_SIZE,
   );
 
   const loadPermissionPageIfNeeded = useCallback(async (pageNum: number) => {
-    if (loadedPermissionPages.has(pageNum)) {
+    if (loadedPermissionPagesRef.current.has(pageNum)) {
       return;
     }
 
     const response = await loadPermissions({ page: pageNum, size: SECURITY_LOOKUP_PAGE_SIZE });
+    const pagePermissions = response.content;
+
+    loadedPermissionPagesRef.current.add(pageNum);
     setTotalPermissionPages(response.totalPages);
-    setAvailablePermissions((current) => {
-      const updated = [...current, ...response.content];
-      const seen = new Set<string>();
-      return updated.filter((permission) => {
-        if (seen.has(permission.id)) {
-          return false;
-        }
-        seen.add(permission.id);
-        return true;
-      });
-    });
-    setLoadedPermissionPages((current) => new Set(current).add(pageNum));
-  }, [loadPermissions, loadedPermissionPages]);
+    setAvailablePermissions((current) =>
+      dedupePermissionsById([...current, ...pagePermissions]),
+    );
+  }, [loadPermissions]);
 
   useEffect(() => {
     void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
+
+  const handleCreateRole = async (form: { name: string; description: string }) => {
+    const created = await addRole({
+      name: form.name.trim(),
+      description: form.description.trim(),
+    });
+    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
+    return created;
+  };
+
+  const handleAfterCreateRole = async (createdRole: Role) => {
+    await openAssignPermissionsDialog(createdRole);
+  };
 
   const openViewDialog = async (role: Role) => {
     const detailedRole = await getRoleById(role.id) as RoleDetail;
@@ -83,16 +105,30 @@ export default function RolesPage() {
   };
 
   const openAssignPermissionsDialog = async (role: Role) => {
-    const detailedRole = await getRoleById(role.id) as RoleDetail;
-    await loadPermissionPageIfNeeded(0);
-
-    setSelectedRole({
-      ...detailedRole,
-      permissions: detailedRole.permissions,
-    });
-    setSelectedPermissionIds(detailedRole.permissions.map((permission) => permission.id));
+    setIsLoadingAssignPermissions(true);
+    loadedPermissionPagesRef.current = new Set();
+    setAvailablePermissions([]);
+    setTotalPermissionPages(0);
     setAssignPermissionsPage(0);
-    setIsAssignPermissionsOpen(true);
+
+    try {
+      const detailedRole = await getRoleById(role.id) as RoleDetail;
+      const rolePermissions = detailedRole.permissions;
+
+      await loadPermissionPageIfNeeded(0);
+
+      setAvailablePermissions((current) =>
+        dedupePermissionsById([...current, ...rolePermissions]),
+      );
+      setSelectedRole({
+        ...detailedRole,
+        permissions: rolePermissions,
+      });
+      setSelectedPermissionIds(rolePermissions.map((permission) => permission.id));
+      setIsAssignPermissionsOpen(true);
+    } finally {
+      setIsLoadingAssignPermissions(false);
+    }
   };
 
   const closeAssignPermissionsDialog = () => {
@@ -100,6 +136,9 @@ export default function RolesPage() {
     setSelectedRole(null);
     setSelectedPermissionIds([]);
     setAssignPermissionsPage(0);
+    loadedPermissionPagesRef.current = new Set();
+    setAvailablePermissions([]);
+    setTotalPermissionPages(0);
   };
 
   const togglePermissionSelection = (permissionId: string, checked: boolean) => {
@@ -125,6 +164,7 @@ export default function RolesPage() {
     }
 
     closeAssignPermissionsDialog();
+    void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
   };
 
   const columnHelper = createColumnHelper<Role>();
@@ -185,6 +225,12 @@ export default function RolesPage() {
         onRefresh={() => {
           void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
+        toolbarAction={
+          <Button type="button" size="sm" onClick={() => { setIsCreateDialogOpen(true); }}>
+            <Plus className="mr-1 size-4" />
+            Adicionar
+          </Button>
+        }
         pageIndex={currentPage}
         pageSize={SECURITY_PAGE_SIZE}
         pageCount={rolesPage?.totalPages ?? 1}
@@ -193,6 +239,13 @@ export default function RolesPage() {
         filterField="name"
         filterPlaceholder="Buscar por nombre"
         emptyMessage="No hay roles disponibles."
+      />
+
+      <RoleCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSave={handleCreateRole}
+        onAfterCreate={handleAfterCreateRole}
       />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -224,7 +277,17 @@ export default function RolesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isAssignPermissionsOpen} onOpenChange={setIsAssignPermissionsOpen}>
+      <Dialog
+        open={isAssignPermissionsOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAssignPermissionsDialog();
+            return;
+          }
+
+          setIsAssignPermissionsOpen(true);
+        }}
+      >
         <DialogContent className="max-w-4xl border-(--security-border)">
           <DialogHeader>
             <DialogTitle>Asignar permisos</DialogTitle>
@@ -252,24 +315,38 @@ export default function RolesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-(--security-border)">
-                  {visiblePermissions.map((permission) => {
-                    const checked = selectedPermissionIds.includes(permission.id);
+                  {isLoadingAssignPermissions ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-(--security-muted-foreground)">
+                        Cargando permisos...
+                      </td>
+                    </tr>
+                  ) : visiblePermissions.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-(--security-muted-foreground)">
+                        No hay permisos para mostrar.
+                      </td>
+                    </tr>
+                  ) : (
+                    visiblePermissions.map((permission) => {
+                      const checked = selectedPermissionIds.includes(permission.id);
 
-                    return (
-                      <tr key={permission.id} className="hover:bg-(--security-surface)">
-                        <td className="px-4 py-3">
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(value) => {
-                              togglePermissionSelection(permission.id, Boolean(value));
-                            }}
-                          />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-(--security-foreground)">{permission.method}</td>
-                        <td className="px-4 py-3 text-(--security-muted-foreground)">{permission.url}</td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={permission.id} className="hover:bg-(--security-surface)">
+                          <td className="px-4 py-3">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) => {
+                                togglePermissionSelection(permission.id, Boolean(value));
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3 font-medium text-(--security-foreground)">{permission.method}</td>
+                          <td className="px-4 py-3 text-(--security-muted-foreground)">{permission.url}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

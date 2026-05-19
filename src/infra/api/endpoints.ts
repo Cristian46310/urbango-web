@@ -54,4 +54,27 @@ export const ENDPOINTS = {
     BY_ID: (rolePermissionId: string) =>
       `/api/role-permission/${rolePermissionId}`,
   },
+  STOPS: {
+    NEARBY: "/stop/nearby",
+  },
+  INCIDENT_REPORTS: {
+    BASE: '/incident-reports/driver',
+  },
+  DRIVER: {
+    BASE: '/driver',
+    ME: '/driver/me',
+  },
+  CITIZEN: {
+    BASE: '/citizen',
+    ME: '/citizen/me',
+  },
+  BUS: {
+    BASE: '/bus',
+    FLEET: '/bus/fleet',
+    BY_ID: (id: string) => `/bus/${id}`,
+    PHOTO: (id: string) => `/bus/${id}/photo`,
+  },
+  ENTERPRISE: {
+    BASE: '/enterprise',
+  },
 };

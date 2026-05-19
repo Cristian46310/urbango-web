@@ -83,7 +83,7 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(0);
 
   const [totalRolePages, setTotalRolePages] = useState(0);
-  const [loadedRolePages, setLoadedRolePages] = useState<Set<number>>(new Set());
+  const [loadedRolePages, setLoadedRolePages] = useState<Set<number>>(() => new Set());
 
   const assignRolesPageCount = totalRolePages || 1;
   const visibleRoles = availableRoles.slice(
@@ -176,10 +176,6 @@ export default function UsersPage() {
         email: form.email.trim(),
         password: form.password.trim(),
       };
-
-      if (!payload.name || !payload.email || (dialogMode === "create" && !payload.password)) {
-        throw new Error("Nombre, correo y contraseña son obligatorios para crear.");
-      }
 
       if (dialogMode === "edit") {
         const updatePayload: { name?: string; email?: string; password?: string } = {

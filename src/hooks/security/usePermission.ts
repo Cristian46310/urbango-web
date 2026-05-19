@@ -30,5 +30,15 @@ export function usePermission() {
     editPermission: (permissionId: string, permissionData: UpdatePermissionDTO) =>
       updatePermission(permissionId, permissionData),
     removePermission: (permissionId: string) => deletePermission(permissionId),
-  }), [permissions, permissionsPage, loading, error]);
+  }), [
+    permissions,
+    permissionsPage,
+    loading,
+    error,
+    fetchPermission,
+    fetchAllPermissions,
+    createPermission,
+    updatePermission,
+    deletePermission,
+  ]);
 }

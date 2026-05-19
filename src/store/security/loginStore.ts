@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
 import { LoginRepository } from "@/infra/repository/security/LoginRepository";
+import { useAuthStore } from "@/store/security/authStore";
 import { AuthorizeGithubLoginUseCase } from "@/core/applications/security/login/authorizeGithubLoginUseCase";
 import { AuthorizeMicrosoftLoginUseCase } from "@/core/applications/security/login/authorizeMicrosoftLoginUseCase";
 import { CompleteGithubRegistrationUseCase } from "@/core/applications/security/login/completeGithubRegistrationUseCase";
@@ -163,7 +164,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
       }
 
       const response = await verifyTwoFactorUseCase.execute(payload);
-      localStorage.setItem("authToken", response.token);
+      useAuthStore.getState().setToken(response.token);
       set({ loading: false });
       showSuccessToast("2FA verification successful");
       return response;
@@ -186,7 +187,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
       }
 
       const response = await loginWithGoogleUseCase.execute(payload);
-      localStorage.setItem("authToken", response.token);
+      useAuthStore.getState().setToken(response.token);
       set({ loading: false });
       showSuccessToast("Google login successful");
       return response;
@@ -220,7 +221,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     try {
       const response = await loginWithGithubUseCase.execute(payload);
       if (response.status === "AUTHENTICATED" && response.token) {
-        localStorage.setItem("authToken", response.token);
+        useAuthStore.getState().setToken(response.token);
       }
       set({ loading: false });
       showSuccessToast("GitHub login successful");
@@ -239,7 +240,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     try {
       const response = await completeGithubRegistrationUseCase.execute(payload);
       if (response.status === "AUTHENTICATED" && response.token) {
-        localStorage.setItem("authToken", response.token);
+        useAuthStore.getState().setToken(response.token);
       }
       set({ loading: false });
       showSuccessToast("GitHub registration completed");
@@ -274,7 +275,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     try {
       const response = await loginWithMicrosoftUseCase.execute(payload);
       if (response.status === "AUTHENTICATED" && response.token) {
-        localStorage.setItem("authToken", response.token);
+        useAuthStore.getState().setToken(response.token);
       }
       set({ loading: false });
       showSuccessToast("Microsoft login successful");
@@ -293,7 +294,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     try {
       const response = await completeMicrosoftRegistrationUseCase.execute(payload);
       if (response.status === "AUTHENTICATED" && response.token) {
-        localStorage.setItem("authToken", response.token);
+        useAuthStore.getState().setToken(response.token);
       }
       set({ loading: false });
       showSuccessToast("Microsoft registration completed");
