@@ -85,7 +85,9 @@ export const ENDPOINTS = {
   },
   BUS: {
     BASE: "/bus",
+    FLEET: "/bus/fleet",
     BY_ID: (id: string) => `/bus/${id}`,
+    PHOTO: (id: string) => `/bus/${id}/photo`,
   },
   SCHEDULER: {
     BASE: "/scheduler",

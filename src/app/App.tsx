@@ -46,6 +46,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
+import RegisterBusPage from './pages/fleet/register-bus/page'
 
 function AppContent() {
   useHttpErrorHandler();
@@ -110,6 +111,14 @@ function AppContent() {
             }
           />
           <Route path="team" element={<TeamPage />} />
+          <Route
+            path="fleet/register-bus"
+            element={
+              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <RegisterBusPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="nearby-stops"
             element={

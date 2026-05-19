@@ -38,7 +38,6 @@ export function TicketAlightSearch() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 flex items-center justify-center">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 space-y-2">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-blue-100">

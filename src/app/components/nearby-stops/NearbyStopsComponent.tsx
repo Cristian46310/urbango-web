@@ -103,7 +103,9 @@ export const NearbyStopsComponent: React.FC = () => {
               </div>
             )}
             <Button
-              onClick={() => { void requestPermission(); }}
+              onClick={() => {
+                void requestPermission();
+              }}
               disabled={geoLoading}
               size="lg"
               className="w-full"
@@ -137,7 +139,9 @@ export const NearbyStopsComponent: React.FC = () => {
               </div>
               <Button
                 variant="outline"
-                onClick={() => { void requestPermission(); }}
+                onClick={() => {
+                  void requestPermission();
+                }}
                 disabled={geoLoading}
               >
                 Actualizar

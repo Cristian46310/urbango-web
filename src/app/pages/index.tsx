@@ -26,6 +26,7 @@ export const RolesPage = lazy(() => import('./security/roles/page'))
 export const UsersPage = lazy(() => import('./security/users/page'))
 export const AccessDeniedPage = lazyNamed(() => import('./access-denied'), 'AccessDeniedPage')
 export const RegisterProfilePage = lazy(() => import('./register-profile/page'))
+export const RegisterBusPage = lazy(() => import('./fleet/register-bus/page'))
 
 export const BusinessDashboardPage = lazy(() => import('./business/dashboard/page'))
 export const AddressesPage = lazy(() => import('./business/addresses/page'))

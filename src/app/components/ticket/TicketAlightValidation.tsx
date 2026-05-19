@@ -113,7 +113,9 @@ export function TicketAlightValidation() {
             <p className="text-slate-600">Revisa los detalles de tu viaje y confirma tu salida</p>
           </div>
           <button
-            onClick={() => { void navigate("/app/ticket/alight"); }}
+            onClick={() => {
+              void navigate("/app/ticket/alight");
+            }}
             className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-slate-600" />
@@ -221,7 +223,9 @@ export function TicketAlightValidation() {
           {/* Acciones */}
           <div className="space-y-2 pt-2">
             <Button
-              onClick={() => { void handleValidateAlight(); }}
+              onClick={() => {
+                void handleValidateAlight();
+              }}
               disabled={loading}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
               size="lg"
@@ -240,7 +244,9 @@ export function TicketAlightValidation() {
             </Button>
 
             <Button
-              onClick={() => { void navigate("/app/ticket/alight"); }}
+              onClick={() => {
+                void navigate("/app/ticket/alight");
+              }}
               variant="outline"
               className="w-full border-blue-200 text-slate-700 hover:bg-blue-50"
               disabled={loading}

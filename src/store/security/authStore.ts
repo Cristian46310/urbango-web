@@ -13,7 +13,7 @@ interface AuthStoreState {
 
   initializeAuth: () => void;
   hasRole: (role: string) => boolean;
-  hasAnyRole: (roles: string[]) => boolean;
+  hasAnyRole: (roles: readonly string[]) => boolean;
   logout: () => void;
   setToken: (token: string) => void;
 }
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     return AuthService.hasRole(role);
   },
 
-  hasAnyRole: (roles: string[]): boolean => {
+  hasAnyRole: (roles: readonly string[]): boolean => {
     return AuthService.hasAnyRole(roles);
   },
 

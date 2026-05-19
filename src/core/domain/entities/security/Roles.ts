@@ -27,4 +27,7 @@ export const ROLE_GROUPS = {
   
   // Users who can access incident report
   INCIDENT_REPORT_ACCESS: [ROLES.DRIVER, ROLES.ADMIN, ROLES.ADMIN_BUS, ROLES.SUPERVISER] as const,
+
+  // Fleet management (register buses)
+  FLEET_ACCESS: [ROLES.ADMIN, ROLES.ADMIN_BUS, ROLES.SUPERVISER] as const,
 } as const;

@@ -20,9 +20,10 @@ export const useCanAccess = () => {
     canManageProfiles: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
 
     // Business features
-    canAccessParaderos: () => hasAnyRole([...ROLE_GROUPS.PARADEROS_ACCESS]),
-    canValidateDescenso: () => hasAnyRole([...ROLE_GROUPS.DESCENSO_ACCESS]),
-    canReportIncidents: () => hasAnyRole([...ROLE_GROUPS.INCIDENT_REPORT_ACCESS]),
+    canAccessParaderos: () => hasAnyRole(ROLE_GROUPS.PARADEROS_ACCESS),
+    canValidateDescenso: () => hasAnyRole(ROLE_GROUPS.DESCENSO_ACCESS),
+    canReportIncidents: () => hasAnyRole(ROLE_GROUPS.INCIDENT_REPORT_ACCESS),
+    canManageFleet: () => hasAnyRole(ROLE_GROUPS.FLEET_ACCESS),
 
     // Generic role check
     hasAnyRole,
