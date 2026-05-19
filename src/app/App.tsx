@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import {
@@ -38,6 +38,7 @@ import {
 } from './pages'
 
 const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
+import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
@@ -57,6 +58,7 @@ function AppContent() {
   return (
     <>
         <Toaster position="top-right" />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -166,6 +168,7 @@ function AppContent() {
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
+        </Suspense>
     </>
   )
 }
