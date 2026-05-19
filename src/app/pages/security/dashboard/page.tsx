@@ -1,16 +1,79 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BookUser, KeyRound, Shield, Users } from "lucide-react";
+import { ArrowRight, BookUser, CreditCard, KeyRound, MapPin, Shield, Users } from "lucide-react";
 
 import { PageShell } from "@/app/components/security/page-shell";
+import { useAuthStore } from "@/store/security/authStore";
+import { ROLE_GROUPS } from "@/core/domain/entities/security/Roles";
 
-const quickLinks = [
+const adminQuickLinks = [
   { title: "Usuarios", to: "/app/users", icon: Users },
   { title: "Permisos", to: "/app/permissions", icon: KeyRound },
   { title: "Roles", to: "/app/roles", icon: Shield },
   { title: "Equipo", to: "/app/team", icon: BookUser },
 ];
 
+const citizenQuickLinks = [
+  {
+    title: "Recargar tarjeta",
+    to: "/app/card-recharge",
+    icon: CreditCard,
+    description: "Recarga tu tarjeta prepagada con ePayco",
+  },
+  {
+    title: "Paraderos cercanos",
+    to: "/app/nearby-stops",
+    icon: MapPin,
+    description: "Consulta paraderos cerca de tu ubicación",
+  },
+];
+
 export default function DashboardPage() {
+  const { hasAnyRole } = useAuthStore();
+  const isAdmin = hasAnyRole(ROLE_GROUPS.ADMIN_ROLES);
+  const isCitizen = hasAnyRole(["CITIZEN"]);
+  const isDriver = hasAnyRole(["DRIVER"]);
+
+  if (isCitizen && !isAdmin) {
+    return (
+      <PageShell
+        title="Inicio"
+        description="Servicios de transporte para ciudadanos."
+      >
+        <section className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            {citizenQuickLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="group flex flex-col rounded-2xl border border-(--security-border) bg-(--security-surface) p-5 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-(--security-foreground)/20"
+                >
+                  <div className="flex items-center justify-between">
+                    <Icon className="size-6 text-(--security-foreground)" />
+                    <span className="flex size-10 items-center justify-center rounded-lg border border-(--security-border) bg-card">
+                      <ArrowRight className="size-4" />
+                    </span>
+                  </div>
+                  <p className="mt-4 text-lg font-semibold text-(--security-foreground)">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          {isDriver ? (
+            <p className="text-sm text-muted-foreground">
+              También tienes perfil de conductor. Revisa el menú Business para más opciones.
+            </p>
+          ) : null}
+        </section>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       title="Inicio"
@@ -18,7 +81,7 @@ export default function DashboardPage() {
     >
       <section className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {quickLinks.map((item) => {
+          {adminQuickLinks.map((item) => {
             const Icon = item.icon;
 
             return (

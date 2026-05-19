@@ -2,6 +2,9 @@ import { Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import {
+  AdminAgeDistributionPage,
+  AdminRouteCreatePage,
+  AdminSchedulerCreatePage,
   LoginPage,
   ForgotPasswordPage,
   ResetPasswordPage,
@@ -19,6 +22,10 @@ import {
   TicketAlightValidationPage,
   AccessDeniedPage,
   RegisterProfilePage,
+  RegisterBusPage,
+  CardRechargePage,
+  CardRechargeReturnPage,
+  CardRechargeStatusPage,
   BusinessDashboardPage,
   AddressesPage,
   EnterprisesPage,
@@ -35,18 +42,20 @@ import {
   IncidentsPage,
   IncidentsByBusPage,
   IncidentDetailPage,
+  CitizenBoardingPage,
+  DriverTurnStartPage,
 } from './pages'
-
-const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
+import { ProtectedRoute as JwtProtectedRoute } from '@/components/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
 import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
-import RegisterBusPage from './pages/fleet/register-bus/page'
+
+const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 
 function AppContent() {
   useHttpErrorHandler();
@@ -152,6 +161,30 @@ function AppContent() {
             }
           />
           <Route
+            path="card-recharge"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargePage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/return"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeReturnPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/status/:reference?"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeStatusPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="business/dashboard"
             element={
               <RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}>
@@ -175,6 +208,48 @@ function AppContent() {
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
         </Route>
+
+        <Route
+          path="/admin/reports/age-distribution"
+          element={
+            <JwtProtectedRoute roles={["admin"]}>
+              <AdminAgeDistributionPage />
+            </JwtProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/routes/create"
+          element={
+            <JwtProtectedRoute roles={["admin"]}>
+              <AdminRouteCreatePage />
+            </JwtProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/schedulers/create"
+          element={
+            <JwtProtectedRoute roles={["admin"]}>
+              <AdminSchedulerCreatePage />
+            </JwtProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/turn-start"
+          element={
+            <JwtProtectedRoute roles={["driver"]}>
+              <DriverTurnStartPage />
+            </JwtProtectedRoute>
+          }
+        />
+        <Route
+          path="/boarding"
+          element={
+            <JwtProtectedRoute roles={["citizen"]}>
+              <CitizenBoardingPage />
+            </JwtProtectedRoute>
+          }
+        />
+
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
         </Suspense>

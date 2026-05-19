@@ -7,7 +7,7 @@ export const ROLES = {
   ADMIN_BUS: 'ADMIN_BUS',
   SUPERVISER: 'SUPERVISER', // Note: SUPERVISER not SUPERVISOR
   DRIVER: 'DRIVER',
-  CITIZEN: 'CITEZEN',
+  CITIZEN: 'CITIZEN',
 } as const;
 
 export type Role = typeof ROLES[keyof typeof ROLES];

@@ -120,6 +120,11 @@ export function OAuthProviders() {
               void handleGoogleSuccess(credentialResponse);
             }}
             onError={handleGoogleError}
+            theme="outline"
+            size="large"
+            text="continue_with"
+            shape="rectangular"
+            logo_alignment="left"
           />
         </div>
 
