@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useBusStore } from '@/store/business/busStore';
 
 export function useBus() {
@@ -8,14 +7,11 @@ export function useBus() {
   const registerBus = useBusStore((state) => state.registerBus);
   const clearLastRegisteredBus = useBusStore((state) => state.clearLastRegisteredBus);
 
-  return useMemo(
-    () => ({
-      loading,
-      error,
-      lastRegisteredBus,
-      registerBus,
-      clearLastRegisteredBus,
-    }),
-    [loading, error, lastRegisteredBus, registerBus, clearLastRegisteredBus],
-  );
+  return {
+    loading,
+    error,
+    lastRegisteredBus,
+    registerBus,
+    clearLastRegisteredBus,
+  };
 }

@@ -175,7 +175,7 @@ export function BusRegistrationForm() {
     }
 
     if (Number.isNaN(yearValue) || yearValue < 1900 || yearValue > CURRENT_YEAR + 1) {
-      setFormError(`El año debe estar entre 1900 y ${CURRENT_YEAR + 1}`);
+      setFormError(`El año debe estar entre 1900 y ${String(CURRENT_YEAR + 1)}`);
       return null;
     }
 
@@ -218,7 +218,7 @@ export function BusRegistrationForm() {
     };
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const payload = validateForm();
     if (!payload) {
@@ -269,7 +269,7 @@ export function BusRegistrationForm() {
               <Input
                 id="bus-plate"
                 value={plate}
-                onChange={(event) => setPlate(event.target.value)}
+                onChange={(event) => { setPlate(event.target.value); }}
                 placeholder="ABC-123"
                 disabled={loading}
                 autoComplete="off"
@@ -281,7 +281,7 @@ export function BusRegistrationForm() {
               <Input
                 id="bus-model"
                 value={model}
-                onChange={(event) => setModel(event.target.value)}
+                onChange={(event) => { setModel(event.target.value); }}
                 placeholder="Mercedes-Benz O500"
                 disabled={loading}
               />
@@ -295,7 +295,7 @@ export function BusRegistrationForm() {
                 min={1900}
                 max={CURRENT_YEAR + 1}
                 value={year}
-                onChange={(event) => setYear(event.target.value)}
+                onChange={(event) => { setYear(event.target.value); }}
                 disabled={loading}
               />
             </div>
@@ -307,7 +307,7 @@ export function BusRegistrationForm() {
                 type="number"
                 min={1}
                 value={capacity}
-                onChange={(event) => setCapacity(event.target.value)}
+                onChange={(event) => { setCapacity(event.target.value); }}
                 placeholder="40"
                 disabled={loading}
               />
@@ -320,7 +320,7 @@ export function BusRegistrationForm() {
                 type="number"
                 min={0}
                 value={seatedCapacity}
-                onChange={(event) => setSeatedCapacity(event.target.value)}
+                onChange={(event) => { setSeatedCapacity(event.target.value); }}
                 placeholder="35"
                 disabled={loading}
               />
@@ -333,7 +333,7 @@ export function BusRegistrationForm() {
                 type="number"
                 min={0}
                 value={standingCapacity}
-                onChange={(event) => setStandingCapacity(event.target.value)}
+                onChange={(event) => { setStandingCapacity(event.target.value); }}
                 placeholder="5"
                 disabled={loading}
               />
@@ -343,7 +343,7 @@ export function BusRegistrationForm() {
               <Label>Estado inicial</Label>
               <Select
                 value={status}
-                onValueChange={(value) => setStatus(value as BusStatus)}
+                onValueChange={(value) => { setStatus(value as BusStatus); }}
                 disabled={loading}
               >
                 <SelectTrigger className="w-full">
@@ -385,7 +385,7 @@ export function BusRegistrationForm() {
                 />
                 <button
                   type="button"
-                  onClick={() => setPhoto(null)}
+                  onClick={() => { setPhoto(null); }}
                   disabled={loading}
                   aria-label="Quitar foto"
                   className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full bg-red-600 text-white shadow-sm"

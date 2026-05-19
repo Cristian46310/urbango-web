@@ -17,13 +17,17 @@ export function AccessDeniedPage() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button
-            onClick={() => navigate('/app')}
+            onClick={() => {
+              void navigate('/app');
+            }}
             className="bg-blue-600 hover:bg-blue-700"
           >
             Ir al Dashboard
           </Button>
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              void navigate(-1);
+            }}
             variant="outline"
           >
             Volver Atrás

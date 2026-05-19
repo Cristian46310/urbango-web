@@ -11,7 +11,7 @@ export function TicketAlightSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!ticketId.trim()) {
@@ -22,23 +22,21 @@ export function TicketAlightSearch() {
     setError(null);
     setLoading(true);
 
-    try {
-      // Simulación de búsqueda - en producción iría aquí la llamada a API
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Navegar a la página de validación
-      navigate(`/app/ticket/${ticketId.trim()}/alight`);
-    } catch (err) {
-      setError("Error al buscar el boleto. Intenta de nuevo.");
-    } finally {
-      setLoading(false);
-    }
+    void (async () => {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        void navigate(`/app/ticket/${ticketId.trim()}/alight`);
+      } catch {
+        setError("Error al buscar el boleto. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 flex items-center justify-center">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 space-y-2">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-blue-100">

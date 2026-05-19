@@ -11,12 +11,15 @@ export interface RegisterPersonPayload {
   licenseNumber?: string;
   licenseExpiry?: string;
   extraInfo?: string;
+  /** Obligatorio al registrar conductor (POST /driver). */
+  enterpriseId?: string;
 }
 
 export interface PersonProfileResponse {
   id: string;
   name?: string;
   document?: string;
+  enterpriseId?: string;
   createdAt?: string;
 }
 

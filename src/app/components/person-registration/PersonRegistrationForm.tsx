@@ -9,17 +9,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthStore } from "@/store/security/authStore";
 import { useUserRole } from "@/hooks/security/useUserRole";
 import { useRole } from "@/hooks/security/useRole";
 import { personRepository, type PersonProfileType } from "@/infra/repository/person";
+import {
+  enterpriseRepository,
+  type Enterprise,
+} from "@/infra/repository/enterprise";
 import { ROLES } from "@/core/domain/entities/security/Roles";
+import type { DecodedToken } from "@/services/AuthService";
 
 type ProfileTab = PersonProfileType;
 
+function tokenEnterpriseId(decodedToken: DecodedToken | null): string {
+  const value = decodedToken?.enterpriseId;
+  return typeof value === "string" ? value : "";
+}
+
 export function PersonRegistrationForm() {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuthStore();
+  const { currentUser, decodedToken, logout } = useAuthStore();
   const { assignMultipleRolesToUser } = useUserRole();
   const { loadRoles } = useRole();
 
@@ -27,11 +44,14 @@ export function PersonRegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [existingDriver, setExistingDriver] = useState(false);
   const [existingCitizen, setExistingCitizen] = useState(false);
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [enterprisesLoading, setEnterprisesLoading] = useState(false);
 
   const [name, setName] = useState("");
   const [document, setDocument] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [enterpriseId, setEnterpriseId] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseExpiry, setLicenseExpiry] = useState("");
   const [extraInfo, setExtraInfo] = useState("");
@@ -55,6 +75,29 @@ export function PersonRegistrationForm() {
     void loadProfiles();
   }, []);
 
+  useEffect(() => {
+    const fromToken = tokenEnterpriseId(decodedToken);
+    if (fromToken) {
+      setEnterpriseId(fromToken);
+    }
+  }, [decodedToken]);
+
+  useEffect(() => {
+    const loadEnterprises = async () => {
+      setEnterprisesLoading(true);
+      try {
+        const items = await enterpriseRepository.list();
+        setEnterprises(items);
+      } catch {
+        toast.error("No se pudieron cargar las empresas de transporte");
+      } finally {
+        setEnterprisesLoading(false);
+      }
+    };
+
+    void loadEnterprises();
+  }, []);
+
   const handleSubmit = async () => {
     const trimmedName = name.trim();
     const trimmedDocument = document.trim();
@@ -69,6 +112,11 @@ export function PersonRegistrationForm() {
       return;
     }
 
+    if (activeTab === "driver" && !enterpriseId.trim()) {
+      toast.error("Debes seleccionar la empresa a la que perteneces");
+      return;
+    }
+
     setLoading(true);
     try {
       await personRepository.register(activeTab, {
@@ -80,6 +128,8 @@ export function PersonRegistrationForm() {
           activeTab === "driver" ? licenseNumber.trim() || undefined : undefined,
         licenseExpiry:
           activeTab === "driver" ? licenseExpiry || undefined : undefined,
+        enterpriseId:
+          activeTab === "driver" ? enterpriseId.trim() : undefined,
         extraInfo:
           activeTab === "citizen" ? extraInfo.trim() || undefined : undefined,
       });
@@ -158,7 +208,7 @@ export function PersonRegistrationForm() {
       <CardContent>
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as ProfileTab)}
+          onValueChange={(value) => { setActiveTab(value as ProfileTab); }}
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="citizen" className="gap-2">
@@ -198,6 +248,10 @@ export function PersonRegistrationForm() {
           setEmail={setEmail}
           phone={phone}
           setPhone={setPhone}
+          enterpriseId={enterpriseId}
+          setEnterpriseId={setEnterpriseId}
+          enterprises={enterprises}
+          enterprisesLoading={enterprisesLoading}
           licenseNumber={licenseNumber}
           setLicenseNumber={setLicenseNumber}
           licenseExpiry={licenseExpiry}
@@ -234,6 +288,10 @@ function ProfileFormFields({
   setEmail,
   phone,
   setPhone,
+  enterpriseId,
+  setEnterpriseId,
+  enterprises,
+  enterprisesLoading,
   licenseNumber,
   setLicenseNumber,
   licenseExpiry,
@@ -251,6 +309,10 @@ function ProfileFormFields({
   setEmail: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  enterpriseId: string;
+  setEnterpriseId: (v: string) => void;
+  enterprises: Enterprise[];
+  enterprisesLoading: boolean;
   licenseNumber: string;
   setLicenseNumber: (v: string) => void;
   licenseExpiry: string;
@@ -266,7 +328,7 @@ function ProfileFormFields({
         <Input
           id="profile-name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); }}
           disabled={disabled}
           placeholder="María Gómez"
         />
@@ -277,7 +339,7 @@ function ProfileFormFields({
         <Input
           id="profile-document"
           value={document}
-          onChange={(e) => setDocument(e.target.value)}
+          onChange={(e) => { setDocument(e.target.value); }}
           disabled={disabled}
           placeholder="12345678"
         />
@@ -289,7 +351,7 @@ function ProfileFormFields({
           id="profile-email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); }}
           disabled={disabled}
         />
       </div>
@@ -299,7 +361,7 @@ function ProfileFormFields({
         <Input
           id="profile-phone"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => { setPhone(e.target.value); }}
           disabled={disabled}
           placeholder="+573001234567"
         />
@@ -308,11 +370,43 @@ function ProfileFormFields({
       {activeTab === "driver" ? (
         <>
           <div className="grid gap-2">
+            <Label htmlFor="profile-enterprise">
+              Empresa de transporte <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={enterpriseId || undefined}
+              onValueChange={setEnterpriseId}
+              disabled={disabled || enterprisesLoading}
+            >
+              <SelectTrigger id="profile-enterprise" className="w-full">
+                <SelectValue
+                  placeholder={
+                    enterprisesLoading
+                      ? "Cargando empresas..."
+                      : enterprises.length === 0
+                        ? "No hay empresas registradas"
+                        : "Selecciona tu empresa"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {enterprises.map((enterprise) => (
+                  <SelectItem key={enterprise.id} value={enterprise.id}>
+                    {enterprise.name} — NIT {enterprise.nit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-muted-foreground text-xs">
+              El conductor queda vinculado a esta empresa en el sistema.
+            </p>
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="profile-license">Número de licencia</Label>
             <Input
               id="profile-license"
               value={licenseNumber}
-              onChange={(e) => setLicenseNumber(e.target.value)}
+              onChange={(e) => { setLicenseNumber(e.target.value); }}
               disabled={disabled}
             />
           </div>
@@ -322,7 +416,7 @@ function ProfileFormFields({
               id="profile-license-expiry"
               type="date"
               value={licenseExpiry}
-              onChange={(e) => setLicenseExpiry(e.target.value)}
+              onChange={(e) => { setLicenseExpiry(e.target.value); }}
               disabled={disabled}
             />
           </div>
@@ -333,7 +427,7 @@ function ProfileFormFields({
           <Textarea
             id="profile-extra"
             value={extraInfo}
-            onChange={(e) => setExtraInfo(e.target.value)}
+            onChange={(e) => { setExtraInfo(e.target.value); }}
             disabled={disabled}
             rows={3}
           />

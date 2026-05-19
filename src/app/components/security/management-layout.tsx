@@ -103,7 +103,7 @@ function isActivePath(pathname: string, target: string) {
 export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout, hasAnyRole, isInitialized, isAuthenticated } = useAuthStore();
+  const { currentUser, logout, hasAnyRole } = useAuthStore();
 
   // Filter menu items based on user roles
   const visibleSecurityItems = securityMenuItems.filter((item) => {

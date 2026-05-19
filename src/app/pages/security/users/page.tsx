@@ -83,7 +83,7 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(0);
 
   const [totalRolePages, setTotalRolePages] = useState(0);
-  const [loadedRolePages, setLoadedRolePages] = useState<Set<number>>(new Set());
+  const [loadedRolePages, setLoadedRolePages] = useState<Set<number>>(() => new Set());
 
   const assignRolesPageCount = totalRolePages || 1;
   const visibleRoles = availableRoles.slice(

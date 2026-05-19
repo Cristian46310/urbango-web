@@ -66,7 +66,7 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
     const loadingToastId = showLoadingToast("Creando rol...");
     set({ loading: true, error: null });
     try {
-      if (!roleData.name?.trim() || !roleData.description?.trim()) {
+      if (!roleData.name.trim() || !roleData.description.trim()) {
         set({ loading: false, error: "Name and description are required" });
         showErrorToast("Nombre y descripcion son obligatorios");
         throw new Error("Name and description are required");
