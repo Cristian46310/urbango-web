@@ -10,8 +10,19 @@ import ProfilesPage from './security/profiles/page'
 import RolesPage from './security/roles/page'
 import UsersPage from './security/users/page'
 
+import AdminAgeDistributionPage from './admin/reports/age-distribution/page'
+import AdminRouteCreatePage from './admin/routes/create/page'
+import AdminSchedulerCreatePage from './admin/schedulers/create/page'
+import DriverTurnStartPage from './driver/turn-start/page'
+import CitizenBoardingPage from './citizen/boarding/page'
+
 export {
+  AdminAgeDistributionPage,
+  AdminRouteCreatePage,
+  AdminSchedulerCreatePage,
+  CitizenBoardingPage,
   DashboardPage,
+  DriverTurnStartPage,
   ForgotPasswordPage,
   GithubCallbackPage,
   LoginPage,

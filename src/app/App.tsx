@@ -1,7 +1,25 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage } from './pages'
+import {
+  AdminAgeDistributionPage,
+  AdminRouteCreatePage,
+  AdminSchedulerCreatePage,
+  CitizenBoardingPage,
+  DashboardPage,
+  DriverTurnStartPage,
+  ForgotPasswordPage,
+  GithubCallbackPage,
+  LoginPage,
+  MicrosoftCallbackPage,
+  PermissionsPage,
+  ProfilesPage,
+  ResetPasswordPage,
+  RolesPage,
+  TeamPage,
+  UsersPage,
+} from './pages'
 import { ManagementLayout } from './components/security/management-layout'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
@@ -26,6 +44,48 @@ function AppContent() {
           <Route path="roles" element={<RolesPage />} />
           <Route path="team" element={<TeamPage />} />
         </Route>
+
+        <Route
+          path="/admin/reports/age-distribution"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminAgeDistributionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/routes/create"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminRouteCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/schedulers/create"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminSchedulerCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/turn-start"
+          element={
+            <ProtectedRoute roles={["driver"]}>
+              <DriverTurnStartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/boarding"
+          element={
+            <ProtectedRoute roles={["citizen"]}>
+              <CitizenBoardingPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
