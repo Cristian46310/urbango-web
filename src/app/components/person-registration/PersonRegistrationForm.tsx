@@ -158,7 +158,7 @@ export function PersonRegistrationForm() {
       <CardContent>
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as ProfileTab)}
+          onValueChange={(value) => { setActiveTab(value as ProfileTab); }}
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="citizen" className="gap-2">
@@ -266,7 +266,7 @@ function ProfileFormFields({
         <Input
           id="profile-name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); }}
           disabled={disabled}
           placeholder="María Gómez"
         />
@@ -277,7 +277,7 @@ function ProfileFormFields({
         <Input
           id="profile-document"
           value={document}
-          onChange={(e) => setDocument(e.target.value)}
+          onChange={(e) => { setDocument(e.target.value); }}
           disabled={disabled}
           placeholder="12345678"
         />
@@ -289,7 +289,7 @@ function ProfileFormFields({
           id="profile-email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); }}
           disabled={disabled}
         />
       </div>
@@ -299,7 +299,7 @@ function ProfileFormFields({
         <Input
           id="profile-phone"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => { setPhone(e.target.value); }}
           disabled={disabled}
           placeholder="+573001234567"
         />
@@ -312,7 +312,7 @@ function ProfileFormFields({
             <Input
               id="profile-license"
               value={licenseNumber}
-              onChange={(e) => setLicenseNumber(e.target.value)}
+              onChange={(e) => { setLicenseNumber(e.target.value); }}
               disabled={disabled}
             />
           </div>
@@ -322,7 +322,7 @@ function ProfileFormFields({
               id="profile-license-expiry"
               type="date"
               value={licenseExpiry}
-              onChange={(e) => setLicenseExpiry(e.target.value)}
+              onChange={(e) => { setLicenseExpiry(e.target.value); }}
               disabled={disabled}
             />
           </div>
@@ -333,7 +333,7 @@ function ProfileFormFields({
           <Textarea
             id="profile-extra"
             value={extraInfo}
-            onChange={(e) => setExtraInfo(e.target.value)}
+            onChange={(e) => { setExtraInfo(e.target.value); }}
             disabled={disabled}
             rows={3}
           />

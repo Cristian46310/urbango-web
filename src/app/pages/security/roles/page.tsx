@@ -71,7 +71,7 @@ export default function RolesPage() {
     }
 
     const response = await loadPermissions({ page: pageNum, size: SECURITY_LOOKUP_PAGE_SIZE });
-    const pagePermissions = response.content ?? [];
+    const pagePermissions = response.content;
 
     loadedPermissionPagesRef.current.add(pageNum);
     setTotalPermissionPages(response.totalPages);
@@ -91,7 +91,7 @@ export default function RolesPage() {
       description: form.description.trim(),
     });
     void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
-    return created as Role;
+    return created;
   };
 
   const handleAfterCreateRole = async (createdRole: Role) => {
@@ -113,7 +113,7 @@ export default function RolesPage() {
 
     try {
       const detailedRole = await getRoleById(role.id) as RoleDetail;
-      const rolePermissions = detailedRole.permissions ?? [];
+      const rolePermissions = detailedRole.permissions;
 
       await loadPermissionPageIfNeeded(0);
 
@@ -226,7 +226,7 @@ export default function RolesPage() {
           void loadRoles({ page: currentPage, size: SECURITY_PAGE_SIZE });
         }}
         toolbarAction={
-          <Button type="button" size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+          <Button type="button" size="sm" onClick={() => { setIsCreateDialogOpen(true); }}>
             <Plus className="mr-1 size-4" />
             Adicionar
           </Button>

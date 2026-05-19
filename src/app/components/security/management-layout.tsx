@@ -15,6 +15,16 @@ import {
   ShieldCheck,
   ShieldUser,
   Users,
+  BarChart3,
+  Building2,
+  Bus,
+  Route,
+  MapPinned,
+  CreditCard,
+  CalendarClock,
+  Link2,
+  AlertCircle,
+  Home,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -75,10 +85,26 @@ const teamMenuItem: MenuItem = {
   icon: BookUser,
 };
 
+const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
+
 const businessMenuItems: MenuItem[] = [
   { title: "Paraderos", to: "/app/nearby-stops", description: "Buscar paraderos cercanos", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje y liberar cupo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Reportar", to: "/app/incident-report", description: "Registrar incidente", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Dashboard", to: "/app/business/dashboard", description: "Analítica business", icon: BarChart3, requiredRoles: [...businessAdminRoles] },
+  { title: "Rutas", to: "/app/business/routes", description: "Gestión de rutas", icon: Route, requiredRoles: [...businessAdminRoles] },
+  { title: "Paradas admin", to: "/app/business/stops", description: "CRUD de paradas", icon: MapPinned, requiredRoles: [...businessAdminRoles] },
+  { title: "Nodos", to: "/app/business/nodes", description: "Nodos ruta-parada", icon: Link2, requiredRoles: [...businessAdminRoles] },
+  { title: "Empresas", to: "/app/business/enterprises", description: "Empresas de transporte", icon: Building2, requiredRoles: [...businessAdminRoles] },
+  { title: "Buses", to: "/app/business/buses", description: "Flota de buses", icon: Bus, requiredRoles: [...businessAdminRoles] },
+  { title: "Programación", to: "/app/business/schedulers", description: "Horarios", icon: CalendarClock, requiredRoles: [...businessAdminRoles] },
+  { title: "Turnos", to: "/app/business/turns", description: "Turnos conductores", icon: CalendarClock, requiredRoles: [...businessAdminRoles] },
+  { title: "Ciudadanos", to: "/app/business/citizens", description: "Admin ciudadanos", icon: Users, requiredRoles: [...businessAdminRoles] },
+  { title: "Conductores", to: "/app/business/drivers", description: "Admin conductores", icon: Users, requiredRoles: [...businessAdminRoles] },
+  { title: "Direcciones", to: "/app/business/addresses", description: "Direcciones", icon: Home, requiredRoles: [...businessAdminRoles] },
+  { title: "Métodos de pago", to: "/app/business/payment-methods", description: "Catálogo pagos", icon: CreditCard, requiredRoles: [...businessAdminRoles] },
+  { title: "Pagos ciudadano", to: "/app/business/payment-method-citizens", description: "Vínculos de pago", icon: CreditCard, requiredRoles: [...businessAdminRoles] },
+  { title: "Incidentes", to: "/app/business/incidents", description: "Supervisión incidentes", icon: AlertCircle, requiredRoles: [...businessAdminRoles] },
 ];
 
 function isActivePath(pathname: string, target: string) {
@@ -92,7 +118,7 @@ function isActivePath(pathname: string, target: string) {
 export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout, hasAnyRole, isInitialized, isAuthenticated } = useAuthStore();
+  const { currentUser, logout, hasAnyRole } = useAuthStore();
 
   // Filter menu items based on user roles
   const visibleSecurityItems = securityMenuItems.filter((item) => {

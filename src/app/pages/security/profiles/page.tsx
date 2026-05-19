@@ -148,7 +148,7 @@ export default function ProfilesPage() {
       cell: (info) => {
         const profile = info.row.original as ProfileWithOptionalUser;
         const user = profile.user;
-        return user?.userName || "Sin usuario";
+        return user?.userName ?? "Sin usuario";
       },
     }),
     columnHelper.display({

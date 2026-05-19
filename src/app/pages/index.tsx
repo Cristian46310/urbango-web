@@ -17,6 +17,25 @@ import { AccessDeniedPage } from './access-denied'
 import RegisterProfilePage from './register-profile/page'
 
 export {
+  BusinessDashboardPage,
+  AddressesPage,
+  EnterprisesPage,
+  StopsAdminPage,
+  PaymentMethodsPage,
+  CitizensPage,
+  DriversAdminPage,
+  RoutesPage,
+  NodesPage,
+  BusesPage,
+  SchedulersPage,
+  TurnsPage,
+  PaymentMethodCitizensPage,
+  IncidentsPage,
+  IncidentsByBusPage,
+  IncidentDetailPage,
+} from './business'
+
+export {
   AccessDeniedPage,
   DashboardPage,
   ForgotPasswordPage,
@@ -33,5 +52,5 @@ export {
   TeamPage,
   TicketAlightSearchPage,
   TicketAlightValidationPage,
-  UsersPage
+  UsersPage,
 }

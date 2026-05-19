@@ -43,7 +43,7 @@ export function RoleCreateDialog({ open, onOpenChange, onSave, onAfterCreate }: 
         <Input
           id="role-name"
           value={createForm.name}
-          onChange={(e) => setCreateForm((c) => ({ ...c, name: e.target.value }))}
+          onChange={(e) => { setCreateForm((c) => ({ ...c, name: e.target.value })); }}
         />
       </DialogField>
 
@@ -51,7 +51,7 @@ export function RoleCreateDialog({ open, onOpenChange, onSave, onAfterCreate }: 
         <Input
           id="role-description"
           value={createForm.description}
-          onChange={(e) => setCreateForm((c) => ({ ...c, description: e.target.value }))}
+          onChange={(e) => { setCreateForm((c) => ({ ...c, description: e.target.value })); }}
         />
       </DialogField>
     </CrudDialogShell>

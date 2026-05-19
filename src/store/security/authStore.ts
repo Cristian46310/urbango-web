@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     const currentUser = {
       id: userId,
       email: decodedToken.email,
-      roles: decodedToken.roles || [],
+      roles: decodedToken.roles,
     };
 
     set({
@@ -107,7 +107,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     const currentUser = {
       id: userId,
       email: decodedToken.email,
-      roles: decodedToken.roles || [],
+      roles: decodedToken.roles,
     };
 
     set({

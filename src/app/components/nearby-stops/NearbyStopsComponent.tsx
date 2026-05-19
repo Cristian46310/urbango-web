@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -10,7 +10,10 @@ import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Fix for Leaflet icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+const iconDefaultPrototype = L.Icon.Default.prototype as L.Icon.Default & {
+  _getIconUrl?: () => string;
+};
+delete iconDefaultPrototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -25,14 +28,7 @@ export const NearbyStopsComponent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch nearby stops when coordinates are available
-  useEffect(() => {
-    if (coordinates) {
-      fetchNearbyStops();
-    }
-  }, [coordinates]);
-
-  const fetchNearbyStops = async () => {
+  const fetchNearbyStops = useCallback(async () => {
     if (!coordinates) return;
 
     setLoading(true);
@@ -54,12 +50,18 @@ export const NearbyStopsComponent: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [coordinates]);
+
+  useEffect(() => {
+    if (coordinates) {
+      void fetchNearbyStops();
+    }
+  }, [coordinates, fetchNearbyStops]);
 
   const handleRefresh = () => {
     setCurrentPage(1);
     if (coordinates) {
-      fetchNearbyStops();
+      void fetchNearbyStops();
     }
   };
 
@@ -101,7 +103,7 @@ export const NearbyStopsComponent: React.FC = () => {
               </div>
             )}
             <Button
-              onClick={requestPermission}
+              onClick={() => { void requestPermission(); }}
               disabled={geoLoading}
               size="lg"
               className="w-full"
@@ -135,7 +137,7 @@ export const NearbyStopsComponent: React.FC = () => {
               </div>
               <Button
                 variant="outline"
-                onClick={requestPermission}
+                onClick={() => { void requestPermission(); }}
                 disabled={geoLoading}
               >
                 Actualizar
@@ -190,7 +192,7 @@ export const NearbyStopsComponent: React.FC = () => {
                     <Popup>
                       <div className="text-sm font-semibold">{stop.name}</div>
                       <div className="text-xs text-gray-600">
-                        {(stop.distance ?? 0).toFixed(0)}m de distancia
+                        {stop.distance.toFixed(0)}m de distancia
                       </div>
                     </Popup>
                   </Marker>
@@ -269,9 +271,9 @@ export const NearbyStopsComponent: React.FC = () => {
                     <h3 className="font-semibold text-lg">{stop.name}</h3>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {(stop.distance ?? 0).toFixed(0)}m de distancia
+                      {stop.distance.toFixed(0)}m de distancia
                     </p>
-                    {stop.routes && stop.routes.length > 0 && (
+                    {stop.routes.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-semibold text-gray-700 mb-1">Rutas disponibles:</p>
                         <div className="flex flex-wrap gap-2">
@@ -297,7 +299,7 @@ export const NearbyStopsComponent: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  onClick={() => { setCurrentPage(Math.max(1, currentPage - 1)); }}
                   disabled={currentPage === 1}
                 >
                   Anterior
@@ -310,7 +312,7 @@ export const NearbyStopsComponent: React.FC = () => {
                       variant={currentPage === page ? "default" : "outline"}
                       size="sm"
                       className="w-8 h-8 p-0"
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => { setCurrentPage(page); }}
                     >
                       {page}
                     </Button>
@@ -320,7 +322,7 @@ export const NearbyStopsComponent: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={() => { setCurrentPage(Math.min(totalPages, currentPage + 1)); }}
                   disabled={currentPage === totalPages}
                 >
                   Siguiente

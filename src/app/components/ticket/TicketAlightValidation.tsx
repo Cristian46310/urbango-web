@@ -25,7 +25,7 @@ export function TicketAlightValidation() {
 
   // Datos de ejemplo - en producción vendrían de una API
   const [ticketData] = useState<TicketData>({
-    id: ticketId || "",
+    id: ticketId ?? "",
     passengerId: "P123456",
     passengerName: "Juan Pérez",
     routeName: "Ruta 5 - Centro a Pereira",
@@ -49,9 +49,9 @@ export function TicketAlightValidation() {
 
       // Auto-redirigir después de 3 segundos
       setTimeout(() => {
-        navigate("/app/ticket/alight");
+        void navigate("/app/ticket/alight");
       }, 3000);
-    } catch (err) {
+    } catch {
       setError("Error al validar el descenso. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -113,7 +113,7 @@ export function TicketAlightValidation() {
             <p className="text-slate-600">Revisa los detalles de tu viaje y confirma tu salida</p>
           </div>
           <button
-            onClick={() => navigate("/app/ticket/alight")}
+            onClick={() => { void navigate("/app/ticket/alight"); }}
             className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-slate-600" />
@@ -221,7 +221,7 @@ export function TicketAlightValidation() {
           {/* Acciones */}
           <div className="space-y-2 pt-2">
             <Button
-              onClick={handleValidateAlight}
+              onClick={() => { void handleValidateAlight(); }}
               disabled={loading}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
               size="lg"
@@ -240,7 +240,7 @@ export function TicketAlightValidation() {
             </Button>
 
             <Button
-              onClick={() => navigate("/app/ticket/alight")}
+              onClick={() => { void navigate("/app/ticket/alight"); }}
               variant="outline"
               className="w-full border-blue-200 text-slate-700 hover:bg-blue-50"
               disabled={loading}

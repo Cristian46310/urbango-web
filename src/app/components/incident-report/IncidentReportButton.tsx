@@ -13,39 +13,6 @@ import { showSuccessToast, showErrorToast, showLoadingToast, dismissToast } from
 type IncidentType = "mechanical" | "accident" | "delay" | "other";
 type IncidentSeverity = "low" | "medium" | "high" | "critical";
 
-function getActiveTurnId() {
-  const storedTurnId =
-    localStorage.getItem("turnId") ??
-    localStorage.getItem("activeTurnId") ??
-    localStorage.getItem("shiftId") ??
-    localStorage.getItem("activeShiftId");
-
-  if (storedTurnId) {
-    return storedTurnId;
-  }
-
-  const token = localStorage.getItem("authToken");
-  const payload = token?.split(".")[1];
-
-  if (!payload) {
-    return "";
-  }
-
-  try {
-    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decodedPayload = JSON.parse(atob(normalizedPayload)) as {
-      turnId?: string;
-      activeTurnId?: string;
-      shiftId?: string;
-      activeShiftId?: string;
-    };
-
-    return decodedPayload.turnId ?? decodedPayload.activeTurnId ?? decodedPayload.shiftId ?? decodedPayload.activeShiftId ?? "";
-  } catch {
-    return "";
-  }
-}
-
 export function IncidentReportButton() {
   const navigate = useNavigate();
   const fileInputId = useId();

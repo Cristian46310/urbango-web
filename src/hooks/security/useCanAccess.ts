@@ -13,16 +13,16 @@ export const useCanAccess = () => {
 
   return {
     // Admin features
-    canAccessAdmin: () => hasAnyRole(ROLE_GROUPS.ADMIN_ROLES),
-    canManageUsers: () => hasAnyRole(ROLE_GROUPS.ADMIN_ROLES),
-    canManageRoles: () => hasAnyRole(ROLE_GROUPS.ADMIN_ROLES),
-    canManagePermissions: () => hasAnyRole(ROLE_GROUPS.ADMIN_ROLES),
-    canManageProfiles: () => hasAnyRole(ROLE_GROUPS.ADMIN_ROLES),
+    canAccessAdmin: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
+    canManageUsers: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
+    canManageRoles: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
+    canManagePermissions: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
+    canManageProfiles: () => hasAnyRole([...ROLE_GROUPS.ADMIN_ROLES]),
 
     // Business features
-    canAccessParaderos: () => hasAnyRole(ROLE_GROUPS.PARADEROS_ACCESS),
-    canValidateDescenso: () => hasAnyRole(ROLE_GROUPS.DESCENSO_ACCESS),
-    canReportIncidents: () => hasAnyRole(ROLE_GROUPS.INCIDENT_REPORT_ACCESS),
+    canAccessParaderos: () => hasAnyRole([...ROLE_GROUPS.PARADEROS_ACCESS]),
+    canValidateDescenso: () => hasAnyRole([...ROLE_GROUPS.DESCENSO_ACCESS]),
+    canReportIncidents: () => hasAnyRole([...ROLE_GROUPS.INCIDENT_REPORT_ACCESS]),
 
     // Generic role check
     hasAnyRole,
