@@ -1,0 +1,3075 @@
+openapi: 3.0.0
+paths:
+  "/":
+    get:
+      operationId: AppController_getHello
+      parameters[0]:
+      responses:
+        "200":
+          description: ""
+      tags[1]: App
+      security[0]:
+  "/route":
+    post:
+      operationId: RouteController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateRouteNodesDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseRouteDto
+      summary: Crear una ruta
+      tags[1]: Routes
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: RouteController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseRouteListDto
+      summary: Listar todas las rutas
+      tags[1]: Routes
+      security[1]:
+        - bearer[0]:
+  "/route/{id}":
+    get:
+      operationId: RouteController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la ruta
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseRouteDto
+      summary: Obtener una ruta por id
+      tags[1]: Routes
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: RouteController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la ruta
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateRouteDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseRouteDto
+      summary: Actualizar una ruta por id
+      tags[1]: Routes
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: RouteController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la ruta
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Ruta eliminada
+      summary: Eliminar una ruta por id
+      tags[1]: Routes
+      security[1]:
+        - bearer[0]:
+  "/stop":
+    post:
+      operationId: StopController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateStopDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseStopDto
+      summary: Crear una parada
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: StopController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseStopListDto
+      summary: Listar todas las paradas
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+  "/stop/nearby":
+    get:
+      operationId: StopController_findNearbyStops
+      parameters[4]:
+        - name: lat
+          required: true
+          in: query
+          description: Latitud de la ubicación
+          schema:
+            example: 12.3456
+            type: number
+        - name: lon
+          required: true
+          in: query
+          description: Longitud de la ubicación
+          schema:
+            example: 78.9012
+            type: number
+        - name: limit
+          required: false
+          in: query
+          description: Límite de resultados
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 5
+            example: 5
+            type: number
+        - name: radiusMeters
+          required: false
+          in: query
+          description: Radio en metros
+          schema:
+            minimum: 1
+            default: 1000
+            example: 1000
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  "$ref": #/components/schemas/NearbyStopDto
+      summary: Buscar paradas cercanas a una ubicación dada
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+  "/stop/{id}":
+    get:
+      operationId: StopController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la parada
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseStopDto
+      summary: Obtener una parada por id
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: StopController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la parada
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateStopDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseStopDto
+      summary: Actualizar una parada por id
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: StopController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id de la parada
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Parada eliminada
+      summary: Eliminar una parada por id
+      tags[1]: Stops
+      security[1]:
+        - bearer[0]:
+  "/node/route/{routeId}/stop/{stopId}":
+    post:
+      operationId: NodeController_create
+      parameters[2]:
+        - name: routeId
+          required: true
+          in: path
+          description: Id de la ruta
+          schema:
+            format: uuid
+            type: string
+        - name: stopId
+          required: true
+          in: path
+          description: Id de la parada
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateNodeDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseNodeDto
+      summary: Crear un nodo para una ruta y parada
+      tags[1]: Nodes
+      security[1]:
+        - bearer[0]:
+  "/node":
+    get:
+      operationId: NodeController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseNodeListDto
+      summary: Listar todos los nodos
+      tags[1]: Nodes
+      security[1]:
+        - bearer[0]:
+  "/node/{id}":
+    get:
+      operationId: NodeController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id del nodo
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseNodeDto
+      summary: Obtener un nodo por id
+      tags[1]: Nodes
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: NodeController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id del nodo
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateNodeDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseNodeDto
+      summary: Actualizar un nodo por id
+      tags[1]: Nodes
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: NodeController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id del nodo
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Nodo eliminado
+      summary: Eliminar un nodo por id
+      tags[1]: Nodes
+      security[1]:
+        - bearer[0]:
+  "/address":
+    post:
+      operationId: AddressController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateAddressDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseAddressDto
+      summary: Create address
+      tags[1]: address
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: AddressController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseAddressListDto
+      summary: List addresses (paginated)
+      tags[1]: address
+      security[1]:
+        - bearer[0]:
+  "/address/{id}":
+    get:
+      operationId: AddressController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseAddressDto
+        "404":
+          description: Address not found
+      tags[1]: address
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: AddressController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateAddressDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: address
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: AddressController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: address
+      security[1]:
+        - bearer[0]:
+  "/citizen":
+    post:
+      operationId: CitizenController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateCitizenDto
+      responses:
+        "201":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Registrar perfil de ciudadano (userId desde token)
+      tags[1]: Citizens
+    get:
+      operationId: CitizenController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Citizens
+  "/citizen/me":
+    get:
+      operationId: CitizenController_findMe
+      parameters[0]:
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Obtener perfil de ciudadano del usuario autenticado
+      tags[1]: Citizens
+  "/citizen/{id}":
+    get:
+      operationId: CitizenController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Citizens
+    patch:
+      operationId: CitizenController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateCitizenDto
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Citizens
+    delete:
+      operationId: CitizenController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Citizens
+  "/ticket":
+    post:
+      operationId: TicketController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateTicketDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseTicketDto
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: TicketController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseTicketDto
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+  "/ticket/{id}":
+    get:
+      operationId: TicketController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseTicketDto
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: TicketController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateTicketDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseTicketDto
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: TicketController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+  "/ticket/{id}/alight":
+    post:
+      operationId: TicketController_alight
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/AlightTicketDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/AlightResponseDto
+      tags[1]: Ticket
+      security[1]:
+        - bearer[0]:
+  "/history":
+    post:
+      operationId: HistoryController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateHistoryDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseHistoryDto
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: HistoryController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseHistoryListDto
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+  "/history/{id}":
+    get:
+      operationId: HistoryController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseHistoryDto
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: HistoryController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateHistoryDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseHistoryDto
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: HistoryController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+  "/history/{id}/trip-details":
+    get:
+      operationId: HistoryController_getTripDetails
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          description: Id del history
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseTripDetailsDto
+      summary: Obtener detalles del viaje a partir de un history id
+      tags[1]: History
+      security[1]:
+        - bearer[0]:
+  "/bus":
+    post:
+      operationId: BusController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateBusDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseBusDto
+      summary: Crear un bus
+      tags[1]: Buses
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: BusController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseBusListDto
+      summary: Listar buses
+      tags[1]: Buses
+      security[1]:
+        - bearer[0]:
+  "/bus/{id}":
+    get:
+      operationId: BusController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseBusDto
+      summary: Obtener un bus por id
+      tags[1]: Buses
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: BusController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateBusDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseBusDto
+      summary: Actualizar un bus por id
+      tags[1]: Buses
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: BusController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+      summary: Eliminar un bus por id
+      tags[1]: Buses
+      security[1]:
+        - bearer[0]:
+  "/scheduler":
+    post:
+      operationId: SchedulerController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateSchedulerDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseSchedulerDto
+      summary: Create scheduler
+      tags[1]: scheduler
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: SchedulerController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseSchedulerListDto
+      summary: List schedulers (paginated)
+      tags[1]: scheduler
+      security[1]:
+        - bearer[0]:
+  "/scheduler/{id}":
+    get:
+      operationId: SchedulerController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseSchedulerDto
+        "404":
+          description: Scheduler not found
+      tags[1]: scheduler
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: SchedulerController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateSchedulerDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: scheduler
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: SchedulerController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: scheduler
+      security[1]:
+        - bearer[0]:
+  "/payment-method":
+    post:
+      operationId: PaymentMethodController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreatePaymentMethodDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponsePaymentMethodDto
+      summary: Create payment method
+      tags[1]: payment-method
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: PaymentMethodController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponsePaymentMethodListDto
+      summary: List payment methods (paginated)
+      tags[1]: payment-method
+      security[1]:
+        - bearer[0]:
+  "/payment-method/{id}":
+    get:
+      operationId: PaymentMethodController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponsePaymentMethodDto
+        "404":
+          description: Payment method not found
+      tags[1]: payment-method
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: PaymentMethodController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdatePaymentMethodDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: payment-method
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: PaymentMethodController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: payment-method
+      security[1]:
+        - bearer[0]:
+  "/payment-method-citizen":
+    post:
+      operationId: PaymentMethodCitizenController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreatePaymentMethodCitizenDto
+      responses:
+        "201":
+          description: ""
+      summary: Register payment method for citizen
+      tags[1]: payment-method-citizen
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: PaymentMethodCitizenController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      summary: List payment methods assigned to citizens (paginated)
+      tags[1]: payment-method-citizen
+      security[1]:
+        - bearer[0]:
+  "/payment-method-citizen/{id}":
+    get:
+      operationId: PaymentMethodCitizenController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: payment-method-citizen
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: PaymentMethodCitizenController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdatePaymentMethodCitizenDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: payment-method-citizen
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: PaymentMethodCitizenController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: payment-method-citizen
+      security[1]:
+        - bearer[0]:
+  "/enterprise":
+    post:
+      operationId: EnterpriseController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateEnterpriseDto
+      responses:
+        "201":
+          description: ""
+      tags[1]: Enterprise
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: EnterpriseController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags[1]: Enterprise
+      security[1]:
+        - bearer[0]:
+  "/enterprise/{id}":
+    get:
+      operationId: EnterpriseController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: Enterprise
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: EnterpriseController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateEnterpriseDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: Enterprise
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: EnterpriseController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: Enterprise
+      security[1]:
+        - bearer[0]:
+  "/driver":
+    post:
+      operationId: DriverController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateDriverDto
+      responses:
+        "201":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Registrar perfil de conductor (userId desde token)
+      tags[1]: Drivers
+    get:
+      operationId: DriverController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Drivers
+  "/driver/me":
+    get:
+      operationId: DriverController_findMe
+      parameters[0]:
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Obtener perfil de conductor del usuario autenticado
+      tags[1]: Drivers
+  "/driver/{id}":
+    get:
+      operationId: DriverController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Drivers
+    patch:
+      operationId: DriverController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateDriverDto
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Drivers
+    delete:
+      operationId: DriverController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      tags[1]: Drivers
+  "/turn":
+    post:
+      operationId: TurnController_create
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateTurnDto
+      responses:
+        "201":
+          description: ""
+      tags[1]: Turn
+      security[1]:
+        - bearer[0]:
+    get:
+      operationId: TurnController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      tags[1]: Turn
+      security[1]:
+        - bearer[0]:
+  "/turn/{id}":
+    get:
+      operationId: TurnController_findOne
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: Turn
+      security[1]:
+        - bearer[0]:
+    patch:
+      operationId: TurnController_update
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateTurnDto
+      responses:
+        "200":
+          description: ""
+      tags[1]: Turn
+      security[1]:
+        - bearer[0]:
+    delete:
+      operationId: TurnController_remove
+      parameters[1]:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags[1]: Turn
+      security[1]:
+        - bearer[0]:
+  "/incident-reports":
+    get:
+      operationId: IncidentController_findAll
+      parameters[2]:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+      responses:
+        "200":
+          description: ""
+      summary: Listar todos los reportes de incidentes (público)
+      tags[1]: Incident Reports
+      security[0]:
+  "/incident-reports/bus/{busId}":
+    get:
+      description: "Devuelve incidentes ordenados por fecha, con filtros opcionales por tipo y estado, y estadísticas agregadas."
+      operationId: IncidentController_findByBus
+      parameters[5]:
+        - name: busId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            example: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+            type: number
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum[5]: mechanical,accident,delay,passenger,other
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum[3]: reported,in_review,closed
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseBusIncidentListDto
+      security[1]:
+        - bearer[0]:
+      summary: Listar incidentes de un bus
+      tags[1]: Incident Reports
+  "/incident-reports/driver":
+    post:
+      description: "El conductor autenticado reporta un incidente de su turno actual. El sistema obtiene automáticamente el driver, el turno activo y el bus asociado."
+      operationId: IncidentController_createByDriver
+      parameters[0]:
+      requestBody:
+        required: true
+        content:
+          "multipart/form-data":
+            schema:
+              "$ref": #/components/schemas/CreateIncidentDriverDto
+      responses:
+        "201":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Crear reporte de incidente del conductor
+      tags[1]: Incident Reports
+  "/incident-reports/{incidentId}/comments":
+    get:
+      operationId: IncidentController_listComments
+      parameters[1]:
+        - name: incidentId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseIncidentCommentListDto
+      security[1]:
+        - bearer[0]:
+      summary: Listar comentarios de seguimiento de un incidente
+      tags[1]: Incident Reports
+    post:
+      operationId: IncidentController_addComment
+      parameters[1]:
+        - name: incidentId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/CreateIncidentCommentDto
+      responses:
+        "201":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseIncidentCommentDto
+      security[1]:
+        - bearer[0]:
+      summary: Agregar comentario de seguimiento a un incidente
+      tags[1]: Incident Reports
+  "/incident-reports/{incidentId}/status":
+    patch:
+      operationId: IncidentController_updateStatus
+      parameters[1]:
+        - name: incidentId
+          required: true
+          in: path
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": #/components/schemas/UpdateIncidentStatusDto
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseIncidentDto
+      security[1]:
+        - bearer[0]:
+      summary: Actualizar estado de un incidente
+      tags[1]: Incident Reports
+  "/dashboard/payment-method-income":
+    get:
+      description: Agrega ingresos de tickets completados por mes y método de pago. Pensado para gráfico de barras apiladas en el dashboard financiero.
+      operationId: DashboardController_getPaymentMethodIncome
+      parameters[1]:
+        - name: months
+          required: false
+          in: query
+          description: "Cantidad de meses calendario a analizar (3, 6 o 12)"
+          schema:
+            default: 6
+            type: number
+            enum[3]: 3,6,12
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponsePaymentMethodIncomeDto
+      security[1]:
+        - bearer[0]:
+      summary: Ingresos por método de pago (evolución mensual)
+      tags[1]: dashboard
+  "/dashboard/payment-method-income/export":
+    get:
+      operationId: DashboardController_exportPaymentMethodIncome
+      parameters[1]:
+        - name: months
+          required: false
+          in: query
+          description: "Cantidad de meses calendario a analizar (3, 6 o 12)"
+          schema:
+            default: 6
+            type: number
+            enum[3]: 3,6,12
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Exportar ingresos por método de pago (CSV)
+      tags[1]: dashboard
+  "/dashboard/incident-trend-by-type":
+    get:
+      description: Agrega incidentes reportados por mes y tipo. Pensado para gráfico de líneas múltiples en el dashboard operativo.
+      operationId: DashboardController_getIncidentTrendByType
+      parameters[2]:
+        - name: months
+          required: false
+          in: query
+          description: "Cantidad de meses calendario a analizar (3, 6 o 12)"
+          schema:
+            default: 12
+            type: number
+            enum[3]: 3,6,12
+        - name: enterpriseId
+          required: false
+          in: query
+          description: Filtrar por empresa; omitir para consolidado de todas las empresas
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/json":
+              schema:
+                "$ref": #/components/schemas/ResponseIncidentTrendByTypeDto
+      security[1]:
+        - bearer[0]:
+      summary: Evolución mensual de incidentes por tipo
+      tags[1]: dashboard
+  "/dashboard/incident-trend-by-type/export":
+    get:
+      operationId: DashboardController_exportIncidentTrendByType
+      parameters[2]:
+        - name: months
+          required: false
+          in: query
+          description: "Cantidad de meses calendario a analizar (3, 6 o 12)"
+          schema:
+            default: 12
+            type: number
+            enum[3]: 3,6,12
+        - name: enterpriseId
+          required: false
+          in: query
+          description: Filtrar por empresa; omitir para consolidado de todas las empresas
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+      security[1]:
+        - bearer[0]:
+      summary: Exportar evolución de incidentes por tipo (CSV)
+      tags[1]: dashboard
+info:
+  title: MS Business API
+  description: "Documentacion de endpoints para rutas, paradas y nodos"
+  version: "1.0"
+  contact:
+tags[0]:
+servers[1]{url,description}:
+  "http://localhost:3000",Local
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+      description: JWT obtenido desde ms-security (POST /api/public/security/login)
+  schemas:
+    BaseNodeDto:
+      type: object
+      properties:
+        order:
+          type: number
+          example: 1
+          minimum: 0
+        stopId:
+          type: string
+          example: 8c5979c5-2681-48a4-bd6f-c6d2f5f57167
+          description: ID del stop asociado al nodo
+      required[2]: order,stopId
+    CreateRouteNodesDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la ruta
+          example: Ruta Norte
+        description:
+          type: string
+          description: Descripcion de la ruta
+          example: Recorrido desde el terminal hasta el centro
+        price:
+          type: number
+          description: Precio del pasaje para la ruta
+          example: 2500
+          minimum: 1
+        nodes:
+          description: Nodos asociados a la ruta
+          type: array
+          items:
+            "$ref": #/components/schemas/BaseNodeDto
+      required[3]: name,description,price
+    ResponseStopDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: Parque Principal
+        location:
+          type: string
+          example: Calle 123
+        createdAt:
+          format: date-time
+          type: string
+          example: "2023-01-01T00:00:00.000Z"
+        latitude:
+          type: number
+          example: -12.3456
+        longitude:
+          type: number
+          example: 78.9012
+      required[4]: id,name,location,createdAt
+    ResponseRouteDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Ruta Norte
+        description:
+          type: string
+          example: Recorrido desde el terminal hasta el centro
+        price:
+          type: number
+          example: 2500
+        stops:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseStopDto
+        createdAt:
+          format: date-time
+          type: string
+          example: "2023-01-01T00:00:00.000Z"
+      required[6]: id,name,description,price,stops,createdAt
+    PaginationMetaDto:
+      type: object
+      properties:
+        page:
+          type: number
+          example: 1
+        limit:
+          type: number
+          example: 10
+        totalItems:
+          type: number
+          example: 25
+        totalPages:
+          type: number
+          example: 3
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPreviousPage:
+          type: boolean
+          example: false
+      required[6]: page,limit,totalItems,totalPages,hasNextPage,hasPreviousPage
+    ResponseRouteListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseRouteDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    UpdateRouteDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la ruta
+          example: Ruta Norte
+        description:
+          type: string
+          description: Descripcion de la ruta
+          example: Recorrido desde el terminal hasta el centro
+        price:
+          type: number
+          description: Precio del pasaje para la ruta
+          example: 2500
+          minimum: 1
+    CreateStopDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la parada
+          example: Parque Principal
+        location:
+          type: string
+          description: Ubicacion o referencia de la parada
+          example: Calle 10 # 15-20
+        latitude:
+          type: number
+          description: Latitud de la parada
+          example: -12.3456
+        longitude:
+          type: number
+          description: Longitud de la parada
+          example: 78.9012
+      required[4]: name,location,latitude,longitude
+    ResponseStopListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseStopDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    NearbyRouteDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: Route Name
+      required[2]: id,name
+    NearbyStopDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: Stop Name
+        location:
+          type: string
+          example: Stop Location
+        latitude:
+          type: number
+          example: 12.3456
+        longitude:
+          type: number
+          example: 78.9012
+        distanceMeters:
+          type: number
+          example: 183.42
+          description: Distancia en metros
+        routes:
+          type: array
+          items:
+            "$ref": #/components/schemas/NearbyRouteDto
+      required[7]: id,name,location,latitude,longitude,distanceMeters,routes
+    UpdateStopDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la parada
+          example: Parque Principal
+        location:
+          type: string
+          description: Ubicacion o referencia de la parada
+          example: Calle 10 # 15-20
+        latitude:
+          type: number
+          description: Latitud de la parada
+          example: -12.3456
+        longitude:
+          type: number
+          description: Longitud de la parada
+          example: 78.9012
+    CreateNodeDto:
+      type: object
+      properties:
+        order:
+          type: number
+          description: Orden del nodo dentro de la ruta
+          example: 1
+          minimum: 0
+      required[1]: order
+    ResponseNodeDto:
+      type: object
+      properties:
+        order:
+          type: number
+          example: 1
+        stopId:
+          type: string
+          example: 8c5979c5-2681-48a4-bd6f-c6d2f5f57167
+        routeId:
+          type: string
+          example: 8c5979c5-2681-48a4-bd6f-c6d2f5f57167
+      required[3]: order,stopId,routeId
+    ResponseNodeListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseNodeDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    UpdateNodeDto:
+      type: object
+      properties:
+        order:
+          type: number
+          description: Orden del nodo dentro de la ruta
+          example: 1
+          minimum: 0
+    CreateAddressDto:
+      type: object
+      properties:
+        address:
+          type: string
+          example: Calle 123 #45-67
+          description: Full street address
+        city:
+          type: string
+          example: Manizales
+          description: City name
+      required[2]: address,city
+    ResponseAddressDto:
+      type: object
+      properties:
+        id:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+      required[4]: id,address,city,createdAt
+    ResponseAddressListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseAddressDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    UpdateAddressDto:
+      type: object
+      properties:
+        address:
+          type: string
+          example: Calle 123 #45-67
+          description: Full street address
+        city:
+          type: string
+          example: Manizales
+          description: City name
+    CreateCitizenDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: María Gómez
+        document:
+          type: string
+          example: "12345678"
+          description: Documento único
+        email:
+          type: string
+          example: maria@example.com
+        phone:
+          type: string
+          example: +573001234567
+        extraInfo:
+          type: string
+          example: Información adicional
+        addressId:
+          type: string
+          example: uuid-de-la-direccion
+      required[2]: name,document
+    UpdateCitizenDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: María Gómez
+        document:
+          type: string
+          example: "12345678"
+          description: Documento único
+        email:
+          type: string
+          example: maria@example.com
+        phone:
+          type: string
+          example: +573001234567
+        extraInfo:
+          type: string
+          example: Información adicional
+        addressId:
+          type: string
+          example: uuid-de-la-direccion
+    CreateTicketDto:
+      type: object
+      properties:
+        citizenId:
+          type: string
+          example: citizen-uuid
+        paymentMethodCitizenId:
+          type: string
+          example: payment-method-uuid
+        schedulerId:
+          type: string
+          example: scheduler-uuid
+        buyedAt:
+          type: string
+          example: "2026-01-01T10:00:00.000Z"
+      required[4]: citizenId,paymentMethodCitizenId,schedulerId,buyedAt
+    ResponseTicketDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid
+        buyedAt:
+          format: date-time
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        status:
+          type: string
+          enum[2]: active,completed
+          example: active
+        completedAt:
+          type: object
+          nullable: true
+        amount:
+          type: number
+          example: 2500
+          description: Tarifa cobrada al crear el ticket
+      required[5]: id,buyedAt,createdAt,status,amount
+    UpdateTicketDto:
+      type: object
+      properties:
+        citizenId:
+          type: string
+          example: citizen-uuid
+        paymentMethodCitizenId:
+          type: string
+          example: payment-method-uuid
+        schedulerId:
+          type: string
+          example: scheduler-uuid
+        buyedAt:
+          type: string
+          example: "2026-01-01T10:00:00.000Z"
+    AlightTicketDto:
+      type: object
+      properties:
+        nodeId:
+          type: string
+          example: node-uuid
+          description: ID del paradero actual
+        busId:
+          type: string
+          example: bus-uuid
+          description: ID del bus actual
+      required[2]: nodeId,busId
+    AlightResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+        ticketId:
+          type: string
+        completedAt:
+          format: date-time
+          type: string
+        stopName:
+          type: string
+        totalTravelTime:
+          type: number
+      required[5]: message,ticketId,completedAt,stopName,totalTravelTime
+    CreateHistoryDto:
+      type: object
+      properties:
+        ticketId:
+          type: string
+          example: ticket-uuid
+        nodeId:
+          type: string
+          example: node-uuid
+        order:
+          type: number
+          example: 1
+      required[3]: ticketId,nodeId,order
+    ResponseHistoryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid
+        order:
+          type: number
+        createdAt:
+          format: date-time
+          type: string
+      required[3]: id,order,createdAt
+    ResponseHistoryListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseHistoryDto
+        meta:
+          type: object
+      required[2]: items,meta
+    ResponseBusDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        plate:
+          type: string
+          example: ABC-123
+        model:
+          type: string
+          example: Mercedes
+        color:
+          type: string
+          example: Blanco
+        capacity:
+          type: number
+          example: 40
+        createdAt:
+          format: date-time
+          type: string
+          example: "2023-01-01T00:00:00.000Z"
+      required[6]: id,plate,model,color,capacity,createdAt
+    ResponseDriverDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid
+        name:
+          type: string
+          example: Juan Perez
+        licenseNumber:
+          type: string
+          example: ABC123456
+        licenseExpiry:
+          format: date-time
+          type: string
+          example: 2026-12-31
+        createdAt:
+          format: date-time
+          type: string
+      required[5]: id,name,licenseNumber,licenseExpiry,createdAt
+    ResponseTurnDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid
+        startTime:
+          format: date-time
+          type: string
+          example: "2026-01-01T08:00:00.000Z"
+        endTime:
+          format: date-time
+          type: string
+          example: "2026-01-01T12:00:00.000Z"
+        status:
+          type: string
+          example: active
+        createdAt:
+          format: date-time
+          type: string
+      required[5]: id,startTime,endTime,status,createdAt
+    ResponseSchedulerDto:
+      type: object
+      properties:
+        id:
+          type: string
+        bus:
+          "$ref": #/components/schemas/ResponseBusDto
+        route:
+          "$ref": #/components/schemas/ResponseRouteDto
+        startTime:
+          format: date-time
+          type: string
+        endTime:
+          format: date-time
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+      required[6]: id,bus,route,startTime,endTime,createdAt
+    ValidationDto:
+      type: object
+      properties:
+        order:
+          type: number
+          example: 1
+        stop:
+          "$ref": #/components/schemas/ResponseStopDto
+        validatedAt:
+          format: date-time
+          type: string
+        type:
+          type: string
+          example: boarding
+      required[3]: order,validatedAt,type
+    TotalTimeDto:
+      type: object
+      properties:
+        minutes:
+          type: number
+          example: 42
+        formatted:
+          type: string
+          example: 0h42m
+      required[2]: minutes,formatted
+    CitizenSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid
+        name:
+          type: string
+          example: María Gómez
+        document:
+          type: string
+          example: ABC123456
+      required[2]: id,name
+    ResponseTripDetailsDto:
+      type: object
+      properties:
+        tripId:
+          type: string
+          example: uuid
+        route:
+          "$ref": #/components/schemas/ResponseRouteDto
+        bus:
+          "$ref": #/components/schemas/ResponseBusDto
+        driver:
+          "$ref": #/components/schemas/ResponseDriverDto
+        turn:
+          "$ref": #/components/schemas/ResponseTurnDto
+        scheduler:
+          "$ref": #/components/schemas/ResponseSchedulerDto
+        validations:
+          type: array
+          items:
+            "$ref": #/components/schemas/ValidationDto
+        totalTime:
+          "$ref": #/components/schemas/TotalTimeDto
+        citizen:
+          "$ref": #/components/schemas/CitizenSummaryDto
+      required[4]: tripId,validations,totalTime,citizen
+    UpdateHistoryDto:
+      type: object
+      properties:
+        ticketId:
+          type: string
+          example: ticket-uuid
+        nodeId:
+          type: string
+          example: node-uuid
+        order:
+          type: number
+          example: 1
+    CreateBusDto:
+      type: object
+      properties:
+        plate:
+          type: string
+          description: Placa del bus
+          example: ABC-123
+        model:
+          type: string
+          description: Modelo del bus
+          example: Mercedes
+        color:
+          type: string
+          description: Color del bus
+          example: Blanco
+        capacity:
+          type: number
+          description: Capacidad
+          example: 40
+        enterpriseId:
+          type: string
+          description: Enterprise id
+          example: 550e84...
+      required[5]: plate,model,color,capacity,enterpriseId
+    ResponseBusListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseBusDto
+        meta:
+          type: object
+      required[2]: items,meta
+    UpdateBusDto:
+      type: object
+      properties:
+        plate:
+          type: string
+          description: Placa del bus
+          example: ABC-123
+        model:
+          type: string
+          description: Modelo del bus
+          example: Mercedes
+        color:
+          type: string
+          description: Color del bus
+          example: Blanco
+        capacity:
+          type: number
+          description: Capacidad
+          example: 40
+        enterpriseId:
+          type: string
+          description: Enterprise id
+          example: 550e84...
+    CreateSchedulerDto:
+      type: object
+      properties:
+        busId:
+          type: string
+          example: a3f5c1d2-1234-4a5b-9cde-111111111111
+          description: Bus id
+        routeId:
+          type: string
+          example: b4f6c2d3-2222-4a5b-9cde-222222222222
+          description: Route id
+        startTime:
+          type: string
+          example: "2026-05-01T08:00:00.000Z"
+          description: Start time ISO string
+        endTime:
+          type: string
+          example: "2026-05-01T10:00:00.000Z"
+          description: End time ISO string
+      required[4]: busId,routeId,startTime,endTime
+    ResponseSchedulerListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseSchedulerDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    UpdateSchedulerDto:
+      type: object
+      properties:
+        busId:
+          type: string
+          example: a3f5c1d2-1234-4a5b-9cde-111111111111
+          description: Bus id
+        routeId:
+          type: string
+          example: b4f6c2d3-2222-4a5b-9cde-222222222222
+          description: Route id
+        startTime:
+          type: string
+          example: "2026-05-01T08:00:00.000Z"
+          description: Start time ISO string
+        endTime:
+          type: string
+          example: "2026-05-01T10:00:00.000Z"
+          description: End time ISO string
+    CreatePaymentMethodDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Cash
+          description: Display name of the payment method
+      required[1]: name
+    ResponsePaymentMethodDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+      required[3]: id,name,createdAt
+    ResponsePaymentMethodListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponsePaymentMethodDto
+        meta:
+          "$ref": #/components/schemas/PaginationMetaDto
+      required[2]: items,meta
+    UpdatePaymentMethodDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Cash
+          description: Display name of the payment method
+    CreatePaymentMethodCitizenDto:
+      type: object
+      properties:
+        citizenId:
+          type: string
+          example: citizen-uuid
+        paymentMethodId:
+          type: string
+          example: payment-method-uuid
+      required[2]: citizenId,paymentMethodId
+    UpdatePaymentMethodCitizenDto:
+      type: object
+      properties:
+        citizenId:
+          type: string
+          example: citizen-uuid
+        paymentMethodId:
+          type: string
+          example: payment-method-uuid
+    CreateEnterpriseDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la empresa
+          example: TransU
+        nit:
+          type: string
+          description: NIT de la empresa
+          example: 900123456-7
+        supervisorEmail:
+          type: string
+          description: Correo del supervisor para notificaciones de incidentes
+          example: supervisor@transu.com
+      required[2]: name,nit
+    UpdateEnterpriseDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la empresa
+          example: TransU
+        nit:
+          type: string
+          description: NIT de la empresa
+          example: 900123456-7
+        supervisorEmail:
+          type: string
+          description: Correo del supervisor para notificaciones de incidentes
+          example: supervisor@transu.com
+    CreateDriverDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: María Gómez
+        document:
+          type: string
+          example: "12345678"
+          description: Documento único
+        email:
+          type: string
+          example: maria@example.com
+        phone:
+          type: string
+          example: +573001234567
+        licenseNumber:
+          type: string
+          example: "123456789"
+        licenseExpiry:
+          type: string
+          example: 2026-12-31
+      required[2]: name,document
+    UpdateDriverDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: María Gómez
+        document:
+          type: string
+          example: "12345678"
+          description: Documento único
+        email:
+          type: string
+          example: maria@example.com
+        phone:
+          type: string
+          example: +573001234567
+        licenseNumber:
+          type: string
+          example: "123456789"
+        licenseExpiry:
+          type: string
+          example: 2026-12-31
+    CreateTurnDto:
+      type: object
+      properties:
+        startTime:
+          type: string
+          description: Inicio del turno (ISO)
+          example: "2026-01-01T08:00:00.000Z"
+        endTime:
+          type: string
+          description: Fin del turno (ISO)
+          example: "2026-01-01T12:00:00.000Z"
+        status:
+          type: string
+          description: Estado
+          example: active
+        busId:
+          type: string
+          description: Bus id
+          example: uuid
+        driverId:
+          type: string
+          description: Driver id
+          example: uuid
+      required[5]: startTime,endTime,status,busId,driverId
+    UpdateTurnDto:
+      type: object
+      properties:
+        startTime:
+          type: string
+          description: Inicio del turno (ISO)
+          example: "2026-01-01T08:00:00.000Z"
+        endTime:
+          type: string
+          description: Fin del turno (ISO)
+          example: "2026-01-01T12:00:00.000Z"
+        status:
+          type: string
+          description: Estado
+          example: active
+        busId:
+          type: string
+          description: Bus id
+          example: uuid
+        driverId:
+          type: string
+          description: Driver id
+          example: uuid
+    ResponseIncidentDriverDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: Juan Perez
+      required[2]: id,name
+    ResponseIncidentPhotoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        publicUrl:
+          type: string
+          example: "https://storage.example.com/photo.jpg"
+        originalName:
+          type: string
+          example: damage-front.jpg
+        createdAt:
+          format: date-time
+          type: string
+          example: "2026-05-18T12:00:00.000Z"
+      required[2]: id,createdAt
+    ResponseIncidentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        reportedAt:
+          format: date-time
+          type: string
+          example: "2026-05-18T12:00:00.000Z"
+        type:
+          type: string
+          enum[5]: mechanical,accident,delay,passenger,other
+          example: mechanical
+        severity:
+          type: string
+          enum[4]: low,medium,high,critical
+          example: high
+        status:
+          type: string
+          enum[3]: reported,in_review,closed
+          example: reported
+        description:
+          type: string
+          example: Falla en el motor delantero
+        driver:
+          "$ref": #/components/schemas/ResponseIncidentDriverDto
+        photos:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseIncidentPhotoDto
+      required[8]: id,reportedAt,type,severity,status,description,driver,photos
+    ResponseIncidentStatisticsDto:
+      type: object
+      properties:
+        total:
+          type: number
+          example: 12
+        byType:
+          type: object
+          example:
+            mechanical: 5
+            accident: 2
+            delay: 3
+            passenger: 1
+            other: 2
+        resolutionRate:
+          type: number
+          example: 0.42
+          description: Proporción de incidentes con estado closed (0–1)
+      required[3]: total,byType,resolutionRate
+    ResponseBusIncidentListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseIncidentDto
+        meta:
+          type: object
+        statistics:
+          "$ref": #/components/schemas/ResponseIncidentStatisticsDto
+      required[3]: items,meta,statistics
+    CreateIncidentDriverDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum[5]: mechanical,accident,delay,passenger,other
+          example: mechanical
+          description: Tipo de incidente reportado
+        severity:
+          type: string
+          enum[4]: low,medium,high,critical
+          example: high
+          description: Nivel de severidad del incidente
+        description:
+          type: string
+          example: El bus presenta una falla en el motor
+          description: Descripción detallada del incidente
+        latitude:
+          type: number
+          example: 4.8156
+          description: Latitud GPS actual del incidente
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          example: -75.5149
+          description: Longitud GPS actual del incidente
+          minimum: -180
+          maximum: 180
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-05-17T23:10:00.000Z"
+          description: Timestamp del evento (opcional)
+      required[5]: type,severity,description,latitude,longitude
+    ResponseIncidentCommentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        text:
+          type: string
+          example: Se programó revisión en taller.
+        authorUserId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440001
+        authorName:
+          type: string
+          example: Admin Empresa
+        createdAt:
+          format: date-time
+          type: string
+          example: "2026-05-18T14:00:00.000Z"
+      required[5]: id,text,authorUserId,authorName,createdAt
+    ResponseIncidentCommentListDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": #/components/schemas/ResponseIncidentCommentDto
+      required[1]: items
+    CreateIncidentCommentDto:
+      type: object
+      properties:
+        text:
+          type: string
+          example: Se programó revisión en taller para el lunes.
+          minLength: 1
+          maxLength: 2000
+      required[1]: text
+    UpdateIncidentStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum[3]: reported,in_review,closed
+          example: in_review
+          description: "reported = pendiente, in_review = en revisión, closed = resuelto"
+      required[1]: status
+    ResponseDashboardPeriodDto:
+      type: object
+      properties:
+        months:
+          type: number
+          example: 6
+        from:
+          type: string
+          example: "2025-12-01T00:00:00.000Z"
+        to:
+          type: string
+          example: "2026-06-01T00:00:00.000Z"
+      required[3]: months,from,to
+    PaymentMethodIncomeDatasetDto:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          example: uuid
+        paymentMethodName:
+          type: string
+          example: Tarjeta débito
+        data:
+          example[3]: 120000,98000,0
+          description: "Ingresos por mes, alineados con labels"
+          type: array
+          items:
+            type: string
+        totalIncome:
+          type: number
+          example: 1500000
+      required[4]: paymentMethodId,paymentMethodName,data,totalIncome
+    ResponsePaymentMethodIncomeDto:
+      type: object
+      properties:
+        period:
+          "$ref": #/components/schemas/ResponseDashboardPeriodDto
+        labels:
+          example[3]: 2025-12,2026-01,2026-02
+          type: array
+          items:
+            type: string
+        datasets:
+          type: array
+          items:
+            "$ref": #/components/schemas/PaymentMethodIncomeDatasetDto
+        grandTotal:
+          type: number
+          example: 4200000
+        excludedTicketsCount:
+          type: number
+          example: 2
+          description: Tickets completados en el período sin método de pago o con amount <= 0
+      required[5]: period,labels,datasets,grandTotal,excludedTicketsCount
+    DashboardScopeDto:
+      type: object
+      properties:
+        enterpriseId:
+          type: object
+          example: uuid
+          nullable: true
+          description: Empresa filtrada; null = consolidado de todas
+        enterpriseName:
+          type: object
+          example: Transportes UC
+          nullable: true
+    IncidentTrendDatasetDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum[5]: mechanical,accident,delay,passenger,other
+          example: mechanical
+        typeLabel:
+          type: string
+          example: Mecánico
+        data:
+          example[3]: 2,1,0
+          description: "Cantidad de incidentes por mes, alineados con labels"
+          type: array
+          items:
+            type: string
+        total:
+          type: number
+          example: 15
+      required[4]: type,typeLabel,data,total
+    ResponseIncidentTrendByTypeDto:
+      type: object
+      properties:
+        period:
+          "$ref": #/components/schemas/ResponseDashboardPeriodDto
+        scope:
+          "$ref": #/components/schemas/DashboardScopeDto
+        labels:
+          example[3]: 2025-06,2025-07,2025-08
+          type: array
+          items:
+            type: string
+        datasets:
+          type: array
+          items:
+            "$ref": #/components/schemas/IncidentTrendDatasetDto
+        grandTotal:
+          type: number
+          example: 42
+      required[5]: period,scope,labels,datasets,grandTotal

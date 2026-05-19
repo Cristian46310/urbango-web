@@ -4,7 +4,7 @@ import type { GeolocationCoordinates } from "@/core/domain/entities/Geolocation"
 export class BrowserGeolocationProvider implements IGeolocationProvider {
   async getCurrentPosition(): Promise<GeolocationCoordinates> {
     return new Promise((resolve, reject) => {
-      if (!("geolocation" in navigator)) {
+      if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
         reject(new Error("La geolocalización no es soportada en tu navegador"));
         return;
       }

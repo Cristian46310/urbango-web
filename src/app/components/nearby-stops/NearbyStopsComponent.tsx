@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -10,10 +10,10 @@ import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Fix for Leaflet icons
-interface LeafletIconPrototype {
-  _getIconUrl?: string;
-}
-delete (L.Icon.Default.prototype as LeafletIconPrototype)._getIconUrl;
+const iconDefaultPrototype = L.Icon.Default.prototype as L.Icon.Default & {
+  _getIconUrl?: () => string;
+};
+delete iconDefaultPrototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',

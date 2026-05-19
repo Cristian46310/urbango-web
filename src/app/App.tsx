@@ -1,7 +1,44 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage, GithubCallbackPage, MicrosoftCallbackPage, TeamPage, DashboardPage, PermissionsPage, ProfilesPage, RolesPage, UsersPage, NearbyStopsPage, IncidentReportPage, TicketAlightSearchPage, TicketAlightValidationPage, AccessDeniedPage, RegisterProfilePage, RegisterBusPage } from './pages'
+import {
+  LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  GithubCallbackPage,
+  MicrosoftCallbackPage,
+  TeamPage,
+  DashboardPage,
+  PermissionsPage,
+  ProfilesPage,
+  RolesPage,
+  UsersPage,
+  NearbyStopsPage,
+  IncidentReportPage,
+  TicketAlightSearchPage,
+  TicketAlightValidationPage,
+  AccessDeniedPage,
+  RegisterProfilePage,
+  BusinessDashboardPage,
+  AddressesPage,
+  EnterprisesPage,
+  StopsAdminPage,
+  PaymentMethodsPage,
+  CitizensPage,
+  DriversAdminPage,
+  RoutesPage,
+  NodesPage,
+  BusesPage,
+  SchedulersPage,
+  TurnsPage,
+  PaymentMethodCitizensPage,
+  IncidentsPage,
+  IncidentsByBusPage,
+  IncidentDetailPage,
+} from './pages'
+
+const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
+import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
@@ -9,6 +46,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
+import RegisterBusPage from './pages/fleet/register-bus/page'
 
 function AppContent() {
   useHttpErrorHandler();
@@ -21,6 +59,7 @@ function AppContent() {
   return (
     <>
         <Toaster position="top-right" />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -112,9 +151,33 @@ function AppContent() {
               </RoleGuard>
             }
           />
+          <Route
+            path="business/dashboard"
+            element={
+              <RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}>
+                <BusinessDashboardPage />
+              </RoleGuard>
+            }
+          />
+          <Route path="business/addresses" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><AddressesPage /></RoleGuard>} />
+          <Route path="business/enterprises" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><EnterprisesPage /></RoleGuard>} />
+          <Route path="business/stops" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><StopsAdminPage /></RoleGuard>} />
+          <Route path="business/payment-methods" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><PaymentMethodsPage /></RoleGuard>} />
+          <Route path="business/citizens" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><CitizensPage /></RoleGuard>} />
+          <Route path="business/drivers" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><DriversAdminPage /></RoleGuard>} />
+          <Route path="business/routes" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><RoutesPage /></RoleGuard>} />
+          <Route path="business/nodes" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><NodesPage /></RoleGuard>} />
+          <Route path="business/buses" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><BusesPage /></RoleGuard>} />
+          <Route path="business/schedulers" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><SchedulersPage /></RoleGuard>} />
+          <Route path="business/turns" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><TurnsPage /></RoleGuard>} />
+          <Route path="business/payment-method-citizens" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><PaymentMethodCitizensPage /></RoleGuard>} />
+          <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
+          <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
+          <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
+        </Suspense>
     </>
   )
 }

@@ -11,7 +11,7 @@ export function TicketAlightSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSearch = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!ticketId.trim()) {
@@ -22,16 +22,17 @@ export function TicketAlightSearch() {
     setError(null);
     setLoading(true);
 
-    void (async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        void navigate(`/app/ticket/${ticketId.trim()}/alight`);
-      } catch {
-        setError("Error al buscar el boleto. Intenta de nuevo.");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      // Simulación de búsqueda - en producción iría aquí la llamada a API
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Navegar a la página de validación
+      void navigate(`/app/ticket/${ticketId.trim()}/alight`);
+    } catch {
+      setError("Error al buscar el boleto. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +52,7 @@ export function TicketAlightSearch() {
 
         <Card className="border-blue-200 shadow-lg">
           <CardContent className="pt-6">
-            <form onSubmit={handleSearch} className="space-y-4">
+            <form onSubmit={(e) => { void handleSearch(e); }} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="ticket-id" className="block text-sm font-semibold text-slate-700">
                   Número de Boleto
