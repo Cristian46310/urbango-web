@@ -47,3 +47,9 @@ export const PaymentMethodCitizensPage = lazy(() => import('./business/payment-m
 export const IncidentsPage = lazy(() => import('./business/incidents/page'))
 export const IncidentsByBusPage = lazy(() => import('./business/incidents/bus/[busId]/page'))
 export const IncidentDetailPage = lazy(() => import('./business/incidents/[incidentId]/page'))
+
+export const AdminAgeDistributionPage = lazy(() => import('./admin/reports/age-distribution/page'))
+export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/page'))
+export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
+export const DriverTurnStartPage = lazy(() => import('./driver/turn-start/page'))
+export const CitizenBoardingPage = lazy(() => import('./citizen/boarding/page'))

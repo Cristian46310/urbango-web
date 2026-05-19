@@ -3,6 +3,8 @@ import type { GeolocationCoordinates } from "@/core/domain/entities/Geolocation"
 
 export interface UseGeolocationReturn {
   coordinates: GeolocationCoordinates | null;
+  latitude: number | null;
+  longitude: number | null;
   loading: boolean;
   error: string | null;
   requestPermission: () => Promise<void>;
@@ -20,6 +22,8 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   return {
     coordinates,
+    latitude: coordinates?.latitude ?? null,
+    longitude: coordinates?.longitude ?? null,
     loading,
     error,
     requestPermission: requestGeolocation,

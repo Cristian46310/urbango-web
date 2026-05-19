@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { recaptchaConfig } from "@/config/recaptcha";
 import { useLogin } from "@/hooks/security";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,7 +22,13 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const response = await forgotPassword({ email: trimmedEmail });
+      const recaptchaToken = await executeRecaptcha(
+        recaptchaConfig.actions.forgotPassword,
+      );
+      const response = await forgotPassword({
+        email: trimmedEmail,
+        recaptchaToken,
+      });
       toast.success(response.message);
     } catch (error) {
       toast.error((error as Error).message);

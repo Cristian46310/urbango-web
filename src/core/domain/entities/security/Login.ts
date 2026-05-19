@@ -20,6 +20,7 @@ export interface RegisterUserResponse {
 
 export interface ForgotPasswordDTO {
     email: string;
+    recaptchaToken: string;
 }
 
 export interface ResetPasswordDTO {
