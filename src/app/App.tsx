@@ -207,32 +207,33 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
+
+          <Route
+            path="reports/age-distribution"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminAgeDistributionPage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="routes/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminRouteCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="schedulers/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminSchedulerCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
         </Route>
 
-        <Route
-          path="/admin/reports/age-distribution"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminAgeDistributionPage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/routes/create"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminRouteCreatePage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/schedulers/create"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminSchedulerCreatePage />
-            </JwtProtectedRoute>
-          }
-        />
         <Route
           path="/driver/turn-start"
           element={
