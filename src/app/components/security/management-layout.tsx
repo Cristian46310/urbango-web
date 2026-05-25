@@ -4,6 +4,7 @@ import {
   ArrowDownToLine,
   BadgeCheck,
   BookUser,
+  CreditCard,
   ChevronDown,
   AlertTriangle,
   KeyRound,
@@ -21,11 +22,11 @@ import {
   Bus,
   Route,
   MapPinned,
-  CreditCard,
   CalendarClock,
   Link2,
   AlertCircle,
   Home,
+  Wrench, // Icono para la sección de Administración Técnica
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import busLogo from "@/assets/icons/images.png";
+import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePaymentReturn";
 import { useAuthStore } from "@/store/security/authStore";
 
 interface MenuItem {
@@ -63,6 +65,13 @@ const securityMenuItems: MenuItem[] = [
   { title: "Perfiles", to: "/app/profiles", description: "Gestion de perfiles", icon: ShieldUser, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+];
+
+
+const globalAdminMenuItems: MenuItem[] = [
+  { title: "Crear Ruta", to: "/app/routes/create", description: "Diseño y trazado de rutas", icon: Route, requiredRoles: ["admin", "ADMIN"] },
+  { title: "Crear Programación", to: "/app/schedulers/create", description: "Asignación de horarios maestros", icon: CalendarClock, requiredRoles: ["admin", "ADMIN"] },
+  { title: "Distribución Edades", to: "/app/reports/age-distribution", description: "Reporte demográfico de usuarios", icon: BarChart3, requiredRoles: ["admin", "ADMIN"] },
 ];
 
 const homeMenuItem: MenuItem = {
@@ -98,6 +107,7 @@ const fleetMenuItems: MenuItem[] = [
 ];
 
 const businessMenuItems: MenuItem[] = [
+  { title: "Recargar tarjeta", to: "/app/card-recharge", description: "Recarga prepagada con ePayco", icon: CreditCard, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Paraderos", to: "/app/nearby-stops", description: "Buscar paraderos cercanos", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje y liberar cupo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Reportar", to: "/app/incident-report", description: "Registrar incidente", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
@@ -121,7 +131,6 @@ function isActivePath(pathname: string, target: string) {
   if (target === "/app") {
     return pathname === "/app";
   }
-
   return pathname === target || pathname.startsWith(`${target}/`);
 }
 
@@ -129,48 +138,53 @@ export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole } = useAuthStore();
+  useCardRechargePaymentReturn();
 
   // Filter menu items based on user roles
   const visibleSecurityItems = securityMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
-    const hasAccess = hasAnyRole(item.requiredRoles);
-    return hasAccess;
+    return hasAnyRole(item.requiredRoles);
   });
 
   const visibleFleetItems = fleetMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
-    const hasAccess = hasAnyRole(item.requiredRoles);
-    return hasAccess;
+    return hasAnyRole(item.requiredRoles);
   });
 
   const visibleBusinessItems = businessMenuItems.filter((item) => {
     if (!item.requiredRoles) return true;
-    const hasAccess = hasAnyRole(item.requiredRoles);
-    return hasAccess;
+    return hasAnyRole(item.requiredRoles);
+  });
+
+
+  const visibleGlobalAdminItems = globalAdminMenuItems.filter((item) => {
+    if (!item.requiredRoles) return true;
+    return hasAnyRole(item.requiredRoles);
   });
 
   // Show all menu items - route guards handle access control
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
-  const registerProfileActive = isActivePath(
-    location.pathname,
-    registerProfileMenuItem.to,
-  );
+  const registerProfileActive = isActivePath(location.pathname, registerProfileMenuItem.to);
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
-  const fleetActive = visibleFleetItems.some((item) =>
-    isActivePath(location.pathname, item.to),
-  );
+  const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
+  
+
+  const globalAdminActive = visibleGlobalAdminItems.some((item) => isActivePath(location.pathname, item.to));
 
   const [isSecurityOpen, setIsSecurityOpen] = useState(securityActive);
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
   const [isFleetOpen, setIsFleetOpen] = useState(fleetActive);
   const [isBusinessOpen, setIsBusinessOpen] = useState(businessActive);
+  
+  const [isGlobalAdminOpen, setIsGlobalAdminOpen] = useState(globalAdminActive);
 
   const securityOpen = securityActive || isSecurityOpen;
   const teamOpen = teamActive || isTeamOpen;
   const fleetOpen = fleetActive || isFleetOpen;
   const businessOpen = businessActive || isBusinessOpen;
+  const globalAdminOpen = globalAdminActive || isGlobalAdminOpen;
 
   const handleLogout = () => {
     logout();
@@ -230,22 +244,22 @@ export function ManagementLayout() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {/* Security menu - Only show if user has access to any security items */}
+                {/* Security menu */}
                 {visibleSecurityItems.length > 0 && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={securityActive}
-                    title="Security"
-                    size="sm"
-                    className="justify-between"
-                    onClick={() => { setIsSecurityOpen(!securityOpen); }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck />
-                      <span className="font-medium">Security</span>
-                    </span>
-                    <ChevronDown className={`size-4 transition-transform ${securityOpen ? "rotate-180" : ""}`} />
-                  </SidebarMenuButton>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={securityActive}
+                      title="Security"
+                      size="sm"
+                      className="justify-between"
+                      onClick={() => { setIsSecurityOpen(!securityOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldCheck />
+                        <span className="font-medium">Security</span>
+                      </span>
+                      <ChevronDown className={`size-4 transition-transform ${securityOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
 
                     {securityOpen ? (
                       <SidebarMenuSub>
@@ -257,6 +271,44 @@ export function ManagementLayout() {
                             <SidebarMenuSubItem key={item.to}>
                               <SidebarMenuSubButton asChild isActive={active}>
                                 <NavLink to={item.to} end={item.to === "/app"}>
+                                  <Icon className="size-4" />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                )}
+
+                {visibleGlobalAdminItems.length > 0 && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={globalAdminActive}
+                      title="Administración"
+                      size="sm"
+                      className="justify-between"
+                      onClick={() => { setIsGlobalAdminOpen(!globalAdminOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Wrench className="size-4 text-amber-500" />
+                        <span className="font-medium">Config Sistema</span>
+                      </span>
+                      <ChevronDown className={`size-4 transition-transform ${globalAdminOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+
+                    {globalAdminOpen ? (
+                      <SidebarMenuSub>
+                        {visibleGlobalAdminItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActivePath(location.pathname, item.to);
+
+                          return (
+                            <SidebarMenuSubItem key={item.to}>
+                              <SidebarMenuSubButton asChild isActive={active}>
+                                <NavLink to={item.to}>
                                   <Icon className="size-4" />
                                   <span>{item.title}</span>
                                 </NavLink>
@@ -299,24 +351,24 @@ export function ManagementLayout() {
                 </SidebarMenuItem>
 
                 {visibleFleetItems.length > 0 && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={fleetActive}
-                    title="Flota"
-                    size="sm"
-                    className="justify-between"
-                    onClick={() => { setIsFleetOpen(!fleetOpen); }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <BusFront />
-                      <span className="font-medium">Flota</span>
-                    </span>
-                    <ChevronDown className={`size-4 transition-transform ${fleetOpen ? "rotate-180" : ""}`} />
-                  </SidebarMenuButton>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={fleetActive}
+                      title="Flota"
+                      size="sm"
+                      className="justify-between"
+                      onClick={() => { setIsFleetOpen(!fleetOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <BusFront />
+                        <span className="font-medium">Flota</span>
+                      </span>
+                      <ChevronDown className={`size-4 transition-transform ${fleetOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
 
-                  {fleetOpen ? (
-                    <SidebarMenuSub>
-                      {visibleFleetItems.map((item) => {
+                    {fleetOpen ? (
+                      <SidebarMenuSub>
+                        {visibleFleetItems.map((item) => {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
 
@@ -336,26 +388,26 @@ export function ManagementLayout() {
                   </SidebarMenuItem>
                 )}
 
-                {/* Business menu - Only show if user has access to any business items */}
+                {/* Business menu */}
                 {visibleBusinessItems.length > 0 && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={businessActive}
-                    title="Business"
-                    size="sm"
-                    className="justify-between"
-                    onClick={() => { setIsBusinessOpen(!businessOpen); }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Briefcase />
-                      <span className="font-medium">Business</span>
-                    </span>
-                    <ChevronDown className={`size-4 transition-transform ${businessOpen ? "rotate-180" : ""}`} />
-                  </SidebarMenuButton>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={businessActive}
+                      title="Business"
+                      size="sm"
+                      className="justify-between"
+                      onClick={() => { setIsBusinessOpen(!businessOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Briefcase />
+                        <span className="font-medium">Business</span>
+                      </span>
+                      <ChevronDown className={`size-4 transition-transform ${businessOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
 
-                  {businessOpen ? (
-                    <SidebarMenuSub>
-                      {visibleBusinessItems.map((item) => {
+                    {businessOpen ? (
+                      <SidebarMenuSub>
+                        {visibleBusinessItems.map((item) => {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
 
@@ -392,7 +444,7 @@ export function ManagementLayout() {
             <Button
               type="button"
               variant="outline"
-              className="justify-start"
+              className="justify-start w-full gap-2"
               onClick={handleLogout}
             >
               <LogOut className="size-4" />

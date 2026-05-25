@@ -1,54 +1,31 @@
-import { useEffect, useState } from "react";
+import { useGeolocationStore } from "@/store/geolocationStore";
+import type { GeolocationCoordinates } from "@/core/domain/entities/Geolocation";
 
-export interface GeolocationState {
+export interface UseGeolocationReturn {
+  coordinates: GeolocationCoordinates | null;
   latitude: number | null;
   longitude: number | null;
-  error: string | null;
   loading: boolean;
+  error: string | null;
+  requestPermission: () => Promise<void>;
 }
 
-export function useGeolocation() {
-  const [state, setState] = useState<GeolocationState>({
-    latitude: null,
-    longitude: null,
-    error: null,
-    loading: true,
-  });
+/**
+ * Custom hook que expone el estado global de geolocalización
+ * Utiliza el store centralizado que maneja toda la lógica
+ *
+ * @returns {UseGeolocationReturn} Estado de ubicación y función para solicitarla
+ */
+export const useGeolocation = (): UseGeolocationReturn => {
+  const { coordinates, loading, error, requestGeolocation } =
+    useGeolocationStore();
 
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setState({ latitude: null, longitude: null, error: "Geolocalización no disponible", loading: false });
-      return;
-    }
-
-    const watcher = navigator.geolocation.watchPosition(
-      (position) => {
-        setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          error: null,
-          loading: false,
-        });
-      },
-      (error) => {
-        setState({
-          latitude: null,
-          longitude: null,
-          error: error.message,
-          loading: false,
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 10000,
-        timeout: 10000,
-      }
-    );
-
-    return () => {
-      navigator.geolocation.clearWatch(watcher);
-    };
-  }, []);
-
-  return state;
-}
+  return {
+    coordinates,
+    latitude: coordinates?.latitude ?? null,
+    longitude: coordinates?.longitude ?? null,
+    loading,
+    error,
+    requestPermission: requestGeolocation,
+  };
+};

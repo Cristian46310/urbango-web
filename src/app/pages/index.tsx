@@ -43,6 +43,9 @@ export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/cr
 export const AccessDeniedPage = lazyNamed(() => import('./access-denied'), 'AccessDeniedPage')
 export const RegisterProfilePage = lazy(() => import('./register-profile/page'))
 export const RegisterBusPage = lazy(() => import('./fleet/register-bus/page'))
+export const CardRechargePage = lazy(() => import('./card-recharge/page'))
+export const CardRechargeStatusPage = lazy(() => import('./card-recharge/status/page'))
+export const CardRechargeReturnPage = lazy(() => import('./card-recharge/return/page'))
 
 export const BusinessDashboardPage = lazy(() => import('./business/dashboard/page'))
 export const AddressesPage = lazy(() => import('./business/addresses/page'))

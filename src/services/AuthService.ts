@@ -10,21 +10,34 @@ export interface DecodedToken {
   [key: string]: unknown;
 }
 
+/** Normaliza variantes del backend (p. ej. CITEZEN → CITIZEN). */
+export function normalizeRoleName(role: string): string {
+  const upper = role.trim().toUpperCase();
+  if (upper === 'CITEZEN') {
+    return 'CITIZEN';
+  }
+  return upper;
+}
+
 function normalizeRoles(rolesData: unknown): string[] {
+  const raw: string[] = [];
+
   if (Array.isArray(rolesData)) {
-    return rolesData.filter(
-      (role): role is string => typeof role === 'string' && role.trim().length > 0,
+    raw.push(
+      ...rolesData.filter(
+        (role): role is string => typeof role === 'string' && role.trim().length > 0,
+      ),
+    );
+  } else if (typeof rolesData === 'string') {
+    raw.push(
+      ...rolesData
+        .split(/[,\s]+/)
+        .map((role) => role.trim())
+        .filter((role) => role.length > 0),
     );
   }
 
-  if (typeof rolesData === 'string') {
-    return rolesData
-      .split(/[,\s]+/)
-      .map((role) => role.trim())
-      .filter((role) => role.length > 0);
-  }
-
-  return [];
+  return [...new Set(raw.map(normalizeRoleName))];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -136,8 +149,9 @@ function isAuthenticated(): boolean {
 
 function hasRole(role: string): boolean {
   const userRoles = getRoles();
+  const target = normalizeRoleName(role);
 
-  return userRoles.includes(role);
+  return userRoles.includes(target);
 }
 
 function hasAnyRole(roles: readonly string[]): boolean {
@@ -147,7 +161,7 @@ function hasAnyRole(roles: readonly string[]): boolean {
     return false;
   }
 
-  return roles.some((role) => userRoles.includes(role));
+  return roles.some((role) => userRoles.includes(normalizeRoleName(role)));
 }
 
 function hasAllRoles(roles: readonly string[]): boolean {
@@ -157,7 +171,7 @@ function hasAllRoles(roles: readonly string[]): boolean {
     return false;
   }
 
-  return roles.every((role) => userRoles.includes(role));
+  return roles.every((role) => userRoles.includes(normalizeRoleName(role)));
 }
 
 function getCurrentUser() {
@@ -185,6 +199,7 @@ function logout(): void {
 }
 
 export const AuthService = {
+  normalizeRoleName,
   decodeToken,
   isTokenExpired,
   getToken,

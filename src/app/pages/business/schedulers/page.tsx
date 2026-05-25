@@ -12,6 +12,9 @@ interface SchedulerForm {
   routeId: string;
   startTime: string;
   endTime: string;
+  recurrence: "none" | "daily" | "weekday" | "weekend";
+  toleranceMinutes: number;
+  status: string;
 }
 
 const initialForm: SchedulerForm = {
@@ -20,8 +23,19 @@ const initialForm: SchedulerForm = {
   routeId: "",
   startTime: "",
   endTime: "",
+  recurrence: "none",
+  toleranceMinutes: 5,
+  status: "programado",
 };
+
 const columnHelper = createColumnHelper<Scheduler>();
+
+const RECURRENCE_OPTIONS = [
+  { value: "none", label: "No recurrente" },
+  { value: "daily", label: "Diaria" },
+  { value: "weekday", label: "Lunes a Viernes" },
+  { value: "weekend", label: "Fines de semana" },
+];
 
 function toLocalDatetime(iso: string) {
   if (!iso) return "";
@@ -36,6 +50,9 @@ function buildPayload(form: SchedulerForm) {
     routeId: form.routeId,
     startTime: new Date(form.startTime).toISOString(),
     endTime: new Date(form.endTime).toISOString(),
+    recurrence: form.recurrence,
+    toleranceMinutes: Number(form.toleranceMinutes),
+    status: form.status || "programado",
   };
 }
 
@@ -58,11 +75,11 @@ export default function SchedulersPage() {
 
   return (
     <BusinessCrudPage
-      title="Programación"
+      title="Programacion"
       description="Horarios de buses en rutas."
       tableTitle="Listado de programaciones"
       tableDescription="Schedulers activos."
-      entityLabel="programación"
+      entityLabel="programacion"
       items={crud.items}
       page={crud.page}
       loading={crud.loading}
@@ -72,12 +89,15 @@ export default function SchedulersPage() {
       editItem={crud.editItem}
       removeItem={crud.removeItem}
       initialForm={initialForm}
-      mapToForm={(e) => ({
+      mapToForm={(e: any) => ({
         id: e.id,
         busId: e.bus?.id ?? "",
         routeId: e.route?.id ?? "",
         startTime: toLocalDatetime(e.startTime),
         endTime: toLocalDatetime(e.endTime),
+        recurrence: e.recurrence ?? "none",
+        toleranceMinutes: e.toleranceMinutes ?? 5,
+        status: e.status ?? "programado",
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}
@@ -94,6 +114,10 @@ export default function SchedulersPage() {
         columnHelper.accessor("startTime", {
           header: "Inicio",
           cell: (i) => new Date(String(i.getValue())).toLocaleString(),
+        }),
+        columnHelper.accessor("status", {
+          header: "Estado",
+          cell: (i) => String(i.getValue() ?? "programado"),
         }),
       ]}
       renderForm={(form, setForm, mode) => (
@@ -127,6 +151,21 @@ export default function SchedulersPage() {
             onChange={(v) => { setForm((c) => ({ ...c, endTime: v })); }}
             disabled={mode === "view"}
             type="datetime-local"
+          />
+          <SelectField
+            label="Recurrencia"
+            value={form.recurrence}
+            onChange={(v) => { setForm((c) => ({ ...c, recurrence: v as any })); }}
+            disabled={mode === "view"}
+            options={RECURRENCE_OPTIONS}
+          />
+          <TextField
+            id="toleranceMinutes"
+            label="Margen de tolerancia (Minutos)"
+            value={String(form.toleranceMinutes)}
+            onChange={(v) => { setForm((c) => ({ ...c, toleranceMinutes: Number(v) })); }}
+            disabled={mode === "view"}
+            type="number"
           />
         </>
       )}

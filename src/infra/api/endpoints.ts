@@ -127,4 +127,12 @@ export const ENDPOINTS = {
     INCIDENT_TREND: "/dashboard/incident-trend-by-type",
     INCIDENT_TREND_EXPORT: "/dashboard/incident-trend-by-type/export",
   },
+  CARD_RECHARGE: {
+    CONFIG: '/card-recharge/config',
+    CARDS: '/card-recharge/cards',
+    PREVIEW: '/card-recharge/preview',
+    CHECKOUT: '/card-recharge/checkout',
+    TRANSACTION_STATUS: (reference: string) =>
+      `/card-recharge/transactions/${reference}/status`,
+  },
 };

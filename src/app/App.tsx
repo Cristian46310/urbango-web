@@ -5,18 +5,16 @@ import {
   AdminAgeDistributionPage,
   AdminRouteCreatePage,
   AdminSchedulerCreatePage,
-  CitizenBoardingPage,
-  DashboardPage,
-  DriverTurnStartPage,
-  ForgotPasswordPage,
-  GithubCallbackPage,
   LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  GithubCallbackPage,
   MicrosoftCallbackPage,
+  TeamPage,
+  DashboardPage,
   PermissionsPage,
   ProfilesPage,
-  ResetPasswordPage,
   RolesPage,
-  TeamPage,
   UsersPage,
   NearbyStopsPage,
   IncidentReportPage,
@@ -24,6 +22,10 @@ import {
   TicketAlightValidationPage,
   AccessDeniedPage,
   RegisterProfilePage,
+  RegisterBusPage,
+  CardRechargePage,
+  CardRechargeReturnPage,
+  CardRechargeStatusPage,
   BusinessDashboardPage,
   AddressesPage,
   EnterprisesPage,
@@ -40,18 +42,20 @@ import {
   IncidentsPage,
   IncidentsByBusPage,
   IncidentDetailPage,
+  CitizenBoardingPage,
+  DriverTurnStartPage,
 } from './pages'
-
-const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
+import { ProtectedRoute as JwtProtectedRoute } from '@/components/ProtectedRoute'
 import { RoleGuard } from '@/components/guards/RoleGuard'
 import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
-import RegisterBusPage from './pages/fleet/register-bus/page'
+
+const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 
 function AppContent() {
   useHttpErrorHandler();
@@ -157,6 +161,30 @@ function AppContent() {
             }
           />
           <Route
+            path="card-recharge"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargePage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/return"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeReturnPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="card-recharge/status/:reference?"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CardRechargeStatusPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="business/dashboard"
             element={
               <RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}>
@@ -179,46 +207,47 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
+
+          <Route
+            path="reports/age-distribution"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminAgeDistributionPage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="routes/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminRouteCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="schedulers/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminSchedulerCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
         </Route>
 
         <Route
-          path="/admin/reports/age-distribution"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminAgeDistributionPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/routes/create"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminRouteCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/schedulers/create"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminSchedulerCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/driver/turn-start"
           element={
-            <ProtectedRoute roles={["driver"]}>
+            <JwtProtectedRoute roles={["driver"]}>
               <DriverTurnStartPage />
-            </ProtectedRoute>
+            </JwtProtectedRoute>
           }
         />
         <Route
           path="/boarding"
           element={
-            <ProtectedRoute roles={["citizen"]}>
+            <JwtProtectedRoute roles={["citizen"]}>
               <CitizenBoardingPage />
-            </ProtectedRoute>
+            </JwtProtectedRoute>
           }
         />
 

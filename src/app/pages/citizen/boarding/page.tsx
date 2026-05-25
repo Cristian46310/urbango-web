@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
-import { board, BoardingResponse } from "@/services/boardingService";
-import { getBuses, BusItem } from "@/services/busService";
-import { getMyPaymentMethods, PaymentMethodItem } from "@/services/paymentService";
-import { getStops, StopItem } from "@/services/stopService";
+import { board } from "@/services/boardingService";
+import type { BoardingResponse } from "@/services/boardingService";
+import { getBuses } from "@/services/busService";
+import type { BusItem } from "@/services/busService";
+import { getMyPaymentMethods } from "@/services/paymentService";
+import type { PaymentMethodItem } from "@/services/paymentService";
+import { getStops } from "@/services/stopService";
+import type { StopItem } from "@/services/stopService";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
 function distanceBetween(lat1: number, lon1: number, lat2: number, lon2: number) {

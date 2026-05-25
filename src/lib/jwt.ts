@@ -28,7 +28,8 @@ export function hasAllowedRole(token: string, allowedRoles: string[]): boolean {
     return false;
   }
 
-  const rawRole = payload.role ?? payload.roles ?? payload.user?.role ?? payload.user?.roles;
+  const user = payload.user as JwtPayload | undefined;
+  const rawRole = payload.role ?? payload.roles ?? user?.role ?? user?.roles;
   const roles = Array.isArray(rawRole) ? rawRole : rawRole ? [rawRole] : [];
 
   const flattened = roles.flatMap((role) => {
