@@ -43,6 +43,10 @@ import {
   IncidentsByBusPage,
   IncidentDetailPage,
   CitizenBoardingPage,
+  CitizenRoutesPage,
+  CitizenRouteDetailPage,
+  CitizenTripsPage,
+  CitizenTripDetailPage,
   DriverTurnStartPage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
@@ -129,10 +133,50 @@ function AppContent() {
             }
           />
           <Route
+            path="planning/routes"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRoutesPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="planning/routes/:id"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRouteDetailPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="nearby-stops"
             element={
               <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
                 <NearbyStopsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="boarding"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenBoardingPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips/:historyId"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripDetailPage />
               </RoleGuard>
             }
           />
@@ -207,6 +251,14 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
+          <Route
+            path="driver/turn-start"
+            element={
+              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <DriverTurnStartPage />
+              </RoleGuard>
+            }
+          />
         </Route>
 
         <Route
@@ -233,22 +285,8 @@ function AppContent() {
             </JwtProtectedRoute>
           }
         />
-        <Route
-          path="/driver/turn-start"
-          element={
-            <JwtProtectedRoute roles={["driver"]}>
-              <DriverTurnStartPage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/boarding"
-          element={
-            <JwtProtectedRoute roles={["citizen"]}>
-              <CitizenBoardingPage />
-            </JwtProtectedRoute>
-          }
-        />
+        <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
+        <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>

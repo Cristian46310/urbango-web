@@ -1,16 +1,23 @@
 import axios from 'axios';
 
-export function getApiErrorMessage(
-  error: unknown,
-  fallback = 'Ocurrió un error inesperado',
-): string {
+export function getApiErrorMessage(error: unknown, fallback = 'Error inesperado'): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string | string[] } | undefined;
-    if (typeof data?.message === 'string') {
-      return data.message;
+    const data = error.response?.data;
+    if (typeof data === 'string' && data.trim()) {
+      return data;
     }
-    if (Array.isArray(data?.message)) {
-      return data.message.join(', ');
+    if (data && typeof data === 'object') {
+      const record = data as Record<string, unknown>;
+      const message = record.message ?? record.error;
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+      if (Array.isArray(message) && message.length > 0) {
+        return message.map(String).join(', ');
+      }
+    }
+    if (error.message) {
+      return error.message;
     }
   }
 

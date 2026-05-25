@@ -1,7 +1,9 @@
 import type { BusinessPage, BusinessTablePagination, PaginationMeta } from "@/core/types/BusinessPage";
 
+const MAX_PAGE_LIMIT = 100;
+
 export function toBusinessPageableQuery(pageIndex: number, limit: number) {
-  return { page: pageIndex + 1, limit };
+  return { page: pageIndex + 1, limit: Math.min(limit, MAX_PAGE_LIMIT) };
 }
 
 export function toTablePagination(meta: PaginationMeta | null | undefined): BusinessTablePagination {

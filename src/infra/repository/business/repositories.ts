@@ -42,6 +42,17 @@ import type {
 import type { BusinessPage, BusinessPageableQuery } from "@/core/types/BusinessPage";
 import type { IBusinessCrudRepository } from "@/core/domain/interfaces/business/IBusinessCrudRepository";
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
+
+function toStringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
 export const addressRepository = new BusinessCrudRepository<
   Address,
   CreateAddressDTO,
@@ -89,22 +100,187 @@ export const busRepository = new BusinessCrudRepository<Bus, CreateBusDTO, Updat
   ENDPOINTS.BUS.BY_ID,
 );
 
-export const schedulerRepository = new BusinessCrudRepository<
-  Scheduler,
-  CreateSchedulerDTO,
-  UpdateSchedulerDTO
->(ENDPOINTS.SCHEDULER.BASE, ENDPOINTS.SCHEDULER.BY_ID);
+function mapBusSummary(raw: unknown): Bus | undefined {
+  const record = asRecord(raw);
+  if (!record) {
+    return undefined;
+  }
+  const id = toStringValue(record.id);
+  if (!id) {
+    return undefined;
+  }
+  return {
+    id,
+    plate: toStringValue(record.plate),
+    status: (toStringValue(record.status) || "operativo") as Bus["status"],
+  };
+}
+
+function mapRouteSummary(raw: unknown): Route | undefined {
+  const record = asRecord(raw);
+  if (!record) {
+    return undefined;
+  }
+  const id = toStringValue(record.id);
+  if (!id) {
+    return undefined;
+  }
+  return {
+    id,
+    name: toStringValue(record.name),
+    description: toStringValue(record.description),
+    price: Number(record.price) || 0,
+  };
+}
+
+function mapScheduler(raw: unknown): Scheduler | null {
+  const record = asRecord(raw);
+  if (!record) {
+    return null;
+  }
+
+  const id = toStringValue(record.id);
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    bus: mapBusSummary(record.bus),
+    route: mapRouteSummary(record.route),
+    date: toStringValue(record.date) || undefined,
+    departureTime: toStringValue(record.departureTime ?? record.departure_time) || undefined,
+    startTime: toStringValue(record.startTime) || undefined,
+    endTime: toStringValue(record.endTime) || undefined,
+    createdAt: toStringValue(record.createdAt) || undefined,
+  };
+}
+
+class SchedulerRepository
+  implements IBusinessCrudRepository<Scheduler, CreateSchedulerDTO, UpdateSchedulerDTO>
+{
+  async getById(id: string): Promise<Scheduler> {
+    const raw = await httpMsBussines.get<unknown>(ENDPOINTS.SCHEDULER.BY_ID(id));
+    return mapScheduler(raw) ?? { id };
+  }
+
+  async getAll(pageable: BusinessPageableQuery): Promise<BusinessPage<Scheduler>> {
+    const page = await httpMsBussines.get<BusinessPage<unknown>>(ENDPOINTS.SCHEDULER.BASE, {
+      params: pageable,
+    });
+    return {
+      ...page,
+      items: page.items
+        .map(mapScheduler)
+        .filter((item): item is Scheduler => item !== null),
+    };
+  }
+
+  async create(data: CreateSchedulerDTO): Promise<Scheduler> {
+    const raw = await httpMsBussines.post<unknown>(ENDPOINTS.SCHEDULER.BASE, data);
+    return mapScheduler(raw) ?? { id: "", ...data };
+  }
+
+  async update(id: string, data: UpdateSchedulerDTO): Promise<Scheduler> {
+    const raw = await httpMsBussines.patch<unknown>(ENDPOINTS.SCHEDULER.BY_ID(id), data);
+    return mapScheduler(raw) ?? { id, ...data };
+  }
+
+  async delete(id: string): Promise<void> {
+    await httpMsBussines.delete(ENDPOINTS.SCHEDULER.BY_ID(id));
+  }
+}
+
+export const schedulerRepository = new SchedulerRepository();
 
 export const turnRepository = new BusinessCrudRepository<Turn, CreateTurnDTO, UpdateTurnDTO>(
   ENDPOINTS.TURN.BASE,
   ENDPOINTS.TURN.BY_ID,
 );
 
-export const paymentMethodCitizenRepository = new BusinessCrudRepository<
-  PaymentMethodCitizen,
-  CreatePaymentMethodCitizenDTO,
-  UpdatePaymentMethodCitizenDTO
->(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BASE, ENDPOINTS.PAYMENT_METHOD_CITIZEN.BY_ID);
+function mapPaymentMethodCitizen(raw: unknown): PaymentMethodCitizen | null {
+  const record = asRecord(raw);
+  if (!record) {
+    return null;
+  }
+
+  const id = toStringValue(record.id);
+  if (!id) {
+    return null;
+  }
+
+  const citizen = asRecord(record.citizen);
+  const paymentMethod = asRecord(record.paymentMethod ?? record.payment_method);
+
+  const citizenId = toStringValue(
+    record.citizenId ?? record.citizen_id ?? citizen?.id,
+  );
+  const paymentMethodId = toStringValue(
+    record.paymentMethodId ?? record.payment_method_id ?? paymentMethod?.id,
+  );
+
+  return {
+    id,
+    citizenId,
+    paymentMethodId,
+    citizen: citizen
+      ? {
+          id: toStringValue(citizen.id),
+          name: toStringValue(citizen.name),
+          document: toStringValue(citizen.document),
+        }
+      : undefined,
+    paymentMethod: paymentMethod
+      ? {
+          id: toStringValue(paymentMethod.id),
+          name: toStringValue(paymentMethod.name),
+        }
+      : undefined,
+    createdAt: toStringValue(record.createdAt) || undefined,
+  };
+}
+
+class PaymentMethodCitizenRepository
+  implements
+    IBusinessCrudRepository<
+      PaymentMethodCitizen,
+      CreatePaymentMethodCitizenDTO,
+      UpdatePaymentMethodCitizenDTO
+    >
+{
+  async getById(id: string): Promise<PaymentMethodCitizen> {
+    const raw = await httpMsBussines.get<unknown>(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BY_ID(id));
+    return mapPaymentMethodCitizen(raw) ?? { id, citizenId: "", paymentMethodId: "" };
+  }
+
+  async getAll(pageable: BusinessPageableQuery): Promise<BusinessPage<PaymentMethodCitizen>> {
+    const page = await httpMsBussines.get<BusinessPage<unknown>>(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BASE, {
+      params: pageable,
+    });
+    return {
+      ...page,
+      items: page.items
+        .map(mapPaymentMethodCitizen)
+        .filter((item): item is PaymentMethodCitizen => item !== null),
+    };
+  }
+
+  async create(data: CreatePaymentMethodCitizenDTO): Promise<PaymentMethodCitizen> {
+    const raw = await httpMsBussines.post<unknown>(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BASE, data);
+    return mapPaymentMethodCitizen(raw) ?? { id: "", citizenId: data.citizenId, paymentMethodId: data.paymentMethodId };
+  }
+
+  async update(id: string, data: UpdatePaymentMethodCitizenDTO): Promise<PaymentMethodCitizen> {
+    const raw = await httpMsBussines.patch<unknown>(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BY_ID(id), data);
+    return mapPaymentMethodCitizen(raw) ?? { id, citizenId: data.citizenId ?? "", paymentMethodId: data.paymentMethodId ?? "" };
+  }
+
+  async delete(id: string): Promise<void> {
+    await httpMsBussines.delete(ENDPOINTS.PAYMENT_METHOD_CITIZEN.BY_ID(id));
+  }
+}
+
+export const paymentMethodCitizenRepository = new PaymentMethodCitizenRepository();
 
 class NodeRepository implements IBusinessCrudRepository<Node, CreateNodeDTO, UpdateNodeDTO> {
   async getById(id: string): Promise<Node> {

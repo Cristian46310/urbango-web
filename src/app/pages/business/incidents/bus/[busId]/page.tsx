@@ -8,7 +8,17 @@ import { DataTable } from "@/app/components/security/data-table";
 import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
 import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
 import { useIncident } from "@/hooks/business";
-import type { Incident, IncidentStatistics, IncidentType, IncidentStatus } from "@/core/domain/entities/business";
+import type { Incident, IncidentStatistics } from "@/core/domain/entities/business";
+import {
+  formatIncidentDate,
+  INCIDENT_STATUS_OPTIONS,
+  INCIDENT_TYPE_OPTIONS,
+  INCIDENT_STATUS_LABELS,
+  INCIDENT_TYPE_LABELS,
+  incidentSeverityLabel,
+  incidentStatusLabel,
+  incidentTypeLabel,
+} from "@/core/domain/entities/business";
 import {
   Select,
   SelectContent,
@@ -20,9 +30,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const columnHelper = createColumnHelper<Incident>();
-
-const TYPE_OPTIONS: IncidentType[] = ["mechanical", "accident", "delay", "passenger", "other"];
-const STATUS_OPTIONS: IncidentStatus[] = ["reported", "in_review", "closed"];
 
 export default function IncidentsByBusPage() {
   const { busId = "" } = useParams();
@@ -50,9 +57,22 @@ export default function IncidentsByBusPage() {
   const meta = busIncidents?.meta;
 
   const columns = [
-    columnHelper.accessor("type", { header: "Tipo" }),
-    columnHelper.accessor("severity", { header: "Severidad" }),
-    columnHelper.accessor("status", { header: "Estado" }),
+    columnHelper.accessor("type", {
+      header: "Tipo",
+      cell: (i) => incidentTypeLabel(i.getValue()),
+    }),
+    columnHelper.accessor("severity", {
+      header: "Severidad",
+      cell: (i) => incidentSeverityLabel(i.getValue()),
+    }),
+    columnHelper.accessor("status", {
+      header: "Estado",
+      cell: (i) => incidentStatusLabel(i.getValue()),
+    }),
+    columnHelper.accessor("reportedAt", {
+      header: "Reportado",
+      cell: (i) => formatIncidentDate(i.getValue()),
+    }),
     columnHelper.display({
       id: "actions",
       header: "",
@@ -126,7 +146,7 @@ function IncidentStatsGrid({ stats }: { stats?: IncidentStatistics }) {
         <CardContent className="text-sm">
           {Object.entries(stats.byType).map(([type, count]) => (
             <p key={type}>
-              {type}: {count}
+              {incidentTypeLabel(type)}: {count}
             </p>
           ))}
         </CardContent>
@@ -156,9 +176,9 @@ function IncidentFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos los tipos</SelectItem>
-          {TYPE_OPTIONS.map((t) => (
+          {INCIDENT_TYPE_OPTIONS.map((t) => (
             <SelectItem key={t} value={t}>
-              {t}
+              {INCIDENT_TYPE_LABELS[t]}
             </SelectItem>
           ))}
         </SelectContent>
@@ -169,9 +189,9 @@ function IncidentFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos</SelectItem>
-          {STATUS_OPTIONS.map((s) => (
+          {INCIDENT_STATUS_OPTIONS.map((s) => (
             <SelectItem key={s} value={s}>
-              {s}
+              {INCIDENT_STATUS_LABELS[s]}
             </SelectItem>
           ))}
         </SelectContent>

@@ -30,7 +30,7 @@ const initialForm: RouteForm = {
   name: "",
   description: "",
   price: "",
-  nodes: [{ order: 1, stopId: "" }],
+  nodes: [{ order: 1, stopId: "", estimatedTimeMinutes: 0 }],
 };
 
 export default function RoutesPage() {
@@ -125,7 +125,13 @@ export default function RoutesPage() {
           name: form.name.trim(),
           description: form.description.trim(),
           price: Number(form.price),
-          nodes: form.nodes.filter((n) => n.stopId),
+          nodes: form.nodes
+            .filter((n) => n.stopId)
+            .map((n) => ({
+              order: n.order,
+              stopId: n.stopId,
+              estimatedTimeMinutes: Math.max(0, Math.round(n.estimatedTimeMinutes)),
+            })),
         });
       }
       setIsDialogOpen(false);
@@ -211,7 +217,7 @@ function RouteNodesEditor({
   const addNode = () => {
     setForm((c) => ({
       ...c,
-      nodes: [...c.nodes, { order: c.nodes.length + 1, stopId: "" }],
+      nodes: [...c.nodes, { order: c.nodes.length + 1, stopId: "", estimatedTimeMinutes: 0 }],
     }));
   };
 
@@ -256,6 +262,18 @@ function RouteNodesEditorRow({
           type="number"
           value={node.order}
           onChange={(e) => { updateNode(index, { order: Number(e.target.value) }); }}
+        />
+      </DialogField>
+      <DialogField label="Tiempo (min)" htmlFor={`time-${String(index)}`}>
+        <Input
+          id={`time-${String(index)}`}
+          type="number"
+          min={0}
+          step={1}
+          value={node.estimatedTimeMinutes}
+          onChange={(e) => {
+            updateNode(index, { estimatedTimeMinutes: Math.max(0, Math.round(Number(e.target.value) || 0)) });
+          }}
         />
       </DialogField>
       <div className="min-w-[200px] flex-1">

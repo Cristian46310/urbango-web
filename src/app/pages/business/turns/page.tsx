@@ -4,7 +4,12 @@ import { BusinessCrudPage } from "@/app/components/business/business-crud-page";
 import { SelectField, TextField } from "@/app/components/business/form-fields";
 import { BUSINESS_LOOKUP_PAGE_SIZE } from "@/app/components/business/constants";
 import { useBus, useDriverAdmin, useTurn } from "@/hooks/business";
-import type { Turn } from "@/core/domain/entities/business";
+import {
+  TURN_STATUS_LABELS,
+  TURN_STATUS_OPTIONS,
+  type Turn,
+  type TurnStatus,
+} from "@/core/domain/entities/business";
 
 interface TurnForm {
   id: string;
@@ -12,7 +17,7 @@ interface TurnForm {
   driverId: string;
   startTime: string;
   endTime: string;
-  status: string;
+  status: TurnStatus;
 }
 
 const initialForm: TurnForm = {
@@ -21,21 +26,24 @@ const initialForm: TurnForm = {
   driverId: "",
   startTime: "",
   endTime: "",
-  status: "active",
+  status: "scheduled",
 };
 const columnHelper = createColumnHelper<Turn>();
 
-const STATUS_OPTIONS = [
-  { value: "active", label: "Activo" },
-  { value: "completed", label: "Completado" },
-  { value: "cancelled", label: "Cancelado" },
-];
+const STATUS_OPTIONS = TURN_STATUS_OPTIONS.map((value) => ({
+  value,
+  label: TURN_STATUS_LABELS[value],
+}));
 
 function toLocalDatetime(iso: string) {
   if (!iso) return "";
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function isTurnStatus(value: string): value is TurnStatus {
+  return (TURN_STATUS_OPTIONS as readonly string[]).includes(value);
 }
 
 function buildPayload(form: TurnForm) {
@@ -87,13 +95,19 @@ export default function TurnsPage() {
         driverId: e.driverId ?? "",
         startTime: toLocalDatetime(e.startTime),
         endTime: toLocalDatetime(e.endTime),
-        status: e.status,
+        status: isTurnStatus(e.status) ? e.status : "scheduled",
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}
       buildUpdatePayload={buildPayload}
       columns={[
-        columnHelper.accessor("status", { header: "Estado" }),
+        columnHelper.accessor("status", {
+          header: "Estado",
+          cell: (i) => {
+            const value = i.getValue();
+            return isTurnStatus(value) ? TURN_STATUS_LABELS[value] : value;
+          },
+        }),
         columnHelper.accessor("startTime", {
           header: "Inicio",
           cell: (i) => new Date(String(i.getValue())).toLocaleString(),
@@ -122,7 +136,11 @@ export default function TurnsPage() {
           <SelectField
             label="Estado"
             value={form.status}
-            onChange={(v) => { setForm((c) => ({ ...c, status: v })); }}
+            onChange={(v) => {
+              if (isTurnStatus(v)) {
+                setForm((c) => ({ ...c, status: v }));
+              }
+            }}
             disabled={mode === "view"}
             options={STATUS_OPTIONS}
           />

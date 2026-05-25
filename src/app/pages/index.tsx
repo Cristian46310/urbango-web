@@ -53,3 +53,7 @@ export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/pag
 export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
 export const DriverTurnStartPage = lazy(() => import('./driver/turn-start/page'))
 export const CitizenBoardingPage = lazy(() => import('./citizen/boarding/page'))
+export const CitizenRoutesPage = lazy(() => import('./citizen/routes/page'))
+export const CitizenRouteDetailPage = lazy(() => import('./citizen/routes/[id]/page'))
+export const CitizenTripsPage = lazy(() => import('./citizen/trips/page'))
+export const CitizenTripDetailPage = lazy(() => import('./citizen/trips/[historyId]/page'))

@@ -1,16 +1,16 @@
-import { httpMsSecurity } from "@/infra/api/builderHttp";
+import type { StartTurnPayload, StartTurnResponse } from '@/core/domain/entities/business/Transit';
+import { transitRepository } from '@/infra/repository/transit';
 
-export interface StartTurnPayload {
-  busStatus: string;
-  observations?: string;
-}
-
-export interface StartTurnResponse {
-  busAssigned?: string;
-  startTime?: string;
-  status?: string;
-}
+export type { StartTurnPayload, StartTurnResponse };
 
 export async function startTurn(payload: StartTurnPayload): Promise<StartTurnResponse> {
-  return httpMsSecurity.post<StartTurnResponse>("/turn/start", payload);
+  return transitRepository.startTurn(payload);
+}
+
+export async function updateBusGps(
+  busId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  return transitRepository.updateBusGps(busId, latitude, longitude);
 }
