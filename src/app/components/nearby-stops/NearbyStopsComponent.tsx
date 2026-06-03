@@ -3,9 +3,13 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { stopRepository } from '@/infra/repository/stop';
+import { dashboardRepository } from '@/infra/repository/business/DashboardRepository';
 import type { NearbyStopDto } from '@/core/domain/entities/Stop';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,6 +30,11 @@ export const NearbyStopsComponent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedNotificationStop, setSelectedNotificationStop] = useState<NearbyStopDto | null>(null);
+  const [selectedNotificationRouteId, setSelectedNotificationRouteId] = useState<string>("");
+  const [anticipationMinutes, setAnticipationMinutes] = useState<number>(5);
+  const [notificationEmail, setNotificationEmail] = useState<string>("");
+  const [subscribing, setSubscribing] = useState(false);
   const itemsPerPage = 5;
 
   const fetchNearbyStops = useCallback(async () => {
@@ -62,6 +71,43 @@ export const NearbyStopsComponent: React.FC = () => {
     setCurrentPage(1);
     if (coordinates) {
       void fetchNearbyStops();
+    }
+  };
+
+  const handleSelectNotificationStop = (stop: NearbyStopDto) => {
+    setSelectedNotificationStop(stop);
+    setSelectedNotificationRouteId(stop.routes?.[0]?.id ?? "");
+  };
+
+  const handleSendNotification = async () => {
+    if (!selectedNotificationStop) {
+      toast.error("Selecciona un paradero primero.");
+      return;
+    }
+
+    if (!notificationEmail.trim()) {
+      toast.error("Ingresa un correo válido para recibir la notificación.");
+      return;
+    }
+
+    setSubscribing(true);
+    try {
+      await dashboardRepository.createArrivalNotification({
+        stopId: selectedNotificationStop.id,
+        routeId: selectedNotificationRouteId || selectedNotificationStop.routeId,
+        email: notificationEmail.trim(),
+        anticipationMinutes,
+      });
+
+      toast.success("Notificación creada. Te avisaremos antes de la llegada.");
+      setNotificationEmail("");
+      setAnticipationMinutes(5);
+      setSelectedNotificationStop(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "No se pudo crear la notificación.";
+      toast.error(errorMessage);
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -266,17 +312,21 @@ export const NearbyStopsComponent: React.FC = () => {
               {paginatedStops.map((stop, index) => (
                 <div
                   key={stop.id}
-                  className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition"
+                  className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-gray-50 transition md:flex-row md:items-start"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-sm">
-                    {startIndex + index + 1}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-sm">
+                      {startIndex + index + 1}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{stop.name}</h3>
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {stop.distance.toFixed(0)}m de distancia
+                      </p>
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{stop.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {stop.distance.toFixed(0)}m de distancia
-                    </p>
                     {stop.routes.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-semibold text-gray-700 mb-1">Rutas disponibles:</p>
@@ -293,9 +343,102 @@ export const NearbyStopsComponent: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  <div className="flex-shrink-0 md:self-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectNotificationStop(stop)}
+                    >
+                      {selectedNotificationStop?.id === stop.id ? 'Seleccionado' : 'Notificar llegada'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
+
+            {selectedNotificationStop && (
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Suscripción de llegada</h3>
+                    <p className="text-sm text-slate-600">
+                      Activa una notificación cuando el bus de la ruta seleccionada esté cerca de este paradero.
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                    {selectedNotificationStop.name}
+                  </span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="notification-email" className="mb-1 block text-sm font-medium text-slate-700">
+                      Correo electrónico
+                    </Label>
+                    <Input
+                      id="notification-email"
+                      type="email"
+                      value={notificationEmail}
+                      onChange={(event) => setNotificationEmail(event.target.value)}
+                      placeholder="ejemplo@correo.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="route-select" className="mb-1 block text-sm font-medium text-slate-700">
+                      Ruta
+                    </Label>
+                    <Select value={selectedNotificationRouteId} onValueChange={setSelectedNotificationRouteId}>
+                      <SelectTrigger id="route-select" className="w-full">
+                        <SelectValue placeholder="Selecciona ruta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedNotificationStop.routes.map((route) => (
+                          <SelectItem key={route.id} value={route.id}>
+                            {route.code} - {route.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="anticipation-minutes" className="mb-1 block text-sm font-medium text-slate-700">
+                      Minutos antes
+                    </Label>
+                    <Input
+                      id="anticipation-minutes"
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={anticipationMinutes}
+                      onChange={(event) => setAnticipationMinutes(Number(event.target.value))}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={handleSendNotification}
+                    disabled={subscribing || !notificationEmail.trim()}
+                  >
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      'Guardar alerta'
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedNotificationStop(null)}
+                    disabled={subscribing}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Pagination Controls */}
             {totalPages > 1 && (

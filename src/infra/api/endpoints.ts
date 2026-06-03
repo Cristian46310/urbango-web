@@ -126,6 +126,12 @@ export const ENDPOINTS = {
     PAYMENT_METHOD_INCOME_EXPORT: "/dashboard/payment-method-income/export",
     INCIDENT_TREND: "/dashboard/incident-trend-by-type",
     INCIDENT_TREND_EXPORT: "/dashboard/incident-trend-by-type/export",
+    REALTIME: {
+      FLEET: "/dashboard/realtime/fleet",
+      BUS_BY_ID: (busId: string) => `/dashboard/realtime/bus/${busId}`,
+      INCIDENTS: "/dashboard/realtime/incidents",
+      ARRIVAL_NOTIFICATION: "/dashboard/realtime/arrival-notification",
+    },
   },
   CARD_RECHARGE: {
     CONFIG: '/card-recharge/config',

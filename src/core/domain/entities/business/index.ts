@@ -249,6 +249,52 @@ export interface UpdateTurnDTO {
   driverId?: string;
 }
 
+export interface RealtimeBusLocation {
+  busId: string;
+  plate: string;
+  routeId?: string;
+  routeName?: string;
+  routeCode?: string;
+  lat: number;
+  lng: number;
+  statusColor?: string;
+  delayAlert?: boolean;
+  isFull?: boolean;
+  occupancyPercent?: number;
+  estimatedMinutesToNextStop?: number;
+  nearestStop?: {
+    id: string;
+    name: string;
+    distance?: number;
+  };
+  activePassengers?: number;
+}
+
+export interface RealtimeIncident {
+  id: string;
+  busId: string;
+  busPlate?: string;
+  routeId?: string;
+  routeName?: string;
+  type: string;
+  description: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface CreateArrivalNotificationDTO {
+  email: string;
+  routeId: string;
+  stopId: string;
+  anticipationMinutes: number;
+  message?: string;
+}
+
+export interface ArrivalNotificationResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface PaymentMethodCitizen {
   id: string;
   citizenId: string;

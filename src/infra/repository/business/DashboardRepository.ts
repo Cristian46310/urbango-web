@@ -1,6 +1,6 @@
 import { httpMsBussines } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
-import type { IncidentTrend, PaymentMethodIncome } from "@/core/domain/entities/business";
+import type { IncidentTrend, PaymentMethodIncome, RealtimeBusLocation, RealtimeIncident, CreateArrivalNotificationDTO, ArrivalNotificationResponse } from "@/core/domain/entities/business";
 
 export class DashboardRepository {
   async getPaymentMethodIncome(months: number): Promise<PaymentMethodIncome> {
@@ -28,6 +28,24 @@ export class DashboardRepository {
       params: { months, ...(enterpriseId ? { enterpriseId } : {}) },
       responseType: "blob",
     });
+  }
+
+  async getRealtimeFleet(enterpriseId?: string, routeId?: string): Promise<RealtimeBusLocation[]> {
+    return await httpMsBussines.get<RealtimeBusLocation[]>(ENDPOINTS.DASHBOARD.REALTIME.FLEET, {
+      params: { ...(enterpriseId ? { enterpriseId } : {}), ...(routeId ? { routeId } : {}) },
+    });
+  }
+
+  async getRealtimeBus(busId: string): Promise<RealtimeBusLocation> {
+    return await httpMsBussines.get<RealtimeBusLocation>(ENDPOINTS.DASHBOARD.REALTIME.BUS_BY_ID(busId));
+  }
+
+  async getActiveRealtimeIncidents(): Promise<RealtimeIncident[]> {
+    return await httpMsBussines.get<RealtimeIncident[]>(ENDPOINTS.DASHBOARD.REALTIME.INCIDENTS);
+  }
+
+  async createArrivalNotification(payload: CreateArrivalNotificationDTO): Promise<ArrivalNotificationResponse> {
+    return await httpMsBussines.post<ArrivalNotificationResponse>(ENDPOINTS.DASHBOARD.REALTIME.ARRIVAL_NOTIFICATION, payload);
   }
 }
 
