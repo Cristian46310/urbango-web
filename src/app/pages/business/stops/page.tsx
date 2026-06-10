@@ -173,7 +173,7 @@ export default function StopsAdminPage() {
                 </Label>
                 <Select
                   value={form.type}
-                  onValueChange={(v) => setForm((c) => ({ ...c, type: v }))}
+                  onValueChange={(v) => setForm((c) => ({ ...c, type: v as StopType }))}
                   disabled={mode === "view"}
                 >
                   <SelectTrigger id="type" className="w-full">

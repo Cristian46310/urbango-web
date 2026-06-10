@@ -48,6 +48,7 @@ import {
   CitizenTripDetailPage,
   DriverTurnStartPage,
   MessagingPage,
+  AdminSchedulerCreatePage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
@@ -276,11 +277,19 @@ function AppContent() {
               </JwtProtectedRoute>
             }
           />
+          <Route
+            path="schedulers/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminSchedulerCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
         </Route>
 
         <Route path="/admin/reports/age-distribution" element={<Navigate to="/app/reports/age-distribution" replace />} />
         <Route path="/admin/routes/create" element={<Navigate to="/app/routes/create" replace />} />
-        <Route path="/admin/schedulers/create" element={<Navigate to="/app/business/schedulers" replace />} />
+        <Route path="/admin/schedulers/create" element={<Navigate to="/app/schedulers/create" replace />} />
         <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
         <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 

@@ -37,6 +37,7 @@ export const UsersPage = lazy(() => import('./security/users/page'))
 // Admin pages - HU Features
 export const AdminAgeDistributionPage = lazy(() => import('./admin/reports/age-distribution/page'))
 export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/page'))
+export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
 
 // Other pages
 export const AccessDeniedPage = lazyNamed(() => import('./access-denied'), 'AccessDeniedPage')

@@ -71,6 +71,7 @@ const securityMenuItems: MenuItem[] = [
 
 const globalAdminMenuItems: MenuItem[] = [
   { title: "Crear Ruta", to: "/app/routes/create", description: "Diseño y trazado de rutas", icon: Route, requiredRoles: ["admin", "ADMIN"] },
+  { title: "Crear Programación", to: "/app/schedulers/create", description: "Asignación de horarios maestros", icon: CalendarClock, requiredRoles: ["admin", "ADMIN"] },
   { title: "Distribución Edades", to: "/app/reports/age-distribution", description: "Reporte demográfico de usuarios", icon: BarChart3, requiredRoles: ["admin", "ADMIN"] },
 ];
 
