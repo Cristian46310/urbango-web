@@ -113,7 +113,7 @@ export default function SchedulersPage() {
       editItem={crud.editItem}
       removeItem={crud.removeItem}
       initialForm={initialForm}
-      mapToForm={(e: any) => ({
+      mapToForm={(e: Scheduler) => ({
         id: e.id,
         busId: e.bus?.id ?? "",
         routeId: e.route?.id ?? "",

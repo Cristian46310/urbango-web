@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Home,
   Wrench, // Icono para la sección de Administración Técnica
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,6 @@ const securityMenuItems: MenuItem[] = [
 
 const globalAdminMenuItems: MenuItem[] = [
   { title: "Crear Ruta", to: "/app/routes/create", description: "Diseño y trazado de rutas", icon: Route, requiredRoles: ["admin", "ADMIN"] },
-  { title: "Crear Programación", to: "/app/schedulers/create", description: "Asignación de horarios maestros", icon: CalendarClock, requiredRoles: ["admin", "ADMIN"] },
   { title: "Distribución Edades", to: "/app/reports/age-distribution", description: "Reporte demográfico de usuarios", icon: BarChart3, requiredRoles: ["admin", "ADMIN"] },
 ];
 
@@ -93,6 +93,13 @@ const teamMenuItem: MenuItem = {
   to: "/app/team",
   description: "Equipo del proyecto",
   icon: BookUser,
+};
+
+const messagingMenuItem: MenuItem = {
+  title: "Mensajería",
+  to: "/app/messaging",
+  description: "Mensajes directos en tiempo real",
+  icon: MessageCircle,
 };
 
 const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
@@ -171,6 +178,7 @@ export function ManagementLayout() {
   const registerProfileActive = isActivePath(location.pathname, registerProfileMenuItem.to);
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
+  const messagingActive = isActivePath(location.pathname, messagingMenuItem.to);
   const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
   
@@ -324,6 +332,20 @@ export function ManagementLayout() {
                     ) : null}
                   </SidebarMenuItem>
                 )}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={messagingActive}
+                    title={messagingMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={messagingMenuItem.to}>
+                      <MessageCircle className="size-4" />
+                      <span className="font-medium">{messagingMenuItem.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
                 <SidebarMenuItem>
                   <SidebarMenuButton

@@ -37,7 +37,6 @@ export const UsersPage = lazy(() => import('./security/users/page'))
 // Admin pages - HU Features
 export const AdminAgeDistributionPage = lazy(() => import('./admin/reports/age-distribution/page'))
 export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/page'))
-export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
 
 // Other pages
 export const AccessDeniedPage = lazyNamed(() => import('./access-denied'), 'AccessDeniedPage')
@@ -67,3 +66,4 @@ export const CitizenRoutesPage = lazy(() => import('./citizen/routes/page'))
 export const CitizenRouteDetailPage = lazy(() => import('./citizen/routes/[id]/page'))
 export const CitizenTripsPage = lazy(() => import('./citizen/trips/page'))
 export const CitizenTripDetailPage = lazy(() => import('./citizen/trips/[historyId]/page'))
+export const MessagingPage = lazy(() => import('./messaging/page'))

@@ -1,4 +1,4 @@
-import { httpMsSecurity } from "@/infra/api/builderHttp";
+import { httpMsBussines } from "@/infra/api/builderHttp";
 
 export type RecurrenceType = "none" | "weekdays" | "weekends" | "daily";
 
@@ -13,5 +13,5 @@ export interface CreateSchedulerPayload {
 }
 
 export async function createScheduler(data: CreateSchedulerPayload): Promise<void> {
-  await httpMsSecurity.post<void>("/schedulers", data);
+  await httpMsBussines.post<void>("/schedulers", data);
 }

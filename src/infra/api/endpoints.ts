@@ -151,4 +151,13 @@ export const ENDPOINTS = {
     TRANSACTION_STATUS: (reference: string) =>
       `/card-recharge/transactions/${reference}/status`,
   },
+  MESSAGES: {
+    USERS_SEARCH: "/users/search",
+    CONVERSATIONS_DIRECT: "/conversations/direct",
+    DIRECT: "/messages/direct",
+    INBOX: "/inbox",
+    SENT: "/messages/sent",
+    READ: (messageId: string) => `/messages/${messageId}/read`,
+    HEALTH: "/health",
+  },
 };

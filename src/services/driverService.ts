@@ -1,4 +1,4 @@
-import { httpMsSecurity } from "@/infra/api/builderHttp";
+import { httpMsBussines } from "@/infra/api/builderHttp";
 
 export interface DriverItem {
   id: string;
@@ -6,5 +6,5 @@ export interface DriverItem {
 }
 
 export async function getDrivers(): Promise<DriverItem[]> {
-  return httpMsSecurity.get<DriverItem[]>("/drivers");
+  return httpMsBussines.get<DriverItem[]>("/drivers");
 }
