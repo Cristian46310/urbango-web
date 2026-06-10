@@ -55,7 +55,7 @@ function BusSuccessPanel({
         </CardTitle>
         <CardDescription className="text-emerald-800">
           Placa <strong>{bus.plate}</strong> — estado{' '}
-          <strong>{BUS_STATUS_LABELS[bus.status]}</strong>. El vehículo queda
+          <strong>{BUS_STATUS_LABELS[bus.status]}</strong>. El vehiculo queda
           disponible para asignar a programaciones
           {bus.status === 'operativo' ? '' : ' cuando pase a operativo'}.
         </CardDescription>
@@ -73,11 +73,11 @@ function BusSuccessPanel({
           <div className="flex flex-col items-center gap-2 rounded-lg border bg-white p-4">
             <p className="flex items-center gap-2 text-sm font-medium text-slate-700">
               <QrCode className="size-4" />
-              Código QR para validaciones rápidas
+              Codigo QR para validaciones rapidas
             </p>
             <img
               src={bus.qrCode}
-              alt={`Código QR del bus ${bus.plate}`}
+              alt={`Codigo QR del bus ${bus.plate}`}
               className="size-48 rounded-md border bg-white p-2"
             />
           </div>
@@ -119,6 +119,13 @@ export function BusRegistrationForm() {
     };
   }, [photoPreview]);
 
+  // Capacidad maxima total calculada reactivamente bajo los criterios de la HU
+  const calculatedTotalCapacity = useMemo(() => {
+    const seated = Number.parseInt(seatedCapacity, 10) || 0;
+    const standing = Number.parseInt(standingCapacity, 10) || 0;
+    return seated + standing;
+  }, [seatedCapacity, standingCapacity]);
+
   const resetForm = () => {
     setPlate('');
     setColor('');
@@ -138,7 +145,7 @@ export function BusRegistrationForm() {
     }
 
     if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      setFormError('Solo se permiten imágenes JPEG, PNG o WebP');
+      setFormError('Solo se permiten imagenes JPEG, PNG o WebP');
       return;
     }
 
@@ -207,7 +214,7 @@ export function BusRegistrationForm() {
     };
   };
 
-  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const payload = validateForm();
     if (!payload) {
@@ -218,7 +225,7 @@ export function BusRegistrationForm() {
       await registerBus(payload, photo);
       resetForm();
     } catch {
-      // El store ya muestra el toast de error
+      // El modulo base se encarga de disparar el toast de error de infraestructura
     }
   };
 
@@ -241,8 +248,8 @@ export function BusRegistrationForm() {
           Datos del bus
         </CardTitle>
         <CardDescription>
-          El bus se asocia automáticamente a tu empresa con la sesión actual.
-          Al guardar se genera un código QR único para validaciones rápidas.
+          El bus se asocia automaticamente a tu empresa con la sesion actual.
+          Al guardar se genera un codigo QR unico para validaciones rapidas.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -254,7 +261,7 @@ export function BusRegistrationForm() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2 sm:col-span-2">
-              <Label htmlFor="bus-plate">Placa (única)</Label>
+              <Label htmlFor="bus-plate">Placa (unica)</Label>
               <Input
                 id="bus-plate"
                 value={plate}
@@ -262,6 +269,8 @@ export function BusRegistrationForm() {
                 placeholder="ABC-123"
                 disabled={loading}
                 autoComplete="off"
+                maxLength={8}
+                className="uppercase"
               />
             </div>
 
@@ -308,7 +317,7 @@ export function BusRegistrationForm() {
                 min={0}
                 value={seatedCapacity}
                 onChange={(event) => { setSeatedCapacity(event.target.value); }}
-                placeholder="35"
+                placeholder="40"
                 disabled={loading}
                 required
               />
@@ -322,10 +331,16 @@ export function BusRegistrationForm() {
                 min={0}
                 value={standingCapacity}
                 onChange={(event) => { setStandingCapacity(event.target.value); }}
-                placeholder="5"
+                placeholder="20"
                 disabled={loading}
                 required
               />
+            </div>
+
+            <div className="grid gap-2 sm:col-span-2">
+              <div className="bg-slate-50 dark:bg-slate-900/40 border rounded-xl p-3 text-xs text-muted-foreground font-medium">
+                Capacidad maxima total recalculada automaticamente: {calculatedTotalCapacity} pasajeros.
+              </div>
             </div>
 
             <div className="grid gap-2 sm:col-span-2">
@@ -377,7 +392,7 @@ export function BusRegistrationForm() {
                   onClick={() => { setPhoto(null); }}
                   disabled={loading}
                   aria-label="Quitar foto"
-                  className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full bg-red-600 text-white shadow-sm"
+                  className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700 transition-colors"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -386,7 +401,7 @@ export function BusRegistrationForm() {
           </div>
 
           {formError ? (
-            <p className="text-sm text-red-600" role="alert">
+            <p className="text-sm text-red-600 font-medium" role="alert">
               {formError}
             </p>
           ) : null}

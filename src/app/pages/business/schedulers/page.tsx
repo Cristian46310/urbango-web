@@ -21,6 +21,7 @@ const initialForm: SchedulerForm = {
   date: "",
   departureTime: "",
 };
+
 const columnHelper = createColumnHelper<Scheduler>();
 
 function toDateInput(value: string | undefined): string {
@@ -98,11 +99,11 @@ export default function SchedulersPage() {
 
   return (
     <BusinessCrudPage
-      title="Programación"
+      title="Programacion"
       description="Horarios de buses en rutas."
       tableTitle="Listado de programaciones"
       tableDescription="Schedulers activos."
-      entityLabel="programación"
+      entityLabel="programacion"
       items={crud.items}
       page={crud.page}
       loading={crud.loading}
@@ -112,7 +113,7 @@ export default function SchedulersPage() {
       editItem={crud.editItem}
       removeItem={crud.removeItem}
       initialForm={initialForm}
-      mapToForm={(e) => ({
+      mapToForm={(e: any) => ({
         id: e.id,
         busId: e.bus?.id ?? "",
         routeId: e.route?.id ?? "",

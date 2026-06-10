@@ -259,32 +259,35 @@ function AppContent() {
               </RoleGuard>
             }
           />
+          <Route
+            path="reports/age-distribution"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminAgeDistributionPage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="routes/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminRouteCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="schedulers/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminSchedulerCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
         </Route>
 
-        <Route
-          path="/admin/reports/age-distribution"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminAgeDistributionPage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/routes/create"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminRouteCreatePage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/schedulers/create"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminSchedulerCreatePage />
-            </JwtProtectedRoute>
-          }
-        />
+        <Route path="/admin/reports/age-distribution" element={<Navigate to="/app/reports/age-distribution" replace />} />
+        <Route path="/admin/routes/create" element={<Navigate to="/app/routes/create" replace />} />
+        <Route path="/admin/schedulers/create" element={<Navigate to="/app/schedulers/create" replace />} />
         <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
         <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 

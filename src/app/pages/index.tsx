@@ -9,21 +9,37 @@ function lazyNamed<T extends Record<string, ComponentType<unknown>>>(
   )
 }
 
+// Auth pages
 export const LoginPage = lazy(() => import('./login/page'))
 export const ForgotPasswordPage = lazy(() => import('./login/forgot-password/page'))
 export const ResetPasswordPage = lazy(() => import('./login/reset-password/page'))
 export const GithubCallbackPage = lazy(() => import('./login/github-callback/page'))
 export const MicrosoftCallbackPage = lazy(() => import('./login/microsoft-callback/page'))
+
+// Citizen & Passenger pages
 export const TeamPage = lazy(() => import('./team/page'))
+export const CitizenBoardingPage = lazy(() => import('./citizen/boarding/page'))
 export const NearbyStopsPage = lazy(() => import('./nearby-stops/page'))
 export const IncidentReportPage = lazy(() => import('./incident-report/page'))
 export const TicketAlightSearchPage = lazy(() => import('./ticket/alight/page'))
 export const TicketAlightValidationPage = lazy(() => import('./ticket/alight/[ticketId]/page'))
+
+// Driver pages
+export const DriverTurnStartPage = lazy(() => import('./driver/turn-start/page'))
+
+// Admin pages - Security
 export const DashboardPage = lazy(() => import('./security/dashboard/page'))
 export const PermissionsPage = lazy(() => import('./security/permissions/page'))
 export const ProfilesPage = lazy(() => import('./security/profiles/page'))
 export const RolesPage = lazy(() => import('./security/roles/page'))
 export const UsersPage = lazy(() => import('./security/users/page'))
+
+// Admin pages - HU Features
+export const AdminAgeDistributionPage = lazy(() => import('./admin/reports/age-distribution/page'))
+export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/page'))
+export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
+
+// Other pages
 export const AccessDeniedPage = lazyNamed(() => import('./access-denied'), 'AccessDeniedPage')
 export const RegisterProfilePage = lazy(() => import('./register-profile/page'))
 export const RegisterBusPage = lazy(() => import('./fleet/register-bus/page'))
@@ -47,12 +63,6 @@ export const PaymentMethodCitizensPage = lazy(() => import('./business/payment-m
 export const IncidentsPage = lazy(() => import('./business/incidents/page'))
 export const IncidentsByBusPage = lazy(() => import('./business/incidents/bus/[busId]/page'))
 export const IncidentDetailPage = lazy(() => import('./business/incidents/[incidentId]/page'))
-
-export const AdminAgeDistributionPage = lazy(() => import('./admin/reports/age-distribution/page'))
-export const AdminRouteCreatePage = lazy(() => import('./admin/routes/create/page'))
-export const AdminSchedulerCreatePage = lazy(() => import('./admin/schedulers/create/page'))
-export const DriverTurnStartPage = lazy(() => import('./driver/turn-start/page'))
-export const CitizenBoardingPage = lazy(() => import('./citizen/boarding/page'))
 export const CitizenRoutesPage = lazy(() => import('./citizen/routes/page'))
 export const CitizenRouteDetailPage = lazy(() => import('./citizen/routes/[id]/page'))
 export const CitizenTripsPage = lazy(() => import('./citizen/trips/page'))
