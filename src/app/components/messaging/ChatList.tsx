@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MessageSquarePlus, Users } from "lucide-react";
+import { Megaphone, MessageSquarePlus, Users } from "lucide-react";
 
 import type { ChatListItem } from "@/core/types/messaging";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ interface ChatListProps {
   onSelect: (conversationId: string) => void;
   onNewChat: () => void;
   onCreateGroup: () => void;
+  showDriverBroadcast?: boolean;
+  onDriverBroadcast?: () => void;
 }
 
 function formatChatTime(value: string) {
@@ -31,12 +33,25 @@ export function ChatList({
   onSelect,
   onNewChat,
   onCreateGroup,
+  showDriverBroadcast = false,
+  onDriverBroadcast,
 }: ChatListProps) {
   return (
     <div className="flex h-full flex-col border-r border-(--security-border) bg-card">
       <div className="flex items-center justify-between border-b border-(--security-border) px-4 py-3">
         <h3 className="font-semibold">Chats</h3>
         <div className="flex gap-1">
+          {showDriverBroadcast && onDriverBroadcast ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onDriverBroadcast}
+              title="Aviso a grupos"
+            >
+              <Megaphone className="size-4" />
+            </Button>
+          ) : null}
           <Button type="button" size="sm" variant="outline" onClick={onCreateGroup} title="Crear grupo">
             <Users className="size-4" />
           </Button>

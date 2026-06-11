@@ -19,6 +19,20 @@ export function getContactLabel(contact?: ContactInfo, fallback = "Usuario"): st
   return contact.name.trim() || contact.email || fallback;
 }
 
+export function getGroupMemberCount(
+  group: MessageGroup,
+  messages: Message[] = [],
+): number {
+  const fromField = group.memberCount ?? 0;
+  const fromMembers = group.members?.length ?? 0;
+  const fromMessages = messages.reduce(
+    (max, message) => Math.max(max, (message.totalRecipients ?? 0) + 1),
+    0,
+  );
+
+  return Math.max(fromField, fromMembers, fromMessages);
+}
+
 export function getAvatarLabel(title: string): string {
   const parts = title.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";

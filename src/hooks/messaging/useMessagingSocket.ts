@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 
-import type { Message, MessageReadPayload, GroupMemberAddedPayload } from "@/core/types/messaging";
+import type {
+  Message,
+  MessageDeletedPayload,
+  MessageReadPayload,
+  GroupMemberAddedPayload,
+} from "@/core/types/messaging";
 
 const AUTH_TOKEN_STORAGE_KEY = "authToken";
 
@@ -10,6 +15,7 @@ interface UseMessagingSocketOptions {
   onNewMessage?: (message: Message) => void;
   onMessageRead?: (payload: MessageReadPayload) => void;
   onGroupMemberAdded?: (payload: GroupMemberAddedPayload) => void;
+  onMessageDeleted?: (payload: MessageDeletedPayload) => void;
 }
 
 export function useMessagingSocket({
@@ -17,11 +23,13 @@ export function useMessagingSocket({
   onNewMessage,
   onMessageRead,
   onGroupMemberAdded,
+  onMessageDeleted,
 }: UseMessagingSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const onNewMessageRef = useRef(onNewMessage);
   const onMessageReadRef = useRef(onMessageRead);
   const onGroupMemberAddedRef = useRef(onGroupMemberAdded);
+  const onMessageDeletedRef = useRef(onMessageDeleted);
 
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
@@ -34,6 +42,10 @@ export function useMessagingSocket({
   useEffect(() => {
     onGroupMemberAddedRef.current = onGroupMemberAdded;
   }, [onGroupMemberAdded]);
+
+  useEffect(() => {
+    onMessageDeletedRef.current = onMessageDeleted;
+  }, [onMessageDeleted]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") {
@@ -61,6 +73,10 @@ export function useMessagingSocket({
 
     socket.on("group:member_added", (payload: GroupMemberAddedPayload) => {
       onGroupMemberAddedRef.current?.(payload);
+    });
+
+    socket.on("message:deleted", (payload: MessageDeletedPayload) => {
+      onMessageDeletedRef.current?.(payload);
     });
 
     socketRef.current = socket;

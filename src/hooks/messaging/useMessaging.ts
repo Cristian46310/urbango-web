@@ -303,6 +303,7 @@ export function useMessaging(currentUserId: string | undefined) {
     getConversationThread,
     rememberContact,
     rememberConversation,
+    resolveContactProfiles,
     conversationMeta,
   };
 }

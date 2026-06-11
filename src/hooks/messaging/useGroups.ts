@@ -12,22 +12,58 @@ import {
   addGroupMembers,
   createGroup,
   getGroups,
+  getMyDriverGroups,
   joinGroup,
   updateGroupIcon,
 } from "@/services/groupService";
+
+function mergeGroupLists(groups: MessageGroup[]): MessageGroup[] {
+  const map = new Map<string, MessageGroup>();
+
+  for (const group of groups) {
+    const existing = map.get(group.id);
+    if (!existing) {
+      map.set(group.id, group);
+      continue;
+    }
+
+    const existingCount = existing.members?.length ?? existing.memberCount ?? 0;
+    const nextCount = group.members?.length ?? group.memberCount ?? 0;
+    const preferred = nextCount > existingCount ? group : existing;
+    const mergedCount = Math.max(existingCount, nextCount);
+
+    map.set(group.id, {
+      ...preferred,
+      memberCount: mergedCount,
+    });
+  }
+
+  return Array.from(map.values());
+}
 
 export function useGroups() {
   const [groups, setGroups] = useState<MessageGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadGroups = useCallback(async () => {
+  const loadGroups = useCallback(async (includeDriverGroups = false) => {
     setLoading(true);
     setError(null);
     try {
       const page = await getGroups(1, 50);
-      setGroups(page.items);
-      return page.items;
+      let merged = page.items;
+
+      if (includeDriverGroups) {
+        try {
+          const driverPage = await getMyDriverGroups(1, 50);
+          merged = mergeGroupLists([...merged, ...driverPage.items]);
+        } catch {
+          // El conductor puede no tener grupos asignados aún
+        }
+      }
+
+      setGroups(merged);
+      return merged;
     } catch (err) {
       const message = getApiErrorMessage(err, "No se pudieron cargar los grupos");
       setError(message);

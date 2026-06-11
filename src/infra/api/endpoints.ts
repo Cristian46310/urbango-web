@@ -161,10 +161,15 @@ export const ENDPOINTS = {
     HEALTH: "/health",
     GROUPS: {
       BASE: "/groups",
+      ME: "/groups/me",
       BY_ID: (groupId: string) => `/groups/${groupId}`,
+      MESSAGES: (groupId: string) => `/groups/${groupId}/messages`,
       JOIN: (groupId: string) => `/groups/${groupId}/join`,
       MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
       ICON: (groupId: string) => `/groups/${groupId}/icon`,
     },
+    GROUP_MESSAGE: "/messages/group",
+    MESSAGE_READS: (messageId: string) => `/messages/${messageId}/reads`,
+    DELETE_MESSAGE: (messageId: string) => `/messages/${messageId}`,
   },
 };

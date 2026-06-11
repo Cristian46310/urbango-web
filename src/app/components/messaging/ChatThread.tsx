@@ -1,11 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, CheckCheck, MapPin } from "lucide-react";
+import { ArrowLeft, CheckCheck, Eye, MapPin, Trash2 } from "lucide-react";
 
 import type { Message } from "@/core/types/messaging";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface ChatThreadProps {
@@ -16,6 +15,12 @@ interface ChatThreadProps {
   loading: boolean;
   showBackButton?: boolean;
   onBack?: () => void;
+  headerAction?: ReactNode;
+  isGroupThread?: boolean;
+  canDeleteMessage?: (message: Message) => boolean;
+  canViewReads?: (message: Message) => boolean;
+  onDeleteMessage?: (message: Message) => void;
+  onViewReads?: (message: Message) => void;
 }
 
 function formatMessageTime(value: string) {
@@ -34,6 +39,12 @@ export function ChatThread({
   loading,
   showBackButton = false,
   onBack,
+  headerAction,
+  isGroupThread = false,
+  canDeleteMessage,
+  canViewReads,
+  onDeleteMessage,
+  onViewReads,
 }: ChatThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -42,32 +53,39 @@ export function ChatThread({
   }, [messages]);
 
   return (
-    <div className="flex h-full flex-col bg-(--security-surface)">
-      <div className="flex items-center gap-3 border-b border-(--security-border) bg-card px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-(--security-surface)">
+      <div className="flex shrink-0 items-center gap-3 border-b border-(--security-border) bg-card px-4 py-3">
         {showBackButton ? (
           <Button type="button" size="icon" variant="ghost" onClick={onBack}>
             <ArrowLeft className="size-4" />
           </Button>
         ) : null}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{title}</p>
           {subtitle ? (
             <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
+        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </div>
 
-      <ScrollArea className="flex-1 px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {loading && messages.length === 0 ? (
           <p className="text-sm text-muted-foreground">Cargando mensajes...</p>
         ) : messages.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Aún no hay mensajes en esta conversación. ¡Envía el primero!
+            {isGroupThread
+              ? "Aún no hay mensajes en este grupo."
+              : "Aún no hay mensajes en esta conversación. ¡Envía el primero!"}
           </p>
         ) : (
           <div className="space-y-3">
             {messages.map((message) => {
               const isOwn = message.senderId === currentUserId;
+              const showReads = canViewReads?.(message) ?? false;
+              const showDelete = canDeleteMessage?.(message) ?? false;
+              const hasGroupStats =
+                message.readCount != null && message.totalRecipients != null;
 
               return (
                 <div
@@ -80,8 +98,15 @@ export function ChatThread({
                       isOwn
                         ? "rounded-br-md bg-primary text-primary-foreground"
                         : "rounded-bl-md border bg-card",
+                      !isOwn && !message.isRead && isGroupThread ? "border-primary/40" : "",
                     )}
                   >
+                    {isGroupThread && message.groupName && !isOwn ? (
+                      <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                        {message.groupName}
+                      </p>
+                    ) : null}
+
                     <p className="whitespace-pre-wrap break-words">{message.body}</p>
 
                     <div
@@ -97,13 +122,51 @@ export function ChatThread({
                           {message.latitude.toFixed(4)}, {message.longitude.toFixed(4)}
                         </span>
                       ) : null}
-                      {isOwn && message.isRead && message.readAt ? (
+                      {isGroupThread && hasGroupStats ? (
+                        <span className="inline-flex items-center gap-1">
+                          <CheckCheck className="size-3" />
+                          Leído {message.readCount}/{message.totalRecipients}
+                        </span>
+                      ) : null}
+                      {!isGroupThread && isOwn && message.isRead && message.readAt ? (
                         <span className="inline-flex items-center gap-1">
                           <CheckCheck className="size-3" />
                           Leído
                         </span>
                       ) : null}
+                      {!isGroupThread && !isOwn && !message.isRead ? (
+                        <span className="text-primary">Nuevo</span>
+                      ) : null}
                     </div>
+
+                    {(showReads || showDelete) ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {showReads ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isOwn ? "secondary" : "outline"}
+                            className="h-7 text-xs"
+                            onClick={() => { onViewReads?.(message); }}
+                          >
+                            <Eye className="size-3" />
+                            Lecturas
+                          </Button>
+                        ) : null}
+                        {showDelete ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 text-xs"
+                            onClick={() => { onDeleteMessage?.(message); }}
+                          >
+                            <Trash2 className="size-3" />
+                            Eliminar
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               );
@@ -111,7 +174,7 @@ export function ChatThread({
             <div ref={bottomRef} />
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
