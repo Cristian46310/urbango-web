@@ -51,11 +51,59 @@ export interface ContactInfo {
   email: string;
 }
 
+export type GroupVisibility = "public" | "private";
+
+export type GroupMemberRole = "admin" | "member";
+
+export interface GroupMember {
+  userId: string;
+  role: GroupMemberRole;
+}
+
+export interface MessageGroup {
+  id: string;
+  name: string;
+  description?: string;
+  visibility: GroupVisibility;
+  conversationId: string;
+  iconUrl?: string;
+  members?: GroupMember[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateGroupPayload {
+  name: string;
+  description?: string;
+  visibility: GroupVisibility;
+  memberIds: string[];
+}
+
+export interface AddGroupMembersPayload {
+  memberIds: string[];
+}
+
+export interface UpdateGroupIconPayload {
+  iconUrl: string;
+}
+
+export interface GroupMemberAddedPayload {
+  groupId: string;
+  groupName: string;
+  conversationId: string;
+  role: GroupMemberRole;
+}
+
+export type GroupPage = BusinessPage<MessageGroup>;
+
 export interface ConversationMeta {
   conversationId: string;
   type: ConversationType;
   peerId?: string;
+  groupId?: string;
   groupName?: string;
+  groupVisibility?: GroupVisibility;
+  groupIconUrl?: string;
   memberIds?: string[];
 }
 
@@ -68,6 +116,8 @@ export interface ChatListItem {
   unreadCount: number;
   avatarLabel: string;
   peerId?: string;
+  groupId?: string;
+  iconUrl?: string;
 }
 
 export type UserSearchPage = BusinessPage<UserSearchResult>;

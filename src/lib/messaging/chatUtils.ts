@@ -3,6 +3,7 @@ import type {
   ContactInfo,
   ConversationMeta,
   Message,
+  MessageGroup,
 } from "@/core/types/messaging";
 
 export function mergeMessages(existing: Message[], incoming: Message[]): Message[] {
@@ -134,6 +135,58 @@ export function collectPeerIds(
   }
 
   return Array.from(ids);
+}
+
+export function mergeGroupChats(
+  messageChats: ChatListItem[],
+  groups: MessageGroup[],
+): ChatListItem[] {
+  const byConversationId = new Map(
+    messageChats.map((chat) => [chat.conversationId, chat]),
+  );
+
+  for (const group of groups) {
+    const existing = byConversationId.get(group.conversationId);
+    if (existing) {
+      byConversationId.set(group.conversationId, {
+        ...existing,
+        type: "group",
+        title: group.name,
+        groupId: group.id,
+        iconUrl: group.iconUrl,
+        subtitle: existing.subtitle || group.description || "Grupo",
+      });
+      continue;
+    }
+
+    byConversationId.set(group.conversationId, {
+      conversationId: group.conversationId,
+      type: "group",
+      title: group.name,
+      subtitle: group.description || "Grupo sin mensajes",
+      updatedAt: group.updatedAt ?? group.createdAt ?? new Date().toISOString(),
+      unreadCount: 0,
+      avatarLabel: getAvatarLabel(group.name),
+      groupId: group.id,
+      iconUrl: group.iconUrl,
+    });
+  }
+
+  return Array.from(byConversationId.values()).sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+}
+
+export function groupToConversationMeta(group: MessageGroup): ConversationMeta {
+  return {
+    conversationId: group.conversationId,
+    type: "group",
+    groupId: group.id,
+    groupName: group.name,
+    groupVisibility: group.visibility,
+    groupIconUrl: group.iconUrl,
+    memberIds: group.members?.map((member) => member.userId),
+  };
 }
 
 export function getUnreadMessagesInConversation(

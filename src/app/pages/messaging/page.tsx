@@ -1,27 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { MessageCircle, RefreshCw } from "lucide-react";
 
 import { PageShell } from "@/app/components/security/page-shell";
 import { ChatComposer } from "@/app/components/messaging/ChatComposer";
 import { ChatList } from "@/app/components/messaging/ChatList";
 import { ChatThread } from "@/app/components/messaging/ChatThread";
+import { CreateGroupDialog } from "@/app/components/messaging/CreateGroupDialog";
+import { GroupPanel } from "@/app/components/messaging/GroupPanel";
 import { NewChatDialog } from "@/app/components/messaging/NewChatDialog";
+import { useGroups } from "@/hooks/messaging/useGroups";
 import { useMessaging } from "@/hooks/messaging/useMessaging";
 import { useMessagingSocket } from "@/hooks/messaging/useMessagingSocket";
+import { useCitizenProfile } from "@/hooks/useCitizenProfile";
+import { mergeGroupChats, groupToConversationMeta } from "@/lib/messaging/chatUtils";
 import { showInfoToast } from "@/lib/toast";
 import { useAuthStore } from "@/store/security/authStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { CreateGroupPayload } from "@/core/types/messaging";
 
 export default function MessagingPage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
+  const { hasCitizenProfile } = useCitizenProfile();
   const {
-    chats,
+    chats: messageChats,
     searchResults,
     healthStatus,
-    loading,
-    error,
+    loading: messagingLoading,
+    error: messagingError,
     maxBodyLength,
     totalUnreadCount,
     loadChats,
@@ -36,20 +44,56 @@ export default function MessagingPage() {
     getConversationThread,
     contacts,
     conversationMeta,
+    rememberConversation,
   } = useMessaging(currentUserId);
+
+  const {
+    groups,
+    loading: groupsLoading,
+    error: groupsError,
+    loadGroups,
+    createNewGroup,
+    joinPublicGroup,
+    inviteMembers,
+    changeGroupIcon,
+    findGroupByConversationId,
+    isGroupAdmin,
+    isGroupMember,
+  } = useGroups();
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [newChatOpen, setNewChatOpen] = useState(false);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [mobileShowThread, setMobileShowThread] = useState(false);
+
+  const loading = messagingLoading || groupsLoading;
+  const error = messagingError ?? groupsError;
 
   useEffect(() => {
     void checkHealth();
     void loadChats();
-  }, [checkHealth, loadChats]);
+    void loadGroups();
+  }, [checkHealth, loadChats, loadGroups]);
+
+  useEffect(() => {
+    for (const group of groups) {
+      rememberConversation(groupToConversationMeta(group));
+    }
+  }, [groups, rememberConversation]);
+
+  const chats = useMemo(
+    () => mergeGroupChats(messageChats, groups),
+    [messageChats, groups],
+  );
 
   const activeChat = useMemo(
     () => chats.find((chat) => chat.conversationId === activeConversationId) ?? null,
     [chats, activeConversationId],
+  );
+
+  const activeGroup = useMemo(
+    () => (activeConversationId ? findGroupByConversationId(activeConversationId) : null),
+    [activeConversationId, findGroupByConversationId],
   );
 
   const threadMessages = useMemo(
@@ -63,9 +107,9 @@ export default function MessagingPage() {
   }, [activeChat?.peerId, contacts]);
 
   useEffect(() => {
-    if (!activeConversationId) return;
+    if (!activeConversationId || activeChat?.type === "group") return;
     void markConversationAsRead(activeConversationId);
-  }, [activeConversationId, markConversationAsRead]);
+  }, [activeConversationId, activeChat?.type, markConversationAsRead]);
 
   const handleSocketMessage = useCallback(
     (message: Parameters<typeof handleIncomingMessage>[0]) => {
@@ -89,6 +133,10 @@ export default function MessagingPage() {
     onMessageRead: (payload) => {
       handleMessageRead(payload.messageId, payload.readAt);
     },
+    onGroupMemberAdded: (payload) => {
+      showInfoToast(`Fuiste agregado al grupo "${payload.groupName}"`);
+      void loadGroups();
+    },
   });
 
   const handleSelectChat = (conversationId: string) => {
@@ -103,12 +151,26 @@ export default function MessagingPage() {
     setMobileShowThread(true);
   };
 
+  const handleCreateGroup = async (payload: CreateGroupPayload, iconUrl?: string) => {
+    const group = await createNewGroup(payload);
+    if (!group) return false;
+
+    if (iconUrl) {
+      await changeGroupIcon(group.id, iconUrl);
+    }
+
+    rememberConversation(groupToConversationMeta(group));
+    setActiveConversationId(group.conversationId);
+    setMobileShowThread(true);
+    return true;
+  };
+
   const handleSendInChat = async (payload: {
     body: string;
     latitude?: number;
     longitude?: number;
   }) => {
-    if (!activeConversationId || !currentUserId) return false;
+    if (!activeConversationId || !currentUserId || activeChat?.type === "group") return false;
 
     const meta = conversationMeta[activeConversationId];
     const peerId = meta?.peerId ?? activeChat?.peerId;
@@ -130,15 +192,18 @@ export default function MessagingPage() {
   const handleRefresh = () => {
     void checkHealth();
     void loadChats();
+    void loadGroups();
   };
+
+  const isGroupChat = activeChat?.type === "group";
 
   return (
     <PageShell
       title="Mensajería"
-      description="Chats directos en tiempo real. Los grupos se habilitarán próximamente."
+      description="Chats directos y grupos de comunicación (HU-ENTR-3-006)."
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <MessageCircle className="size-4" />
           <span>
             ms-messages:{" "}
@@ -149,6 +214,14 @@ export default function MessagingPage() {
           {totalUnreadCount > 0 ? (
             <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
               {totalUnreadCount} sin leer
+            </span>
+          ) : null}
+          {hasCitizenProfile === false ? (
+            <span className="text-amber-600">
+              Sin perfil ciudadano ·{" "}
+              <Link to="/app/register-profile" className="underline">
+                registrarse
+              </Link>
             </span>
           ) : null}
         </div>
@@ -174,6 +247,7 @@ export default function MessagingPage() {
               loading={loading}
               onSelect={handleSelectChat}
               onNewChat={() => { setNewChatOpen(true); }}
+              onCreateGroup={() => { setCreateGroupOpen(true); }}
             />
           </div>
 
@@ -184,40 +258,87 @@ export default function MessagingPage() {
             )}
           >
             {activeChat && currentUserId ? (
-              <>
-                <div className="min-h-0 flex-1">
-                  <ChatThread
-                    title={activeContact?.name ?? activeChat.title}
-                    subtitle={
-                      activeChat.type === "group"
-                        ? "Chat grupal"
-                        : activeContact?.email
-                    }
-                    messages={threadMessages}
-                    currentUserId={currentUserId}
-                    loading={loading}
-                    showBackButton
-                    onBack={() => { setMobileShowThread(false); }}
-                  />
+              isGroupChat && activeGroup ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {threadMessages.length > 0 ? (
+                    <div className="min-h-0 flex-1 border-b">
+                      <ChatThread
+                        title={activeGroup.name}
+                        subtitle={
+                          activeGroup.visibility === "public"
+                            ? "Grupo público"
+                            : "Grupo privado"
+                        }
+                        messages={threadMessages}
+                        currentUserId={currentUserId}
+                        loading={loading}
+                        showBackButton
+                        onBack={() => { setMobileShowThread(false); }}
+                      />
+                    </div>
+                  ) : null}
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <GroupPanel
+                      group={activeGroup}
+                      currentUserId={currentUserId}
+                      isAdmin={isGroupAdmin(activeGroup, currentUserId)}
+                      isMember={isGroupMember(activeGroup, currentUserId)}
+                      loading={loading}
+                      hasCitizenProfile={hasCitizenProfile}
+                      searchResults={searchResults}
+                      onJoin={async () => {
+                        await joinPublicGroup(activeGroup.id);
+                        await loadGroups();
+                      }}
+                      onInvite={async (memberIds) => {
+                        await inviteMembers(activeGroup.id, memberIds);
+                        await loadGroups();
+                      }}
+                      onUpdateIcon={async (iconUrl) => {
+                        await changeGroupIcon(activeGroup.id, iconUrl);
+                        await loadGroups();
+                      }}
+                      onSearch={searchPeople}
+                    />
+                  </div>
                 </div>
-                <ChatComposer
-                  loading={loading}
-                  maxBodyLength={maxBodyLength}
-                  onSend={handleSendInChat}
-                />
-              </>
+              ) : (
+                <>
+                  <div className="min-h-0 flex-1">
+                    <ChatThread
+                      title={activeContact?.name ?? activeChat.title}
+                      subtitle={activeContact?.email}
+                      messages={threadMessages}
+                      currentUserId={currentUserId}
+                      loading={loading}
+                      showBackButton
+                      onBack={() => { setMobileShowThread(false); }}
+                    />
+                  </div>
+                  <ChatComposer
+                    loading={loading}
+                    maxBodyLength={maxBodyLength}
+                    onSend={handleSendInChat}
+                  />
+                </>
+              )
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 bg-(--security-surface) p-8 text-center">
                 <MessageCircle className="size-10 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Selecciona un chat</p>
                   <p className="text-sm text-muted-foreground">
-                    Elige una conversación de la lista o inicia un chat nuevo.
+                    Inicia un chat directo o crea un grupo de comunicación.
                   </p>
                 </div>
-                <Button type="button" onClick={() => { setNewChatOpen(true); }}>
-                  Nuevo chat
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" onClick={() => { setNewChatOpen(true); }}>
+                    Nuevo chat
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => { setCreateGroupOpen(true); }}>
+                    Crear grupo
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -231,6 +352,17 @@ export default function MessagingPage() {
         onOpenChange={setNewChatOpen}
         onSearch={searchPeople}
         onSelectUser={(user) => { void handleStartChat(user); }}
+      />
+
+      <CreateGroupDialog
+        open={createGroupOpen}
+        loading={loading}
+        hasCitizenProfile={hasCitizenProfile}
+        results={searchResults}
+        currentUserId={currentUserId}
+        onOpenChange={setCreateGroupOpen}
+        onSearch={searchPeople}
+        onCreate={handleCreateGroup}
       />
     </PageShell>
   );

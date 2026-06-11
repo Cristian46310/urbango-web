@@ -13,6 +13,7 @@ interface ChatListProps {
   loading: boolean;
   onSelect: (conversationId: string) => void;
   onNewChat: () => void;
+  onCreateGroup: () => void;
 }
 
 function formatChatTime(value: string) {
@@ -29,15 +30,20 @@ export function ChatList({
   loading,
   onSelect,
   onNewChat,
+  onCreateGroup,
 }: ChatListProps) {
   return (
     <div className="flex h-full flex-col border-r border-(--security-border) bg-card">
       <div className="flex items-center justify-between border-b border-(--security-border) px-4 py-3">
         <h3 className="font-semibold">Chats</h3>
-        <Button type="button" size="sm" variant="outline" onClick={onNewChat}>
-          <MessageSquarePlus className="size-4" />
-          Nuevo
-        </Button>
+        <div className="flex gap-1">
+          <Button type="button" size="sm" variant="outline" onClick={onCreateGroup} title="Crear grupo">
+            <Users className="size-4" />
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onNewChat} title="Nuevo chat">
+            <MessageSquarePlus className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -62,8 +68,10 @@ export function ChatList({
                   activeConversationId === chat.conversationId && "bg-accent",
                 )}
               >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  {chat.type === "group" ? (
+                <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                  {chat.iconUrl ? (
+                    <img src={chat.iconUrl} alt="" className="size-full object-cover" />
+                  ) : chat.type === "group" ? (
                     <Users className="size-5" />
                   ) : (
                     chat.avatarLabel
