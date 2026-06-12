@@ -35,8 +35,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { CreateGroupPayload, Message } from "@/core/types/messaging";
 
-const MESSAGING_POLL_INTERVAL_MS = 15_000;
-
 export default function MessagingPage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
   const { hasCitizenProfile } = useCitizenProfile();
@@ -58,6 +56,7 @@ export default function MessagingPage() {
     checkHealth,
     handleIncomingMessage,
     handleMessageRead,
+    handleMessageDeleted,
     getConversationThread,
     contacts,
     conversationMeta,
@@ -102,6 +101,7 @@ export default function MessagingPage() {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [mobileShowThread, setMobileShowThread] = useState(false);
   const [groupInfoOpen, setGroupInfoOpen] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const loading = messagingLoading || groupsLoading || groupMessagesLoading;
   const error = messagingError ?? groupsError;
@@ -196,31 +196,12 @@ export default function MessagingPage() {
     setGroupInfoOpen(false);
   }, [activeGroupId, loadGroupMessages]);
 
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    const poll = () => {
-      if (document.visibilityState === "hidden") return;
-      refreshMessagingLists(true);
-      if (activeGroupId) {
-        void loadGroupMessages(activeGroupId, true);
-      }
-    };
-
-    const intervalId = window.setInterval(poll, MESSAGING_POLL_INTERVAL_MS);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        poll();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [currentUserId, refreshMessagingLists, activeGroupId, loadGroupMessages]);
+  const resyncAfterReconnect = useCallback(() => {
+    refreshMessagingLists(true);
+    if (activeGroupId) {
+      void loadGroupMessages(activeGroupId, true);
+    }
+  }, [refreshMessagingLists, activeGroupId, loadGroupMessages]);
 
   useEffect(() => {
     if (!activeGroup || !currentUserId) return;
@@ -254,13 +235,14 @@ export default function MessagingPage() {
         return;
       }
 
-      if (message.conversationId !== activeConversationId) {
+      if (message.conversationId !== activeConversationId && message.senderId !== currentUserId) {
         showInfoToast("Tienes un mensaje nuevo");
       }
     },
     [
       activeConversationId,
       appendGroupMessage,
+      currentUserId,
       handleIncomingMessage,
       markGroupMessageRead,
       readMessage,
@@ -269,6 +251,7 @@ export default function MessagingPage() {
 
   useMessagingSocket({
     enabled: Boolean(currentUserId),
+    activeConversationId,
     onNewMessage: handleSocketMessage,
     onMessageRead: (payload) => {
       handleMessageRead(payload.messageId, payload.readAt ?? "");
@@ -282,11 +265,20 @@ export default function MessagingPage() {
     },
     onGroupMemberAdded: (payload) => {
       showInfoToast(`Fuiste agregado al grupo "${payload.groupName}"`);
-      void loadGroups(hasDriverProfile === true);
+      rememberConversation({
+        conversationId: payload.conversationId,
+        type: "group",
+        groupId: payload.groupId,
+        groupName: payload.groupName,
+      });
+      void loadGroups(hasDriverProfile === true, true);
     },
     onMessageDeleted: (payload) => {
+      handleMessageDeleted(payload.messageId);
       deleteGroupMessageLocal(payload.messageId, payload.groupId);
     },
+    onReconnect: resyncAfterReconnect,
+    onConnectionChange: setSocketConnected,
   });
 
   const handleSelectChat = (conversationId: string) => {
@@ -399,6 +391,11 @@ export default function MessagingPage() {
             ms-messages:{" "}
             <span className={healthStatus === "ok" ? "text-emerald-600" : "text-amber-600"}>
               {healthStatus === "ok" ? "conectado" : healthStatus ?? "verificando..."}
+            </span>
+            {" · "}
+            websocket:{" "}
+            <span className={socketConnected ? "text-emerald-600" : "text-amber-600"}>
+              {socketConnected ? "en vivo" : "desconectado"}
             </span>
           </span>
           {totalUnreadCount > 0 ? (

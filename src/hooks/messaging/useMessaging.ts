@@ -271,6 +271,10 @@ export function useMessaging(currentUserId: string | undefined) {
     );
   }, []);
 
+  const handleMessageDeleted = useCallback((messageId: string) => {
+    setMessages((prev) => prev.filter((item) => item.id !== messageId));
+  }, []);
+
   const getConversationThread = useCallback(
     (conversationId: string) => getThreadMessages(messages, conversationId),
     [messages],
@@ -306,6 +310,7 @@ export function useMessaging(currentUserId: string | undefined) {
     checkHealth,
     handleIncomingMessage,
     handleMessageRead,
+    handleMessageDeleted,
     getConversationThread,
     rememberContact,
     rememberConversation,
