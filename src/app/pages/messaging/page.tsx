@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, RefreshCw } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 import { PageShell } from "@/app/components/security/page-shell";
 import { ChatComposer } from "@/app/components/messaging/ChatComposer";
@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { CreateGroupPayload, Message } from "@/core/types/messaging";
+
+const MESSAGING_POLL_INTERVAL_MS = 15_000;
 
 export default function MessagingPage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
@@ -105,12 +107,6 @@ export default function MessagingPage() {
   const error = messagingError ?? groupsError;
 
   useEffect(() => {
-    void checkHealth();
-    void loadChats();
-    void loadGroups(hasDriverProfile === true);
-  }, [checkHealth, loadChats, loadGroups, hasDriverProfile]);
-
-  useEffect(() => {
     for (const group of groups) {
       rememberConversation(groupToConversationMeta(group));
     }
@@ -179,11 +175,52 @@ export default function MessagingPage() {
     return getGroupMemberCount(activeGroup, groupThreadMessages);
   }, [activeGroup, groupThreadMessages]);
 
+  const activeGroupId = activeGroup?.id ?? null;
+
+  const refreshMessagingLists = useCallback(
+    (silent = false) => {
+      void checkHealth();
+      void loadChats(silent);
+      void loadGroups(hasDriverProfile === true, silent);
+    },
+    [checkHealth, loadChats, loadGroups, hasDriverProfile],
+  );
+
   useEffect(() => {
-    if (!activeGroup) return;
-    void loadGroupMessages(activeGroup.id);
+    refreshMessagingLists(false);
+  }, [refreshMessagingLists]);
+
+  useEffect(() => {
+    if (!activeGroupId) return;
+    void loadGroupMessages(activeGroupId);
     setGroupInfoOpen(false);
-  }, [activeGroup, loadGroupMessages]);
+  }, [activeGroupId, loadGroupMessages]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const poll = () => {
+      if (document.visibilityState === "hidden") return;
+      refreshMessagingLists(true);
+      if (activeGroupId) {
+        void loadGroupMessages(activeGroupId, true);
+      }
+    };
+
+    const intervalId = window.setInterval(poll, MESSAGING_POLL_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        poll();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [currentUserId, refreshMessagingLists, activeGroupId, loadGroupMessages]);
 
   useEffect(() => {
     if (!activeGroup || !currentUserId) return;
@@ -323,15 +360,6 @@ export default function MessagingPage() {
     return messages.length > 0;
   };
 
-  const handleRefresh = () => {
-    void checkHealth();
-    void loadChats();
-    void loadGroups(hasDriverProfile === true);
-    if (activeGroup) {
-      void loadGroupMessages(activeGroup.id);
-    }
-  };
-
   const isGroupChat = activeChat?.type === "group";
   const canSendInGroup =
     isGroupChat &&
@@ -395,10 +423,6 @@ export default function MessagingPage() {
             </span>
           ) : null}
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-          <RefreshCw className="size-4" />
-          Actualizar
-        </Button>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

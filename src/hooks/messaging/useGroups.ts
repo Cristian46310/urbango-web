@@ -46,9 +46,11 @@ export function useGroups() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadGroups = useCallback(async (includeDriverGroups = false) => {
-    setLoading(true);
-    setError(null);
+  const loadGroups = useCallback(async (includeDriverGroups = false, silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const page = await getGroups(1, 50);
       let merged = page.items;
@@ -65,12 +67,16 @@ export function useGroups() {
       setGroups(merged);
       return merged;
     } catch (err) {
-      const message = getApiErrorMessage(err, "No se pudieron cargar los grupos");
-      setError(message);
-      showErrorToast(message);
+      if (!silent) {
+        const message = getApiErrorMessage(err, "No se pudieron cargar los grupos");
+        setError(message);
+        showErrorToast(message);
+      }
       return [];
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 

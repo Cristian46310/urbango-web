@@ -17,9 +17,11 @@ export function useGroupMessages() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadGroupMessages = useCallback(async (groupId: string) => {
-    setLoading(true);
-    setError(null);
+  const loadGroupMessages = useCallback(async (groupId: string, silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const page = await getGroupMessages(groupId, 1, 50);
       setMessagesByGroup((prev) => ({
@@ -28,12 +30,16 @@ export function useGroupMessages() {
       }));
       return page.items;
     } catch (err) {
-      const message = getApiErrorMessage(err, "No se pudo cargar el historial del grupo");
-      setError(message);
-      showErrorToast(message);
+      if (!silent) {
+        const message = getApiErrorMessage(err, "No se pudo cargar el historial del grupo");
+        setError(message);
+        showErrorToast(message);
+      }
       return [];
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
