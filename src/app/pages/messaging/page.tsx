@@ -99,6 +99,7 @@ export default function MessagingPage() {
   const handleStartChat = async (user: { id: string; name: string; email: string }) => {
     const conversationId = await startDirectChat(user);
     if (!conversationId) return;
+    setNewChatOpen(false);
     setActiveConversationId(conversationId);
     setMobileShowThread(true);
   };

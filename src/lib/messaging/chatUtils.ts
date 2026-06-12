@@ -46,6 +46,62 @@ export function inferConversationMeta(
   };
 }
 
+function buildChatListItem(
+  conversationId: string,
+  conversationMessages: Message[],
+  currentUserId: string,
+  contacts: Record<string, ContactInfo>,
+  knownMeta?: ConversationMeta,
+): ChatListItem {
+  const meta = inferConversationMeta(
+    conversationId,
+    conversationMessages,
+    currentUserId,
+    knownMeta,
+  );
+
+  const title =
+    meta.type === "group"
+      ? meta.groupName ?? "Grupo"
+      : getContactLabel(meta.peerId ? contacts[meta.peerId] : undefined, "Usuario");
+
+  const sorted = [...conversationMessages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+  const lastMessage = sorted[sorted.length - 1];
+
+  const unreadCount = conversationMessages.filter(
+    (message) => !message.isRead && message.senderId !== currentUserId,
+  ).length;
+
+  if (lastMessage) {
+    const isOwnLastMessage = lastMessage.senderId === currentUserId;
+    const prefix = isOwnLastMessage ? "Tú: " : "";
+
+    return {
+      conversationId,
+      type: meta.type,
+      title,
+      subtitle: `${prefix}${lastMessage.body}`,
+      updatedAt: lastMessage.createdAt,
+      unreadCount,
+      avatarLabel: getAvatarLabel(title),
+      peerId: meta.peerId,
+    };
+  }
+
+  return {
+    conversationId,
+    type: meta.type,
+    title,
+    subtitle: "Sin mensajes aún",
+    updatedAt: knownMeta?.createdAt ?? new Date().toISOString(),
+    unreadCount: 0,
+    avatarLabel: getAvatarLabel(title),
+    peerId: meta.peerId,
+  };
+}
+
 export function buildChatList(
   messages: Message[],
   currentUserId: string,
@@ -60,44 +116,27 @@ export function buildChatList(
     grouped.set(message.conversationId, current);
   }
 
+  const processedIds = new Set<string>();
   const chats: ChatListItem[] = [];
 
   for (const [conversationId, conversationMessages] of grouped) {
-    const sorted = [...conversationMessages].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    processedIds.add(conversationId);
+    chats.push(
+      buildChatListItem(
+        conversationId,
+        conversationMessages,
+        currentUserId,
+        contacts,
+        conversationMeta[conversationId],
+      ),
     );
-    const lastMessage = sorted[sorted.length - 1];
-    if (!lastMessage) continue;
+  }
 
-    const meta = inferConversationMeta(
-      conversationId,
-      conversationMessages,
-      currentUserId,
-      conversationMeta[conversationId],
+  for (const meta of Object.values(conversationMeta)) {
+    if (processedIds.has(meta.conversationId)) continue;
+    chats.push(
+      buildChatListItem(meta.conversationId, [], currentUserId, contacts, meta),
     );
-
-    const title =
-      meta.type === "group"
-        ? meta.groupName ?? "Grupo"
-        : getContactLabel(meta.peerId ? contacts[meta.peerId] : undefined, "Usuario");
-
-    const unreadCount = conversationMessages.filter(
-      (message) => !message.isRead && message.senderId !== currentUserId,
-    ).length;
-
-    const isOwnLastMessage = lastMessage.senderId === currentUserId;
-    const prefix = isOwnLastMessage ? "Tú: " : "";
-
-    chats.push({
-      conversationId,
-      type: meta.type,
-      title,
-      subtitle: `${prefix}${lastMessage.body}`,
-      updatedAt: lastMessage.createdAt,
-      unreadCount,
-      avatarLabel: getAvatarLabel(title),
-      peerId: meta.peerId,
-    });
   }
 
   return chats.sort(

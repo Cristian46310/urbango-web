@@ -57,6 +57,7 @@ export interface ConversationMeta {
   peerId?: string;
   groupName?: string;
   memberIds?: string[];
+  createdAt?: string;
 }
 
 export interface ChatListItem {

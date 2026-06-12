@@ -145,6 +145,7 @@ export function useMessaging(currentUserId: string | undefined) {
           type: conversation.type,
           peerId,
           memberIds: conversation.memberIds,
+          createdAt: conversation.createdAt,
         });
 
         return conversation.id;
