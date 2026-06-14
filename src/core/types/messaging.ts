@@ -145,6 +145,7 @@ export interface ConversationMeta {
   groupVisibility?: GroupVisibility;
   groupIconUrl?: string;
   memberIds?: string[];
+  createdAt?: string;
 }
 
 export interface ChatListItem {

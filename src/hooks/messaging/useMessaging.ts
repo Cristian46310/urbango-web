@@ -151,6 +151,7 @@ export function useMessaging(currentUserId: string | undefined) {
           type: conversation.type,
           peerId,
           memberIds: conversation.memberIds,
+          createdAt: conversation.createdAt,
         });
 
         return conversation.id;
@@ -252,13 +253,15 @@ export function useMessaging(currentUserId: string | undefined) {
     (message: Message) => {
       setMessages((prev) => mergeMessages(prev, [message]));
 
-      if (currentUserId && message.senderId !== currentUserId) {
-        rememberConversation({
-          conversationId: message.conversationId,
-          type: "direct",
-          peerId: message.senderId,
-        });
-      }
+      if (!currentUserId || message.senderId === currentUserId) return;
+
+      rememberConversation({
+        conversationId: message.conversationId,
+        type: message.messageType === "group" ? "group" : "direct",
+        peerId: message.senderId,
+        groupId: message.groupId,
+        groupName: message.groupName,
+      });
     },
     [currentUserId, rememberConversation],
   );

@@ -19,7 +19,9 @@ import { useCitizenProfile } from "@/hooks/useCitizenProfile";
 import { useDriverProfile } from "@/hooks/useDriverProfile";
 import {
   getGroupMemberCount,
+  getThreadMessages,
   groupToConversationMeta,
+  isGroupMessage,
   mergeGroupChats,
 } from "@/lib/messaging/chatUtils";
 import { showInfoToast } from "@/lib/toast";
@@ -57,7 +59,7 @@ export default function MessagingPage() {
     handleIncomingMessage,
     handleMessageRead,
     handleMessageDeleted,
-    getConversationThread,
+    messages,
     contacts,
     conversationMeta,
     rememberConversation,
@@ -142,28 +144,39 @@ export default function MessagingPage() {
     });
   }, [messageChats, groups, getGroupThread, currentUserId]);
 
+  const activeDirectMeta = useMemo(() => {
+    if (!activeConversationId) return null;
+    return conversationMeta[activeConversationId] ?? null;
+  }, [activeConversationId, conversationMeta]);
+
   const activeChat = useMemo(
     () => chats.find((chat) => chat.conversationId === activeConversationId) ?? null,
     [chats, activeConversationId],
+  );
+
+  const canShowActiveThread = Boolean(
+    currentUserId &&
+    activeConversationId &&
+    (activeChat || activeDirectMeta?.type === "direct" || activeGroup),
   );
 
   const threadMessages = useMemo(() => {
     if (activeChat?.type === "group" && activeGroup) {
       return groupThreadMessages;
     }
-    return activeConversationId ? getConversationThread(activeConversationId) : [];
+    return activeConversationId ? getThreadMessages(messages, activeConversationId) : [];
   }, [
     activeChat?.type,
     activeGroup,
     groupThreadMessages,
     activeConversationId,
-    getConversationThread,
+    messages,
   ]);
 
   const activeContact = useMemo(() => {
-    const peerId = activeChat?.peerId;
+    const peerId = activeChat?.peerId ?? activeDirectMeta?.peerId;
     return peerId ? contacts[peerId] : undefined;
-  }, [activeChat?.peerId, contacts]);
+  }, [activeChat?.peerId, activeDirectMeta?.peerId, contacts]);
 
   const driverGroups = useMemo(
     () => groups.filter((group) => isGroupMember(group, currentUserId)),
@@ -218,11 +231,11 @@ export default function MessagingPage() {
 
   const handleSocketMessage = useCallback(
     (message: Message) => {
-      if (message.messageType === "group" && message.groupId) {
+      if (isGroupMessage(message) && message.groupId) {
         appendGroupMessage(message);
         if (message.conversationId === activeConversationId && message.senderId !== currentUserId) {
           void markGroupMessageRead(message.id, true);
-        } else if (message.conversationId !== activeConversationId) {
+        } else if (message.conversationId !== activeConversationId && message.senderId !== currentUserId) {
           showInfoToast(message.groupName ? `Nuevo mensaje en ${message.groupName}` : "Nuevo mensaje grupal");
         }
         return;
@@ -450,7 +463,7 @@ export default function MessagingPage() {
               !mobileShowThread ? "hidden lg:flex" : "flex",
             )}
           >
-            {activeChat && currentUserId ? (
+            {canShowActiveThread ? (
               isGroupChat && activeGroup ? (
                 <>
                   <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -499,7 +512,7 @@ export default function MessagingPage() {
                 <>
                   <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     <ChatThread
-                      title={activeContact?.name ?? activeChat.title}
+                      title={activeContact?.name ?? activeChat?.title ?? "Chat directo"}
                       subtitle={activeContact?.email}
                       messages={threadMessages}
                       currentUserId={currentUserId}

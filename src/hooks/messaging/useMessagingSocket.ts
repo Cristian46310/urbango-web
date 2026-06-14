@@ -7,6 +7,7 @@ import type {
   MessageReadPayload,
   GroupMemberAddedPayload,
 } from "@/core/types/messaging";
+import { normalizeIncomingMessage } from "@/lib/messaging/chatUtils";
 
 const AUTH_TOKEN_STORAGE_KEY = "authToken";
 
@@ -27,6 +28,19 @@ function emitConversationJoin(socket: Socket, conversationId: string) {
   socket.emit("conversation:join", { conversationId: trimmed });
 }
 
+function queueConversationJoin(pendingJoins: Set<string>, conversationId: string) {
+  const trimmed = conversationId.trim();
+  if (!trimmed) return;
+  pendingJoins.add(trimmed);
+}
+
+function flushConversationJoins(socket: Socket, pendingJoins: Set<string>) {
+  for (const conversationId of pendingJoins) {
+    emitConversationJoin(socket, conversationId);
+  }
+  pendingJoins.clear();
+}
+
 export function useMessagingSocket({
   enabled = true,
   activeConversationId = null,
@@ -38,6 +52,7 @@ export function useMessagingSocket({
   onConnectionChange,
 }: UseMessagingSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
+  const pendingJoinsRef = useRef<Set<string>>(new Set());
   const activeConversationIdRef = useRef(activeConversationId);
   activeConversationIdRef.current = activeConversationId;
   const onNewMessageRef = useRef(onNewMessage);
@@ -73,8 +88,11 @@ export function useMessagingSocket({
 
   const joinConversation = useCallback((conversationId: string) => {
     const socket = socketRef.current;
-    if (!socket?.connected) return;
-    emitConversationJoin(socket, conversationId);
+    if (socket?.connected) {
+      emitConversationJoin(socket, conversationId);
+      return;
+    }
+    queueConversationJoin(pendingJoinsRef.current, conversationId);
   }, []);
 
   useEffect(() => {
@@ -100,8 +118,9 @@ export function useMessagingSocket({
 
       const activeId = activeConversationIdRef.current;
       if (activeId) {
-        emitConversationJoin(socket, activeId);
+        queueConversationJoin(pendingJoinsRef.current, activeId);
       }
+      flushConversationJoins(socket, pendingJoinsRef.current);
 
       if (!isFirstConnect) {
         onReconnectRef.current?.();
@@ -113,7 +132,9 @@ export function useMessagingSocket({
       onConnectionChangeRef.current?.(false);
     });
 
-    socket.on("message:new", (message: Message) => {
+    socket.on("message:new", (payload: unknown) => {
+      const message = normalizeIncomingMessage(payload);
+      if (!message) return;
       onNewMessageRef.current?.(message);
     });
 

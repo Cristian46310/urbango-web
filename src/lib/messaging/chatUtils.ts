@@ -4,11 +4,99 @@ import type {
   ConversationMeta,
   Message,
   MessageGroup,
+  MessageType,
 } from "@/core/types/messaging";
+
+function readString(source: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return "";
+}
+
+function readOptionalNumber(source: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readOptionalBoolean(source: Record<string, unknown>, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "boolean") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readMessageType(source: Record<string, unknown>): MessageType | undefined {
+  const raw = readString(source, "messageType", "message_type", "type");
+  if (raw === "direct" || raw === "group") {
+    return raw;
+  }
+  return undefined;
+}
+
+export function normalizeIncomingMessage(raw: unknown): Message | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const envelope = raw as Record<string, unknown>;
+  const source =
+    envelope.message && typeof envelope.message === "object"
+      ? (envelope.message as Record<string, unknown>)
+      : envelope;
+
+  const id = readString(source, "id", "_id");
+  const conversationId = readString(source, "conversationId", "conversation_id");
+  const senderId = readString(source, "senderId", "sender_id");
+  const body = readString(source, "body", "content", "text");
+
+  if (!id || !conversationId || !senderId) {
+    return null;
+  }
+
+  const messageType = readMessageType(source);
+  const groupId = readString(source, "groupId", "group_id");
+
+  return {
+    id,
+    conversationId,
+    senderId,
+    body,
+    latitude: readOptionalNumber(source, "latitude", "lat"),
+    longitude: readOptionalNumber(source, "longitude", "lng", "lon"),
+    createdAt: readString(source, "createdAt", "created_at") || new Date().toISOString(),
+    isRead: readOptionalBoolean(source, "isRead", "is_read") ?? false,
+    readAt: readString(source, "readAt", "read_at") || undefined,
+    messageType: messageType ?? (groupId ? "group" : "direct"),
+    groupId: groupId || undefined,
+    groupName: readString(source, "groupName", "group_name") || undefined,
+    readCount: readOptionalNumber(source, "readCount", "read_count"),
+    totalRecipients: readOptionalNumber(source, "totalRecipients", "total_recipients"),
+  };
+}
+
+export function isGroupMessage(message: Message): boolean {
+  return message.messageType === "group" || Boolean(message.groupId);
+}
 
 export function mergeMessages(existing: Message[], incoming: Message[]): Message[] {
   const map = new Map(existing.map((message) => [message.id, message]));
   for (const message of incoming) {
+    if (!message.id) continue;
     map.set(message.id, message);
   }
   return Array.from(map.values());
@@ -61,6 +149,62 @@ export function inferConversationMeta(
   };
 }
 
+function buildChatListItem(
+  conversationId: string,
+  conversationMessages: Message[],
+  currentUserId: string,
+  contacts: Record<string, ContactInfo>,
+  knownMeta?: ConversationMeta,
+): ChatListItem {
+  const meta = inferConversationMeta(
+    conversationId,
+    conversationMessages,
+    currentUserId,
+    knownMeta,
+  );
+
+  const title =
+    meta.type === "group"
+      ? meta.groupName ?? "Grupo"
+      : getContactLabel(meta.peerId ? contacts[meta.peerId] : undefined, "Usuario");
+
+  const sorted = [...conversationMessages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+  const lastMessage = sorted[sorted.length - 1];
+
+  const unreadCount = conversationMessages.filter(
+    (message) => !message.isRead && message.senderId !== currentUserId,
+  ).length;
+
+  if (lastMessage) {
+    const isOwnLastMessage = lastMessage.senderId === currentUserId;
+    const prefix = isOwnLastMessage ? "Tú: " : "";
+
+    return {
+      conversationId,
+      type: meta.type,
+      title,
+      subtitle: `${prefix}${lastMessage.body}`,
+      updatedAt: lastMessage.createdAt,
+      unreadCount,
+      avatarLabel: getAvatarLabel(title),
+      peerId: meta.peerId,
+    };
+  }
+
+  return {
+    conversationId,
+    type: meta.type,
+    title,
+    subtitle: "Sin mensajes aún",
+    updatedAt: knownMeta?.createdAt ?? new Date().toISOString(),
+    unreadCount: 0,
+    avatarLabel: getAvatarLabel(title),
+    peerId: meta.peerId,
+  };
+}
+
 export function buildChatList(
   messages: Message[],
   currentUserId: string,
@@ -75,44 +219,28 @@ export function buildChatList(
     grouped.set(message.conversationId, current);
   }
 
+  const processedIds = new Set<string>();
   const chats: ChatListItem[] = [];
 
   for (const [conversationId, conversationMessages] of grouped) {
-    const sorted = [...conversationMessages].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    processedIds.add(conversationId);
+    chats.push(
+      buildChatListItem(
+        conversationId,
+        conversationMessages,
+        currentUserId,
+        contacts,
+        conversationMeta[conversationId],
+      ),
     );
-    const lastMessage = sorted[sorted.length - 1];
-    if (!lastMessage) continue;
+  }
 
-    const meta = inferConversationMeta(
-      conversationId,
-      conversationMessages,
-      currentUserId,
-      conversationMeta[conversationId],
+  for (const meta of Object.values(conversationMeta)) {
+    if (processedIds.has(meta.conversationId)) continue;
+    if (meta.type === "group") continue;
+    chats.push(
+      buildChatListItem(meta.conversationId, [], currentUserId, contacts, meta),
     );
-
-    const title =
-      meta.type === "group"
-        ? meta.groupName ?? "Grupo"
-        : getContactLabel(meta.peerId ? contacts[meta.peerId] : undefined, "Usuario");
-
-    const unreadCount = conversationMessages.filter(
-      (message) => !message.isRead && message.senderId !== currentUserId,
-    ).length;
-
-    const isOwnLastMessage = lastMessage.senderId === currentUserId;
-    const prefix = isOwnLastMessage ? "Tú: " : "";
-
-    chats.push({
-      conversationId,
-      type: meta.type,
-      title,
-      subtitle: `${prefix}${lastMessage.body}`,
-      updatedAt: lastMessage.createdAt,
-      unreadCount,
-      avatarLabel: getAvatarLabel(title),
-      peerId: meta.peerId,
-    });
   }
 
   return chats.sort(
