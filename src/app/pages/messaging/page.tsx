@@ -38,7 +38,8 @@ import { cn } from "@/lib/utils";
 import type { CreateGroupPayload, Message } from "@/core/types/messaging";
 
 export default function MessagingPage() {
-  const currentUserId = useAuthStore((state) => state.currentUser?.id);
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const currentUserId = currentUser?.id;
   const { hasCitizenProfile } = useCitizenProfile();
   const { hasDriverProfile } = useDriverProfile();
   const {
@@ -50,12 +51,15 @@ export default function MessagingPage() {
     maxBodyLength,
     totalUnreadCount,
     loadChats,
+    loadConversationThread,
     searchPeople,
     startDirectChat,
     sendMessage,
     markConversationAsRead,
     readMessage,
+    openMessageById,
     checkHealth,
+    refreshUnreadCount,
     handleIncomingMessage,
     handleMessageRead,
     handleMessageDeleted,
@@ -137,9 +141,10 @@ export default function MessagingPage() {
       const isOwnLastMessage = last.senderId === currentUserId;
       return {
         ...chat,
-        subtitle: `${isOwnLastMessage ? "Tú: " : ""}${last.body}`,
+        subtitle: `${isOwnLastMessage ? "Tú: " : ""}${last.preview ?? last.body}`,
         updatedAt: last.createdAt,
         unreadCount,
+        hasUnread: unreadCount > 0,
       };
     });
   }, [messageChats, groups, getGroupThread, currentUserId]);
@@ -204,6 +209,11 @@ export default function MessagingPage() {
   }, [refreshMessagingLists]);
 
   useEffect(() => {
+    if (!activeConversationId || activeChat?.type === "group") return;
+    void loadConversationThread(activeConversationId, true);
+  }, [activeConversationId, activeChat?.type, loadConversationThread]);
+
+  useEffect(() => {
     if (!activeGroupId) return;
     void loadGroupMessages(activeGroupId);
     setGroupInfoOpen(false);
@@ -211,10 +221,22 @@ export default function MessagingPage() {
 
   const resyncAfterReconnect = useCallback(() => {
     refreshMessagingLists(true);
+    void refreshUnreadCount();
     if (activeGroupId) {
       void loadGroupMessages(activeGroupId, true);
     }
-  }, [refreshMessagingLists, activeGroupId, loadGroupMessages]);
+    if (activeConversationId && activeChat?.type !== "group") {
+      void loadConversationThread(activeConversationId, true);
+    }
+  }, [
+    refreshMessagingLists,
+    refreshUnreadCount,
+    activeGroupId,
+    loadGroupMessages,
+    activeConversationId,
+    activeChat?.type,
+    loadConversationThread,
+  ]);
 
   useEffect(() => {
     if (!activeGroup || !currentUserId) return;
@@ -297,6 +319,11 @@ export default function MessagingPage() {
   const handleSelectChat = (conversationId: string) => {
     setActiveConversationId(conversationId);
     setMobileShowThread(true);
+
+    const chat = chats.find((item) => item.conversationId === conversationId);
+    if (chat?.type !== "group" && chat?.lastMessageId && chat.hasUnread) {
+      void openMessageById(chat.lastMessageId, true);
+    }
   };
 
   const handleStartChat = async (user: { id: string; name: string; email: string }) => {
@@ -475,7 +502,7 @@ export default function MessagingPage() {
                           : "Grupo privado"
                       }
                       messages={threadMessages}
-                      currentUserId={currentUserId}
+                      currentUserId={currentUserId!}
                       loading={loading}
                       isGroupThread
                       showBackButton
@@ -515,7 +542,7 @@ export default function MessagingPage() {
                       title={activeContact?.name ?? activeChat?.title ?? "Chat directo"}
                       subtitle={activeContact?.email}
                       messages={threadMessages}
-                      currentUserId={currentUserId}
+                      currentUserId={currentUserId!}
                       loading={loading}
                       showBackButton
                       onBack={() => { setMobileShowThread(false); }}
@@ -570,7 +597,11 @@ export default function MessagingPage() {
         loading={loading}
         hasCitizenProfile={hasCitizenProfile}
         results={searchResults}
-        currentUserId={currentUserId}
+        currentUser={
+          currentUser
+            ? { id: currentUser.id, email: currentUser.email }
+            : undefined
+        }
         onOpenChange={setCreateGroupOpen}
         onSearch={searchPeople}
         onCreate={handleCreateGroup}

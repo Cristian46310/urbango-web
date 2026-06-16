@@ -2,6 +2,8 @@ import { httpMsMessages } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
 import type {
   DirectConversation,
+  InboxQuery,
+  InboxUnreadCount,
   Message,
   MessagePage,
   MessagePageQuery,
@@ -35,10 +37,40 @@ export async function sendDirectMessage(
   return httpMsMessages.post<Message>(ENDPOINTS.MESSAGES.DIRECT, payload);
 }
 
-export async function getInbox(query: MessagePageQuery): Promise<MessagePage> {
+export async function getInbox(query: InboxQuery = { page: 1, limit: 20 }): Promise<MessagePage> {
   return httpMsMessages.get<MessagePage>(ENDPOINTS.MESSAGES.INBOX, {
     params: query,
   });
+}
+
+export async function getInboxUnreadCount(): Promise<InboxUnreadCount> {
+  const response = await httpMsMessages.get<InboxUnreadCount | { unreadCount: number }>(
+    ENDPOINTS.MESSAGES.INBOX_UNREAD_COUNT,
+  );
+
+  if ("count" in response && typeof response.count === "number") {
+    return { count: response.count };
+  }
+
+  if ("unreadCount" in response && typeof response.unreadCount === "number") {
+    return { count: response.unreadCount };
+  }
+
+  return { count: 0 };
+}
+
+export async function openMessage(messageId: string): Promise<Message> {
+  return httpMsMessages.get<Message>(ENDPOINTS.MESSAGES.BY_ID(messageId));
+}
+
+export async function getConversationMessages(
+  conversationId: string,
+  query: MessagePageQuery = { page: 1, limit: 50 },
+): Promise<MessagePage> {
+  return httpMsMessages.get<MessagePage>(
+    ENDPOINTS.MESSAGES.CONVERSATION_MESSAGES(conversationId),
+    { params: query },
+  );
 }
 
 export async function getSentMessages(

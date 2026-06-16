@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/sidebar";
 import busLogo from "@/assets/icons/images.png";
 import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePaymentReturn";
+import { useInboxUnreadCount } from "@/hooks/messaging/useInboxUnreadCount";
 import { useAuthStore } from "@/store/security/authStore";
 
 interface MenuItem {
@@ -150,6 +151,7 @@ export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole } = useAuthStore();
+  const { count: inboxUnreadCount } = useInboxUnreadCount(Boolean(currentUser?.id));
   useCardRechargePaymentReturn();
 
   // Filter menu items based on user roles
@@ -341,9 +343,14 @@ export function ManagementLayout() {
                     title={messagingMenuItem.title}
                     size="sm"
                   >
-                    <NavLink to={messagingMenuItem.to}>
+                    <NavLink to={messagingMenuItem.to} className="relative">
                       <MessageCircle className="size-4" />
                       <span className="font-medium">{messagingMenuItem.title}</span>
+                      {inboxUnreadCount > 0 ? (
+                        <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                          {inboxUnreadCount > 99 ? "99+" : inboxUnreadCount}
+                        </span>
+                      ) : null}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

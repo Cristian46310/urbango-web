@@ -81,6 +81,7 @@ export function ChatList({
                 className={cn(
                   "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/60",
                   activeConversationId === chat.conversationId && "bg-accent",
+                  chat.hasUnread && "bg-primary/5",
                 )}
               >
                 <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary">
@@ -95,13 +96,17 @@ export function ChatList({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate font-medium">{chat.title}</p>
+                    <p className={cn("truncate font-medium", chat.hasUnread && "font-semibold text-foreground")}>
+                      {chat.title}
+                    </p>
                     <span className="shrink-0 text-[11px] text-muted-foreground">
                       {formatChatTime(chat.updatedAt)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="truncate text-sm text-muted-foreground">{chat.subtitle}</p>
+                    <p className={cn("truncate text-sm text-muted-foreground", chat.hasUnread && "font-medium text-foreground")}>
+                      {chat.subtitle}
+                    </p>
                     {chat.unreadCount > 0 ? (
                       <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] text-primary-foreground">
                         {chat.unreadCount}
