@@ -27,7 +27,12 @@ import {
   AlertCircle,
   Home,
   Wrench, // Icono para la sección de Administración Técnica
+  MessageCircle,
+  Bell,
+  Megaphone,
 } from "lucide-react";
+
+import { GlobalAlertsListener } from "@/app/components/alerts/GlobalAlertsListener";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +55,10 @@ import {
 } from "@/components/ui/sidebar";
 import busLogo from "@/assets/icons/images.png";
 import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePaymentReturn";
+import { useInboxUnreadCount } from "@/hooks/messaging/useInboxUnreadCount";
+import { useAlertsUnreadCount } from "@/hooks/alerts/useAlertsUnreadCount";
 import { useAuthStore } from "@/store/security/authStore";
+import { ROLES } from "@/core/domain/entities/security/Roles";
 
 interface MenuItem {
   title: string;
@@ -65,6 +73,7 @@ const securityMenuItems: MenuItem[] = [
   { title: "Perfiles", to: "/app/profiles", description: "Gestion de perfiles", icon: ShieldUser, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Alertas masivas", to: "/app/admin/mass-alerts", description: "Envío de alertas masivas", icon: Megaphone, requiredRoles: [ROLES.ADMIN] },
 ];
 
 
@@ -95,6 +104,20 @@ const teamMenuItem: MenuItem = {
   icon: BookUser,
 };
 
+const messagingMenuItem: MenuItem = {
+  title: "Mensajería",
+  to: "/app/messaging",
+  description: "Mensajes directos en tiempo real",
+  icon: MessageCircle,
+};
+
+const alertsMenuItem: MenuItem = {
+  title: "Alertas",
+  to: "/app/alerts",
+  description: "Avisos del sistema",
+  icon: Bell,
+};
+
 const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
 const fleetMenuItems: MenuItem[] = [
   {
@@ -107,10 +130,14 @@ const fleetMenuItems: MenuItem[] = [
 ];
 
 const businessMenuItems: MenuItem[] = [
+  { title: "Rutas", to: "/app/planning/routes", description: "Consultar rutas y tarifas", icon: Route, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Paraderos cercanos", to: "/app/nearby-stops", description: "Top 5 paraderos con GPS", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Abordar", to: "/app/boarding", description: "Registrar abordaje y boleto", icon: BusFront, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje activo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Mis viajes", to: "/app/trips", description: "Historial y mapa de viajes", icon: MapPinned, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Recargar tarjeta", to: "/app/card-recharge", description: "Recarga prepagada con ePayco", icon: CreditCard, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Paraderos", to: "/app/nearby-stops", description: "Buscar paraderos cercanos", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje y liberar cupo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Reportar", to: "/app/incident-report", description: "Registrar incidente", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Iniciar turno", to: "/app/driver/turn-start", description: "Turno y GPS del bus", icon: Bus, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Reportar incidente", to: "/app/incident-report", description: "Formulario conductor", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Dashboard", to: "/app/business/dashboard", description: "Analítica business", icon: BarChart3, requiredRoles: [...businessAdminRoles] },
   { title: "Rutas", to: "/app/business/routes", description: "Gestión de rutas", icon: Route, requiredRoles: [...businessAdminRoles] },
   { title: "Paradas admin", to: "/app/business/stops", description: "CRUD de paradas", icon: MapPinned, requiredRoles: [...businessAdminRoles] },
@@ -138,6 +165,8 @@ export function ManagementLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole } = useAuthStore();
+  const { count: inboxUnreadCount } = useInboxUnreadCount(Boolean(currentUser?.id));
+  const { count: alertsUnreadCount } = useAlertsUnreadCount(Boolean(currentUser?.id));
   useCardRechargePaymentReturn();
 
   // Filter menu items based on user roles
@@ -167,6 +196,8 @@ export function ManagementLayout() {
   const registerProfileActive = isActivePath(location.pathname, registerProfileMenuItem.to);
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
+  const messagingActive = isActivePath(location.pathname, messagingMenuItem.to);
+  const alertsActive = isActivePath(location.pathname, alertsMenuItem.to);
   const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
   
@@ -193,6 +224,7 @@ export function ManagementLayout() {
 
   return (
     <SidebarProvider>
+      <GlobalAlertsListener enabled={Boolean(currentUser?.id)} />
       <Sidebar side="left" collapsible="icon" className="overflow-hidden">
         <SidebarHeader>
           <div
@@ -320,6 +352,44 @@ export function ManagementLayout() {
                     ) : null}
                   </SidebarMenuItem>
                 )}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={messagingActive}
+                    title={messagingMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={messagingMenuItem.to} className="relative">
+                      <MessageCircle className="size-4" />
+                      <span className="font-medium">{messagingMenuItem.title}</span>
+                      {inboxUnreadCount > 0 ? (
+                        <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                          {inboxUnreadCount > 99 ? "99+" : inboxUnreadCount}
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={alertsActive}
+                    title={alertsMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={alertsMenuItem.to} className="relative">
+                      <Bell className="size-4" />
+                      <span className="font-medium">{alertsMenuItem.title}</span>
+                      {alertsUnreadCount > 0 ? (
+                        <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold text-destructive-foreground">
+                          {alertsUnreadCount > 99 ? "99+" : alertsUnreadCount}
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
                 <SidebarMenuItem>
                   <SidebarMenuButton

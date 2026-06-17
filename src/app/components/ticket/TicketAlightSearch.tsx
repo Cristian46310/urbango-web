@@ -1,21 +1,43 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, Loader, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Search, Loader, Ticket, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { myTickets, getActiveTicketId } from "@/services/ticketService";
+import type { CitizenTicket } from "@/services/ticketService";
 export function TicketAlightSearch() {
   const navigate = useNavigate();
   const [ticketId, setTicketId] = useState("");
+  const [activeTickets, setActiveTickets] = useState<CitizenTicket[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingActive, setLoadingActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stored = getActiveTicketId();
+    void myTickets({ status: "active", page: 1, limit: 10 })
+      .then((page) => {
+        const items = page.items;
+        if (stored && !items.some((t) => t.id === stored)) {
+          setActiveTickets([{ id: stored, status: "active" }, ...items]);
+        } else {
+          setActiveTickets(items);
+        }
+      })
+      .catch(() => {
+        if (stored) {
+          setActiveTickets([{ id: stored, status: "active" }]);
+        }
+      })
+      .finally(() => setLoadingActive(false));
+  }, []);
 
   const handleSearch = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!ticketId.trim()) {
-      setError("Ingresa el número de boleto");
+      setError("Ingresa el ID del boleto");
       return;
     }
 
@@ -23,10 +45,6 @@ export function TicketAlightSearch() {
     setLoading(true);
 
     try {
-      // Simulación de búsqueda - en producción iría aquí la llamada a API
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Navegar a la página de validación
       void navigate(`/app/ticket/${ticketId.trim()}/alight`);
     } catch {
       setError("Error al buscar el boleto. Intenta de nuevo.");
@@ -36,72 +54,77 @@ export function TicketAlightSearch() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        <div className="mb-8 space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-blue-100">
-              <MapPin className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Validar Descenso</h1>
-              <p className="text-sm text-slate-600 mt-1">Cierra tu viaje y libera tu cupo</p>
-            </div>
-          </div>
-        </div>
+    <div className="w-full max-w-lg mx-auto space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">Descenso</h1>
+        <p className="text-sm text-muted-foreground">Cierra tu viaje y libera tu cupo en el bus</p>
+      </div>
 
-        <Card className="border-blue-200 shadow-lg">
-          <CardContent className="pt-6">
-            <form onSubmit={(e) => { void handleSearch(e); }} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="ticket-id" className="block text-sm font-semibold text-slate-700">
-                  Número de Boleto
-                </label>
-                <Input
-                  id="ticket-id"
-                  placeholder="Ingresa tu número de boleto"
-                  value={ticketId}
-                  onChange={(e) => {
-                    setTicketId(e.target.value);
-                    setError(null);
-                  }}
-                  disabled={loading}
-                  className="text-base border-blue-200 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-
+      {!loadingActive && activeTickets.length > 0 ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Ticket className="h-4 w-4" />
+              Boletos activos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {activeTickets.map((ticket) => (
               <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                size="lg"
+                key={ticket.id}
+                variant="outline"
+                className="w-full justify-between"
+                asChild
               >
-                {loading ? (
-                  <>
-                    <Loader className="mr-2 w-4 h-4 animate-spin" />
-                    Buscando...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 w-4 h-4" />
-                    Buscar Boleto
-                  </>
-                )}
+                <Link to={`/app/ticket/${ticket.id}/alight`}>
+                  <span className="truncate">{ticket.id}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </Link>
               </Button>
-
-              <p className="text-xs text-slate-500 text-center mt-6">
-                Asegúrate de ingresar tu número de boleto correctamente
-              </p>
-            </form>
+            ))}
           </CardContent>
         </Card>
-      </div>
+      ) : null}
+
+      <Card>
+        <CardContent className="pt-6">
+          <form onSubmit={(e) => { void handleSearch(e); }} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="ticket-id" className="block text-sm font-medium">
+                ID de boleto manual
+              </label>
+              <Input
+                id="ticket-id"
+                placeholder="UUID del boleto"
+                value={ticketId}
+                onChange={(e) => {
+                  setTicketId(e.target.value);
+                  setError(null);
+                }}
+                disabled={loading}
+              />
+            </div>
+
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : null}
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Continuar
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

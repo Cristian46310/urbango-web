@@ -10,6 +10,12 @@ import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
 import { toTablePagination } from "@/infra/repository/business/businessPageAdapter";
 import { useIncident } from "@/hooks/business";
 import type { Incident } from "@/core/domain/entities/business";
+import {
+  formatIncidentDate,
+  incidentSeverityLabel,
+  incidentStatusLabel,
+  incidentTypeLabel,
+} from "@/core/domain/entities/business";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DialogField } from "@/app/components/security/dialog-field";
@@ -30,12 +36,21 @@ export default function IncidentsPage() {
   }, [currentPage]);
 
   const columns = [
-    columnHelper.accessor("type", { header: "Tipo" }),
-    columnHelper.accessor("severity", { header: "Severidad" }),
-    columnHelper.accessor("status", { header: "Estado" }),
+    columnHelper.accessor("type", {
+      header: "Tipo",
+      cell: (i) => incidentTypeLabel(i.getValue()),
+    }),
+    columnHelper.accessor("severity", {
+      header: "Severidad",
+      cell: (i) => incidentSeverityLabel(i.getValue()),
+    }),
+    columnHelper.accessor("status", {
+      header: "Estado",
+      cell: (i) => incidentStatusLabel(i.getValue()),
+    }),
     columnHelper.accessor("reportedAt", {
       header: "Reportado",
-      cell: (i) => new Date(i.getValue()).toLocaleString(),
+      cell: (i) => formatIncidentDate(i.getValue()),
     }),
     columnHelper.display({
       id: "actions",

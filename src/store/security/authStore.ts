@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { AuthService, type DecodedToken } from '@/services/AuthService';
+import { useAlertsUnreadCountStore } from '@/store/alerts/alertsUnreadCountStore';
+import { useInboxUnreadCountStore } from '@/store/messaging/inboxUnreadCountStore';
 
 interface AuthStoreState {
   isAuthenticated: boolean;
@@ -79,6 +81,8 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
 
   logout: () => {
     AuthService.logout();
+    useAlertsUnreadCountStore.getState().resetUnreadCount();
+    useInboxUnreadCountStore.getState().resetUnreadCount();
     set({
       isAuthenticated: false,
       currentUser: null,

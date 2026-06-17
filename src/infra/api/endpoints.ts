@@ -80,8 +80,17 @@ export const ENDPOINTS = {
   },
   TICKET: {
     BASE: "/ticket",
+    ME: "/ticket/me",
     BY_ID: (id: string) => `/ticket/${id}`,
     ALIGHT: (id: string) => `/ticket/${id}/alight`,
+  },
+  BOARDING: "/boarding",
+  HISTORY: {
+    BASE: "/history",
+    TRIP_DETAILS: (id: string) => `/history/${id}/trip-details`,
+  },
+  GPS: {
+    BUS: (busId: string) => `/gps/bus/${busId}`,
   },
   BUS: {
     BASE: "/bus",
@@ -99,6 +108,7 @@ export const ENDPOINTS = {
   },
   PAYMENT_METHOD_CITIZEN: {
     BASE: "/payment-method-citizen",
+    ME: "/payment-method-citizen/me",
     BY_ID: (id: string) => `/payment-method-citizen/${id}`,
   },
   ENTERPRISE: {
@@ -110,8 +120,14 @@ export const ENDPOINTS = {
     ME: "/driver/me",
     BY_ID: (id: string) => `/driver/${id}`,
   },
+  SUPERVISOR: {
+    BASE: "/supervisor",
+    ME: "/supervisor/me",
+    BY_ID: (id: string) => `/supervisor/${id}`,
+  },
   TURN: {
     BASE: "/turn",
+    START: "/turn/start",
     BY_ID: (id: string) => `/turn/${id}`,
   },
   INCIDENT_REPORTS: {
@@ -134,5 +150,42 @@ export const ENDPOINTS = {
     CHECKOUT: '/card-recharge/checkout',
     TRANSACTION_STATUS: (reference: string) =>
       `/card-recharge/transactions/${reference}/status`,
+  },
+  MESSAGES: {
+    USERS_SEARCH: "/users/search",
+    CONVERSATIONS_DIRECT: "/conversations/direct",
+    CONVERSATION_MESSAGES: (conversationId: string) =>
+      `/conversations/${conversationId}/messages`,
+    DIRECT: "/messages/direct",
+    INBOX: "/inbox",
+    INBOX_UNREAD_COUNT: "/inbox/unread-count",
+    SENT: "/messages/sent",
+    BY_ID: (messageId: string) => `/messages/${messageId}`,
+    READ: (messageId: string) => `/messages/${messageId}/read`,
+    HEALTH: "/health",
+    GROUPS: {
+      BASE: "/groups",
+      ME: "/groups/me",
+      BY_ID: (groupId: string) => `/groups/${groupId}`,
+      MESSAGES: (groupId: string) => `/groups/${groupId}/messages`,
+      JOIN: (groupId: string) => `/groups/${groupId}/join`,
+      MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
+      ICON: (groupId: string) => `/groups/${groupId}/icon`,
+    },
+    GROUP_MESSAGE: "/messages/group",
+    MESSAGE_READS: (messageId: string) => `/messages/${messageId}/reads`,
+    DELETE_MESSAGE: (messageId: string) => `/messages/${messageId}`,
+  },
+  ALERTS: {
+    BASE: "/alerts",
+    UNREAD_COUNT: "/alerts/unread-count",
+    BY_ID: (alertId: string) => `/alerts/${alertId}`,
+    READ: (alertId: string) => `/alerts/${alertId}/read`,
+  },
+  MASS_ALERTS: {
+    BASE: "/mass-alerts",
+    PREVIEW: "/mass-alerts/preview-recipients",
+    BY_ID: (alertId: string) => `/mass-alerts/${alertId}`,
+    STATS: (alertId: string) => `/mass-alerts/${alertId}/stats`,
   },
 };

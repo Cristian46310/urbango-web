@@ -2,7 +2,12 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { BusinessCrudPage } from "@/app/components/business/business-crud-page";
 import { TextField } from "@/app/components/business/form-fields";
 import { useStopAdmin } from "@/hooks/business";
-import type { Stop } from "@/core/domain/entities/business";
+import {
+  STOP_TYPE_LABELS,
+  STOP_TYPE_OPTIONS,
+  type Stop,
+  type StopType,
+} from "@/core/domain/entities/business";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -33,7 +38,7 @@ interface StopForm {
   location: string;
   latitude: string;
   longitude: string;
-  type: string;
+  type: StopType;
 }
 
 const initialForm: StopForm = {
@@ -42,8 +47,22 @@ const initialForm: StopForm = {
   location: "",
   latitude: "5.0689",
   longitude: "-75.5174",
-  type: "BASICO",
+  type: "regular",
 };
+
+/** Compatibilidad con valores antiguos del formulario antes del alineamiento con OpenAPI */
+const LEGACY_STOP_TYPE: Record<string, StopType> = {
+  BASICO: "regular",
+  ESTACION: "intermediate",
+  TERMINAL: "terminal",
+};
+
+function normalizeStopType(value: string | undefined): StopType {
+  if (!value) return "regular";
+  if (value in LEGACY_STOP_TYPE) return LEGACY_STOP_TYPE[value];
+  if (STOP_TYPE_OPTIONS.includes(value as StopType)) return value as StopType;
+  return "regular";
+}
 
 const columnHelper = createColumnHelper<Stop>();
 
@@ -102,7 +121,7 @@ export default function StopsAdminPage() {
         location: e.location,
         latitude: String(e.latitude),
         longitude: String(e.longitude),
-        type: e.type || "BASICO",
+        type: normalizeStopType(e.type),
       })}
       getId={(f) => f.id}
       buildCreatePayload={toPayload}
@@ -110,9 +129,15 @@ export default function StopsAdminPage() {
       columns={[
         columnHelper.accessor("name", { header: "Nombre" }),
         columnHelper.accessor("location", { header: "Ubicación" }),
-        columnHelper.accessor("type", { header: "Tipo" }),
         columnHelper.accessor("latitude", { header: "Lat" }),
         columnHelper.accessor("longitude", { header: "Lon" }),
+        columnHelper.accessor("type", {
+          header: "Tipo",
+          cell: (info) => {
+            const t = info.getValue();
+            return t ? (STOP_TYPE_LABELS[t as StopType] ?? t) : "—";
+          },
+        }),
       ]}
       renderForm={(form, setForm, mode) => {
         const lat = Number(form.latitude) || 5.0689;
@@ -148,16 +173,18 @@ export default function StopsAdminPage() {
                 </Label>
                 <Select
                   value={form.type}
-                  onValueChange={(v) => setForm((c) => ({ ...c, type: v }))}
+                  onValueChange={(v) => setForm((c) => ({ ...c, type: v as StopType }))}
                   disabled={mode === "view"}
                 >
                   <SelectTrigger id="type" className="w-full">
                     <SelectValue placeholder="Selecciona el tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BASICO">Básico (Paradero de calle)</SelectItem>
-                    <SelectItem value="ESTACION">Estación / Troncal</SelectItem>
-                    <SelectItem value="TERMINAL">Terminal de Integración</SelectItem>
+                    {STOP_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {STOP_TYPE_LABELS[option]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -4,7 +4,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import {
   AdminAgeDistributionPage,
   AdminRouteCreatePage,
-  AdminSchedulerCreatePage,
   LoginPage,
   ForgotPasswordPage,
   ResetPasswordPage,
@@ -43,7 +42,15 @@ import {
   IncidentsByBusPage,
   IncidentDetailPage,
   CitizenBoardingPage,
+  CitizenRoutesPage,
+  CitizenRouteDetailPage,
+  CitizenTripsPage,
+  CitizenTripDetailPage,
   DriverTurnStartPage,
+  MessagingPage,
+  AdminSchedulerCreatePage,
+  AlertsPage,
+  MassAlertsAdminPage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
@@ -54,6 +61,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
+import { ROLES } from '@/core/domain/entities/security/Roles'
 
 const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 
@@ -120,6 +128,16 @@ function AppContent() {
             }
           />
           <Route path="team" element={<TeamPage />} />
+          <Route path="messaging" element={<MessagingPage />} />
+          <Route path="alerts" element={<AlertsPage />} />
+          <Route
+            path="admin/mass-alerts"
+            element={
+              <RoleGuard requiredRoles={[ROLES.ADMIN]}>
+                <MassAlertsAdminPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="fleet/register-bus"
             element={
@@ -129,10 +147,50 @@ function AppContent() {
             }
           />
           <Route
+            path="planning/routes"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRoutesPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="planning/routes/:id"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRouteDetailPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="nearby-stops"
             element={
               <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
                 <NearbyStopsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="boarding"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenBoardingPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips/:historyId"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripDetailPage />
               </RoleGuard>
             }
           />
@@ -207,7 +265,14 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
-
+          <Route
+            path="driver/turn-start"
+            element={
+              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <DriverTurnStartPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="reports/age-distribution"
             element={
@@ -234,22 +299,11 @@ function AppContent() {
           />
         </Route>
 
-        <Route
-          path="/driver/turn-start"
-          element={
-            <JwtProtectedRoute roles={["driver"]}>
-              <DriverTurnStartPage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/boarding"
-          element={
-            <JwtProtectedRoute roles={["citizen"]}>
-              <CitizenBoardingPage />
-            </JwtProtectedRoute>
-          }
-        />
+        <Route path="/admin/reports/age-distribution" element={<Navigate to="/app/reports/age-distribution" replace />} />
+        <Route path="/admin/routes/create" element={<Navigate to="/app/routes/create" replace />} />
+        <Route path="/admin/schedulers/create" element={<Navigate to="/app/schedulers/create" replace />} />
+        <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
+        <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>

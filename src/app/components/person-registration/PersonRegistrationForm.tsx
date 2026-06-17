@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
-import { Bus, UserRound } from "lucide-react";
+import { Bus, ShieldUser, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -34,6 +33,30 @@ function tokenEnterpriseId(decodedToken: DecodedToken | null): string {
   return typeof value === "string" ? value : "";
 }
 
+const profileLabels: Record<ProfileTab, { registered: string; submit: string; success: string }> = {
+  citizen: {
+    registered: "Ya tienes un perfil de ciudadano registrado.",
+    submit: "Registrarme como ciudadano",
+    success: "Perfil de ciudadano registrado",
+  },
+  driver: {
+    registered: "Ya tienes un perfil de conductor registrado.",
+    submit: "Registrarme como conductor",
+    success: "Perfil de conductor registrado",
+  },
+  supervisor: {
+    registered: "Ya tienes un perfil de supervisor registrado.",
+    submit: "Registrarme como supervisor",
+    success: "Perfil de supervisor registrado",
+  },
+};
+
+function roleForTab(tab: ProfileTab): string {
+  if (tab === "driver") return ROLES.DRIVER;
+  if (tab === "supervisor") return ROLES.SUPERVISER;
+  return ROLES.CITIZEN;
+}
+
 export function PersonRegistrationForm() {
   const navigate = useNavigate();
   const { currentUser, decodedToken, logout } = useAuthStore();
@@ -44,6 +67,7 @@ export function PersonRegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [existingDriver, setExistingDriver] = useState(false);
   const [existingCitizen, setExistingCitizen] = useState(false);
+  const [existingSupervisor, setExistingSupervisor] = useState(false);
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
   const [enterprisesLoading, setEnterprisesLoading] = useState(false);
 
@@ -54,7 +78,6 @@ export function PersonRegistrationForm() {
   const [enterpriseId, setEnterpriseId] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseExpiry, setLicenseExpiry] = useState("");
-  const [extraInfo, setExtraInfo] = useState("");
 
   useEffect(() => {
     if (currentUser?.email) {
@@ -64,12 +87,14 @@ export function PersonRegistrationForm() {
 
   useEffect(() => {
     const loadProfiles = async () => {
-      const [driver, citizen] = await Promise.all([
+      const [driver, citizen, supervisor] = await Promise.all([
         personRepository.getMyProfile("driver"),
         personRepository.getMyProfile("citizen"),
+        personRepository.getMyProfile("supervisor"),
       ]);
       setExistingDriver(Boolean(driver));
       setExistingCitizen(Boolean(citizen));
+      setExistingSupervisor(Boolean(supervisor));
     };
 
     void loadProfiles();
@@ -112,30 +137,29 @@ export function PersonRegistrationForm() {
       return;
     }
 
-    if (activeTab === "driver" && !enterpriseId.trim()) {
-      toast.error("Debes seleccionar la empresa a la que perteneces");
+    const needsEnterprise = activeTab === "driver" || activeTab === "supervisor";
+    if (needsEnterprise && !enterpriseId.trim()) {
+      toast.error("Debes seleccionar la empresa de transporte");
       return;
     }
 
     setLoading(true);
     try {
-      await personRepository.register(activeTab, {
+      const payload = {
         name: trimmedName,
         document: trimmedDocument,
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
         licenseNumber:
           activeTab === "driver" ? licenseNumber.trim() || undefined : undefined,
-        licenseExpiry:
-          activeTab === "driver" ? licenseExpiry || undefined : undefined,
-        enterpriseId:
-          activeTab === "driver" ? enterpriseId.trim() : undefined,
-        extraInfo:
-          activeTab === "citizen" ? extraInfo.trim() || undefined : undefined,
-      });
+        licenseExpiry: activeTab === "driver" ? licenseExpiry || undefined : undefined,
+        enterpriseId: needsEnterprise ? enterpriseId.trim() : undefined,
+      };
+
+      await personRepository.register(activeTab, payload);
 
       const rolesPage = await loadRoles({ page: 0, size: 100 });
-      const roleName = activeTab === "driver" ? ROLES.DRIVER : ROLES.CITIZEN;
+      const roleName = roleForTab(activeTab);
       const role = rolesPage.content.find(
         (item) => item.name.toUpperCase() === roleName,
       );
@@ -153,15 +177,13 @@ export function PersonRegistrationForm() {
 
       if (activeTab === "driver") {
         setExistingDriver(true);
+      } else if (activeTab === "supervisor") {
+        setExistingSupervisor(true);
       } else {
         setExistingCitizen(true);
       }
 
-      toast.success(
-        activeTab === "driver"
-          ? "Perfil de conductor registrado"
-          : "Perfil de ciudadano registrado",
-      );
+      toast.success(profileLabels[activeTab].success);
       toast.info(
         "Cierra sesión e ingresa de nuevo para actualizar tus permisos en el menú",
         {
@@ -193,8 +215,13 @@ export function PersonRegistrationForm() {
   };
 
   const alreadyRegistered =
-    activeTab === "driver" ? existingDriver : existingCitizen;
+    activeTab === "driver"
+      ? existingDriver
+      : activeTab === "supervisor"
+        ? existingSupervisor
+        : existingCitizen;
   const fieldsDisabled = alreadyRegistered || loading;
+  const labels = profileLabels[activeTab];
 
   return (
     <Card className="max-w-2xl border border-(--security-border) shadow-sm">
@@ -210,7 +237,7 @@ export function PersonRegistrationForm() {
           value={activeTab}
           onValueChange={(value) => { setActiveTab(value as ProfileTab); }}
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="citizen" className="gap-2">
               <UserRound className="size-4" />
               Ciudadano
@@ -219,12 +246,16 @@ export function PersonRegistrationForm() {
               <Bus className="size-4" />
               Conductor
             </TabsTrigger>
+            <TabsTrigger value="supervisor" className="gap-2">
+              <ShieldUser className="size-4" />
+              Supervisor
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="citizen" className="mt-4">
             {existingCitizen ? (
               <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                Ya tienes un perfil de ciudadano registrado.
+                {profileLabels.citizen.registered}
               </p>
             ) : null}
           </TabsContent>
@@ -232,7 +263,15 @@ export function PersonRegistrationForm() {
           <TabsContent value="driver" className="mt-4">
             {existingDriver ? (
               <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                Ya tienes un perfil de conductor registrado.
+                {profileLabels.driver.registered}
+              </p>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="supervisor" className="mt-4">
+            {existingSupervisor ? (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                {profileLabels.supervisor.registered}
               </p>
             ) : null}
           </TabsContent>
@@ -256,8 +295,6 @@ export function PersonRegistrationForm() {
           setLicenseNumber={setLicenseNumber}
           licenseExpiry={licenseExpiry}
           setLicenseExpiry={setLicenseExpiry}
-          extraInfo={extraInfo}
-          setExtraInfo={setExtraInfo}
           disabled={fieldsDisabled}
         />
 
@@ -267,11 +304,7 @@ export function PersonRegistrationForm() {
           disabled={fieldsDisabled}
           onClick={() => void handleSubmit()}
         >
-          {loading
-            ? "Registrando..."
-            : activeTab === "driver"
-              ? "Registrarme como conductor"
-              : "Registrarme como ciudadano"}
+          {loading ? "Registrando..." : labels.submit}
         </Button>
       </CardContent>
     </Card>
@@ -296,8 +329,6 @@ function ProfileFormFields({
   setLicenseNumber,
   licenseExpiry,
   setLicenseExpiry,
-  extraInfo,
-  setExtraInfo,
   disabled,
 }: {
   activeTab: ProfileTab;
@@ -317,10 +348,10 @@ function ProfileFormFields({
   setLicenseNumber: (v: string) => void;
   licenseExpiry: string;
   setLicenseExpiry: (v: string) => void;
-  extraInfo: string;
-  setExtraInfo: (v: string) => void;
   disabled: boolean;
 }) {
+  const showEnterprise = activeTab === "driver" || activeTab === "supervisor";
+
   return (
     <div className="mt-6 grid gap-4">
       <div className="grid gap-2">
@@ -353,6 +384,7 @@ function ProfileFormFields({
           value={email}
           onChange={(e) => { setEmail(e.target.value); }}
           disabled={disabled}
+          placeholder="maria@example.com"
         />
       </div>
 
@@ -367,40 +399,45 @@ function ProfileFormFields({
         />
       </div>
 
+      {showEnterprise ? (
+        <div className="grid gap-2">
+          <Label htmlFor="profile-enterprise">
+            Empresa de transporte <span className="text-destructive">*</span>
+          </Label>
+          <Select
+            value={enterpriseId || undefined}
+            onValueChange={setEnterpriseId}
+            disabled={disabled || enterprisesLoading}
+          >
+            <SelectTrigger id="profile-enterprise" className="w-full">
+              <SelectValue
+                placeholder={
+                  enterprisesLoading
+                    ? "Cargando empresas..."
+                    : enterprises.length === 0
+                      ? "No hay empresas registradas"
+                      : "Selecciona la empresa"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {enterprises.map((enterprise) => (
+                <SelectItem key={enterprise.id} value={enterprise.id}>
+                  {enterprise.name} — NIT {enterprise.nit}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-xs">
+            {activeTab === "supervisor"
+              ? "El supervisor queda vinculado a esta empresa para gestionar su operación."
+              : "El conductor queda vinculado a esta empresa en el sistema."}
+          </p>
+        </div>
+      ) : null}
+
       {activeTab === "driver" ? (
         <>
-          <div className="grid gap-2">
-            <Label htmlFor="profile-enterprise">
-              Empresa de transporte <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={enterpriseId || undefined}
-              onValueChange={setEnterpriseId}
-              disabled={disabled || enterprisesLoading}
-            >
-              <SelectTrigger id="profile-enterprise" className="w-full">
-                <SelectValue
-                  placeholder={
-                    enterprisesLoading
-                      ? "Cargando empresas..."
-                      : enterprises.length === 0
-                        ? "No hay empresas registradas"
-                        : "Selecciona tu empresa"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {enterprises.map((enterprise) => (
-                  <SelectItem key={enterprise.id} value={enterprise.id}>
-                    {enterprise.name} — NIT {enterprise.nit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              El conductor queda vinculado a esta empresa en el sistema.
-            </p>
-          </div>
           <div className="grid gap-2">
             <Label htmlFor="profile-license">Número de licencia</Label>
             <Input
@@ -421,18 +458,7 @@ function ProfileFormFields({
             />
           </div>
         </>
-      ) : (
-        <div className="grid gap-2">
-          <Label htmlFor="profile-extra">Información adicional</Label>
-          <Textarea
-            id="profile-extra"
-            value={extraInfo}
-            onChange={(e) => { setExtraInfo(e.target.value); }}
-            disabled={disabled}
-            rows={3}
-          />
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

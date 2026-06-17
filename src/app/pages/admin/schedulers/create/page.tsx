@@ -8,7 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Stop = {
   id: string;
@@ -230,19 +236,21 @@ export default function Page() {
           <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
             <div className="col-span-2">
               <Label>Agregar paradero</Label>
-              <Select value={selectedStopId} onValueChange={(v: any) => setSelectedStopId(v)}>
-                <Select.Trigger className="w-full" />
-                <Select.Content>
+              <Select value={selectedStopId} onValueChange={(v) => setSelectedStopId(v)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar paradero" />
+                </SelectTrigger>
+                <SelectContent>
                   {loadingStops ? (
                     <div className="p-2">Cargando...</div>
                   ) : (
                     stops.map((s) => (
-                      <Select.Item key={s.id} value={s.id}>
+                      <SelectItem key={s.id} value={s.id}>
                         {s.name}
-                      </Select.Item>
+                      </SelectItem>
                     ))
                   )}
-                </Select.Content>
+                </SelectContent>
               </Select>
             </div>
             <div>
