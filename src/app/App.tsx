@@ -51,6 +51,9 @@ import {
   AdminSchedulerCreatePage,
   AlertsPage,
   MassAlertsAdminPage,
+  SupportAppointmentsPage,
+  SupportPqrsPage,
+  ProfilePreferencesPage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
@@ -265,6 +268,30 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
+          <Route
+            path="support/appointments"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <SupportAppointmentsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="support/pqrs"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <SupportPqrsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="profile/preferences"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <ProfilePreferencesPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="driver/turn-start"
             element={

@@ -188,4 +188,23 @@ export const ENDPOINTS = {
     BY_ID: (alertId: string) => `/mass-alerts/${alertId}`,
     STATS: (alertId: string) => `/mass-alerts/${alertId}/stats`,
   },
+  APPOINTMENTS: {
+    BASE: "/api/appointments",
+    AVAILABILITY: "/api/appointments/availability",
+    BY_USER: (userId: string) => `/api/appointments/user/${userId}`,
+    BY_ID: (id: string) => `/api/appointments/${id}`,
+  },
+  PQRS: {
+    BASE: "/api/pqrs",
+    BY_TICKET: (ticketNumber: string) => `/api/pqrs/ticket/${ticketNumber}`,
+    BY_ID: (pqrsId: string) => `/api/pqrs/${pqrsId}`,
+    UPDATES: (pqrsId: string) => `/api/pqrs/${pqrsId}/updates`,
+    UPDATE_BY_ID: (pqrsId: string, updateId: string) => `/api/pqrs/${pqrsId}/updates/${updateId}`,
+  },
+  WEATHER: {
+    ALERTS: "/api/weather/alerts",
+    ALERTS_BY_USER: (userId: string) => `/api/weather/alerts/user/${userId}`,
+    ALERT_BY_ID: (alertId: string) => `/api/weather/alerts/${alertId}`,
+    FORECAST_HOURS: "/api/weather/forecast/available-hours",
+  },
 };

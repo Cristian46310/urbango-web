@@ -70,3 +70,10 @@ export const CitizenTripDetailPage = lazy(() => import('./citizen/trips/[history
 export const MessagingPage = lazy(() => import('./messaging/page'))
 export const AlertsPage = lazy(() => import('./alerts/page'))
 export const MassAlertsAdminPage = lazy(() => import('./admin/mass-alerts/page'))
+
+// Support / Atención al cliente
+export const SupportAppointmentsPage = lazy(() => import('./support/appointments/page'))
+export const SupportPqrsPage = lazy(() => import('./support/pqrs/page'))
+
+// Profile / Preferencias de viaje
+export const ProfilePreferencesPage = lazy(() => import('./profile/preferences/page'))

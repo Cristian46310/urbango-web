@@ -26,10 +26,14 @@ import {
   Link2,
   AlertCircle,
   Home,
-  Wrench, // Icono para la sección de Administración Técnica
+  Wrench,
   MessageCircle,
   Bell,
   Megaphone,
+  Headset,
+  CalendarCheck,
+  FileText,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { GlobalAlertsListener } from "@/app/components/alerts/GlobalAlertsListener";
@@ -118,6 +122,31 @@ const alertsMenuItem: MenuItem = {
   icon: Bell,
 };
 
+const preferencesMenuItem: MenuItem = {
+  title: "Preferencias",
+  to: "/app/profile/preferences",
+  description: "Alertas de clima para tu viaje",
+  icon: SlidersHorizontal,
+  requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+};
+
+const supportMenuItems: MenuItem[] = [
+  {
+    title: "Citas de reclamos",
+    to: "/app/support/appointments",
+    description: "Agenda y gestiona citas de atención",
+    icon: CalendarCheck,
+    requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+  },
+  {
+    title: "PQRS",
+    to: "/app/support/pqrs",
+    description: "Peticiones, quejas, reclamos y sugerencias",
+    icon: FileText,
+    requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+  },
+];
+
 const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
 const fleetMenuItems: MenuItem[] = [
   {
@@ -191,16 +220,25 @@ export function ManagementLayout() {
     return hasAnyRole(item.requiredRoles);
   });
 
+  const visibleSupportItems = supportMenuItems.filter((item) => {
+    if (!item.requiredRoles) return true;
+    return hasAnyRole(item.requiredRoles);
+  });
+
+  const showPreferences = !preferencesMenuItem.requiredRoles ||
+    hasAnyRole(preferencesMenuItem.requiredRoles);
+
   // Show all menu items - route guards handle access control
   const homeActive = isActivePath(location.pathname, homeMenuItem.to);
   const registerProfileActive = isActivePath(location.pathname, registerProfileMenuItem.to);
+  const preferencesActive = isActivePath(location.pathname, preferencesMenuItem.to);
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
   const messagingActive = isActivePath(location.pathname, messagingMenuItem.to);
   const alertsActive = isActivePath(location.pathname, alertsMenuItem.to);
   const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
-  
+  const supportActive = visibleSupportItems.some((item) => isActivePath(location.pathname, item.to));
 
   const globalAdminActive = visibleGlobalAdminItems.some((item) => isActivePath(location.pathname, item.to));
 
@@ -208,13 +246,14 @@ export function ManagementLayout() {
   const [isTeamOpen, setIsTeamOpen] = useState(teamActive);
   const [isFleetOpen, setIsFleetOpen] = useState(fleetActive);
   const [isBusinessOpen, setIsBusinessOpen] = useState(businessActive);
-  
+  const [isSupportOpen, setIsSupportOpen] = useState(supportActive);
   const [isGlobalAdminOpen, setIsGlobalAdminOpen] = useState(globalAdminActive);
 
   const securityOpen = securityActive || isSecurityOpen;
   const teamOpen = teamActive || isTeamOpen;
   const fleetOpen = fleetActive || isFleetOpen;
   const businessOpen = businessActive || isBusinessOpen;
+  const supportOpen = supportActive || isSupportOpen;
   const globalAdminOpen = globalAdminActive || isGlobalAdminOpen;
 
   const handleLogout = () => {
@@ -275,6 +314,22 @@ export function ManagementLayout() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {showPreferences && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={preferencesActive}
+                      title={preferencesMenuItem.title}
+                      size="sm"
+                    >
+                      <NavLink to={preferencesMenuItem.to}>
+                        <SlidersHorizontal className="size-4" />
+                        <span className="font-medium">{preferencesMenuItem.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Security menu */}
                 {visibleSecurityItems.length > 0 && (
@@ -337,6 +392,43 @@ export function ManagementLayout() {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
 
+                          return (
+                            <SidebarMenuSubItem key={item.to}>
+                              <SidebarMenuSubButton asChild isActive={active}>
+                                <NavLink to={item.to}>
+                                  <Icon className="size-4" />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                )}
+
+                {visibleSupportItems.length > 0 && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={supportActive}
+                      title="Atención al cliente"
+                      size="sm"
+                      className="justify-between"
+                      onClick={() => { setIsSupportOpen(!supportOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Headset className="size-4" />
+                        <span className="font-medium">Atención al cliente</span>
+                      </span>
+                      <ChevronDown className={`size-4 transition-transform ${supportOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+
+                    {supportOpen ? (
+                      <SidebarMenuSub>
+                        {visibleSupportItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActivePath(location.pathname, item.to);
                           return (
                             <SidebarMenuSubItem key={item.to}>
                               <SidebarMenuSubButton asChild isActive={active}>
