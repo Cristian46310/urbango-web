@@ -10,36 +10,38 @@ interface SchedulerForm {
   id: string;
   busId: string;
   routeId: string;
-  startTime: string;
-  endTime: string;
-  recurrence: "none" | "daily" | "weekday" | "weekend";
-  toleranceMinutes: number;
-  status: string;
+  date: string;
+  departureTime: string;
 }
 
 const initialForm: SchedulerForm = {
   id: "",
   busId: "",
   routeId: "",
-  startTime: "",
-  endTime: "",
-  recurrence: "none",
-  toleranceMinutes: 5,
-  status: "programado",
+  date: "",
+  departureTime: "",
 };
 
 const columnHelper = createColumnHelper<Scheduler>();
 
-const RECURRENCE_OPTIONS = [
-  { value: "none", label: "No recurrente" },
-  { value: "daily", label: "Diaria" },
-  { value: "weekday", label: "Lunes a Viernes" },
-  { value: "weekend", label: "Fines de semana" },
-];
+function toDateInput(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+  return value.slice(0, 10);
+}
 
-function toLocalDatetime(iso: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
+function toTimeInput(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+  if (/^\d{2}:\d{2}/.test(value)) {
+    return value.slice(0, 5);
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -73,11 +75,8 @@ function buildPayload(form: SchedulerForm) {
   return {
     busId: form.busId,
     routeId: form.routeId,
-    startTime: new Date(form.startTime).toISOString(),
-    endTime: new Date(form.endTime).toISOString(),
-    recurrence: form.recurrence,
-    toleranceMinutes: Number(form.toleranceMinutes),
-    status: form.status || "programado",
+    date: toServiceDate(form.date),
+    departureTime: toDepartureTimePayload(form.departureTime),
   };
 }
 
@@ -114,15 +113,12 @@ export default function SchedulersPage() {
       editItem={crud.editItem}
       removeItem={crud.removeItem}
       initialForm={initialForm}
-      mapToForm={(e: any) => ({
+      mapToForm={(e: Scheduler) => ({
         id: e.id,
         busId: e.bus?.id ?? "",
         routeId: e.route?.id ?? "",
-        startTime: toLocalDatetime(e.startTime),
-        endTime: toLocalDatetime(e.endTime),
-        recurrence: e.recurrence ?? "none",
-        toleranceMinutes: e.toleranceMinutes ?? 5,
-        status: e.status ?? "programado",
+        date: toDateInput(e.date ?? e.startTime),
+        departureTime: e.departureTime ?? toTimeInput(e.startTime),
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}

@@ -4,7 +4,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import {
   AdminAgeDistributionPage,
   AdminRouteCreatePage,
-  AdminSchedulerCreatePage,
   LoginPage,
   ForgotPasswordPage,
   ResetPasswordPage,
@@ -48,6 +47,8 @@ import {
   CitizenTripsPage,
   CitizenTripDetailPage,
   DriverTurnStartPage,
+  MessagingPage,
+  AdminSchedulerCreatePage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
@@ -124,6 +125,7 @@ function AppContent() {
             }
           />
           <Route path="team" element={<TeamPage />} />
+          <Route path="messaging" element={<MessagingPage />} />
           <Route
             path="fleet/register-bus"
             element={
@@ -251,7 +253,14 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
-
+          <Route
+            path="driver/turn-start"
+            element={
+              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <DriverTurnStartPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="reports/age-distribution"
             element={
@@ -278,22 +287,11 @@ function AppContent() {
           />
         </Route>
 
-        <Route
-          path="/driver/turn-start"
-          element={
-            <JwtProtectedRoute roles={["driver"]}>
-              <DriverTurnStartPage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route
-          path="/boarding"
-          element={
-            <JwtProtectedRoute roles={["citizen"]}>
-              <CitizenBoardingPage />
-            </JwtProtectedRoute>
-          }
-        />
+        <Route path="/admin/reports/age-distribution" element={<Navigate to="/app/reports/age-distribution" replace />} />
+        <Route path="/admin/routes/create" element={<Navigate to="/app/routes/create" replace />} />
+        <Route path="/admin/schedulers/create" element={<Navigate to="/app/schedulers/create" replace />} />
+        <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
+        <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>

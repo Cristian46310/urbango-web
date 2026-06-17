@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Home,
   Wrench, // Icono para la sección de Administración Técnica
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,13 @@ const teamMenuItem: MenuItem = {
   to: "/app/team",
   description: "Equipo del proyecto",
   icon: BookUser,
+};
+
+const messagingMenuItem: MenuItem = {
+  title: "Mensajería",
+  to: "/app/messaging",
+  description: "Mensajes directos en tiempo real",
+  icon: MessageCircle,
 };
 
 const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
@@ -171,6 +179,7 @@ export function ManagementLayout() {
   const registerProfileActive = isActivePath(location.pathname, registerProfileMenuItem.to);
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
+  const messagingActive = isActivePath(location.pathname, messagingMenuItem.to);
   const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
   
@@ -324,6 +333,20 @@ export function ManagementLayout() {
                     ) : null}
                   </SidebarMenuItem>
                 )}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={messagingActive}
+                    title={messagingMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={messagingMenuItem.to}>
+                      <MessageCircle className="size-4" />
+                      <span className="font-medium">{messagingMenuItem.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
                 <SidebarMenuItem>
                   <SidebarMenuButton

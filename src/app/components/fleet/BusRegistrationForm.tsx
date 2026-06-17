@@ -100,8 +100,8 @@ export function BusRegistrationForm() {
   const [color, setColor] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState(String(CURRENT_YEAR));
-  const [seatedCapacity, setSeatedCapacity] = useState('40');
-  const [standingCapacity, setStandingCapacity] = useState('20');
+  const [seatedCapacity, setSeatedCapacity] = useState('');
+  const [standingCapacity, setStandingCapacity] = useState('');
   const [status, setStatus] = useState<BusStatus>('operativo');
   const [photo, setPhoto] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -131,8 +131,8 @@ export function BusRegistrationForm() {
     setColor('');
     setModel('');
     setYear(String(CURRENT_YEAR));
-    setSeatedCapacity('40');
-    setStandingCapacity('20');
+    setSeatedCapacity('');
+    setStandingCapacity('');
     setStatus('operativo');
     setPhoto(null);
     setFormError(null);
@@ -181,8 +181,8 @@ export function BusRegistrationForm() {
       return null;
     }
 
-    if (calculatedTotalCapacity < 1) {
-      setFormError('La capacidad maxima total calculada debe ser al menos de 1 pasajero');
+    if (seated == null || seated < 0) {
+      setFormError('Indica la capacidad de pasajeros sentados (0 o más)');
       return null;
     }
 
@@ -203,7 +203,8 @@ export function BusRegistrationForm() {
       color: trimmedColor,
       model: trimmedModel,
       year: yearValue,
-      capacity: calculatedTotalCapacity,
+      seatedCapacity: seated,
+      standingCapacity: standing,
       status,
     };
   };

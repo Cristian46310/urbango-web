@@ -35,12 +35,24 @@ export interface UpdateEnterpriseDTO {
   supervisorEmail?: string;
 }
 
+/** Valores aceptados por ms-business en POST/PATCH /stop */
+export type StopType = "terminal" | "intermediate" | "regular";
+
+export const STOP_TYPE_LABELS: Record<StopType, string> = {
+  regular: "Básico (Paradero de calle)",
+  intermediate: "Estación / Troncal",
+  terminal: "Terminal de integración",
+};
+
+export const STOP_TYPE_OPTIONS: StopType[] = ["regular", "intermediate", "terminal"];
+
 export interface Stop {
   id: string;
   name: string;
   location: string;
   latitude: number;
   longitude: number;
+  type?: StopType;
   createdAt?: string;
 }
 
@@ -49,6 +61,7 @@ export interface CreateStopDTO {
   location: string;
   latitude: number;
   longitude: number;
+  type: StopType;
 }
 
 export interface UpdateStopDTO {
@@ -56,6 +69,7 @@ export interface UpdateStopDTO {
   location?: string;
   latitude?: number;
   longitude?: number;
+  type?: StopType;
 }
 
 export interface PaymentMethod {
