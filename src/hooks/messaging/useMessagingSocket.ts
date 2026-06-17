@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 
-import type { Message, MessageReadPayload } from "@/core/types/messaging";
+import type { Message, MessageReadPayload, GroupMemberAddedPayload } from "@/core/types/messaging";
 
 const AUTH_TOKEN_STORAGE_KEY = "authToken";
 
@@ -9,16 +9,19 @@ interface UseMessagingSocketOptions {
   enabled?: boolean;
   onNewMessage?: (message: Message) => void;
   onMessageRead?: (payload: MessageReadPayload) => void;
+  onGroupMemberAdded?: (payload: GroupMemberAddedPayload) => void;
 }
 
 export function useMessagingSocket({
   enabled = true,
   onNewMessage,
   onMessageRead,
+  onGroupMemberAdded,
 }: UseMessagingSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const onNewMessageRef = useRef(onNewMessage);
   const onMessageReadRef = useRef(onMessageRead);
+  const onGroupMemberAddedRef = useRef(onGroupMemberAdded);
 
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
@@ -27,6 +30,10 @@ export function useMessagingSocket({
   useEffect(() => {
     onMessageReadRef.current = onMessageRead;
   }, [onMessageRead]);
+
+  useEffect(() => {
+    onGroupMemberAddedRef.current = onGroupMemberAdded;
+  }, [onGroupMemberAdded]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") {
@@ -50,6 +57,10 @@ export function useMessagingSocket({
 
     socket.on("message:read", (payload: MessageReadPayload) => {
       onMessageReadRef.current?.(payload);
+    });
+
+    socket.on("group:member_added", (payload: GroupMemberAddedPayload) => {
+      onGroupMemberAddedRef.current?.(payload);
     });
 
     socketRef.current = socket;

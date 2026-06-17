@@ -159,5 +159,12 @@ export const ENDPOINTS = {
     SENT: "/messages/sent",
     READ: (messageId: string) => `/messages/${messageId}/read`,
     HEALTH: "/health",
+    GROUPS: {
+      BASE: "/groups",
+      BY_ID: (groupId: string) => `/groups/${groupId}`,
+      JOIN: (groupId: string) => `/groups/${groupId}/join`,
+      MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
+      ICON: (groupId: string) => `/groups/${groupId}/icon`,
+    },
   },
 };
