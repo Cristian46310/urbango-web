@@ -137,6 +137,10 @@ export default function SchedulersPage() {
           header: "Salida",
           cell: ({ row }) => formatSchedulerLabel(row.original),
         }),
+        columnHelper.accessor("status", {
+          header: "Estado",
+          cell: (i) => String(i.getValue() ?? "programado"),
+        }),
       ]}
       renderForm={(form, setForm, mode) => (
         <>
@@ -169,6 +173,21 @@ export default function SchedulersPage() {
             onChange={(v) => { setForm((c) => ({ ...c, departureTime: v })); }}
             disabled={mode === "view"}
             type="time"
+          />
+          <SelectField
+            label="Recurrencia"
+            value={form.recurrence}
+            onChange={(v) => { setForm((c) => ({ ...c, recurrence: v as any })); }}
+            disabled={mode === "view"}
+            options={RECURRENCE_OPTIONS}
+          />
+          <TextField
+            id="toleranceMinutes"
+            label="Margen de tolerancia (Minutos)"
+            value={String(form.toleranceMinutes)}
+            onChange={(v) => { setForm((c) => ({ ...c, toleranceMinutes: Number(v) })); }}
+            disabled={mode === "view"}
+            type="number"
           />
         </>
       )}

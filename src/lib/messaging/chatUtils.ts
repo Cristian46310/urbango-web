@@ -237,7 +237,6 @@ export function buildChatList(
 
   for (const meta of Object.values(conversationMeta)) {
     if (processedIds.has(meta.conversationId)) continue;
-    if (meta.type === "group") continue;
     chats.push(
       buildChatListItem(meta.conversationId, [], currentUserId, contacts, meta),
     );

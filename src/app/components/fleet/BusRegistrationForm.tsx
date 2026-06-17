@@ -181,11 +181,6 @@ export function BusRegistrationForm() {
       return null;
     }
 
-    if (Number.isNaN(yearValue) || yearValue < 1900 || yearValue > CURRENT_YEAR + 1) {
-      setFormError(`El año debe estar entre 1900 y ${String(CURRENT_YEAR + 1)}`);
-      return null;
-    }
-
     if (seated == null || seated < 0) {
       setFormError('Indica la capacidad de pasajeros sentados (0 o más)');
       return null;

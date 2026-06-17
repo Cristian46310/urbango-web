@@ -296,8 +296,6 @@ export interface UpdatePaymentMethodCitizenDTO {
   paymentMethodId?: string;
 }
 
-import type { Incident, IncidentStatus } from './Incident';
-
 export type {
   Incident,
   IncidentType,
