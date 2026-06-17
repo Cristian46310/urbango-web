@@ -80,8 +80,17 @@ export const ENDPOINTS = {
   },
   TICKET: {
     BASE: "/ticket",
+    ME: "/ticket/me",
     BY_ID: (id: string) => `/ticket/${id}`,
     ALIGHT: (id: string) => `/ticket/${id}/alight`,
+  },
+  BOARDING: "/boarding",
+  HISTORY: {
+    BASE: "/history",
+    TRIP_DETAILS: (id: string) => `/history/${id}/trip-details`,
+  },
+  GPS: {
+    BUS: (busId: string) => `/gps/bus/${busId}`,
   },
   BUS: {
     BASE: "/bus",
@@ -99,6 +108,7 @@ export const ENDPOINTS = {
   },
   PAYMENT_METHOD_CITIZEN: {
     BASE: "/payment-method-citizen",
+    ME: "/payment-method-citizen/me",
     BY_ID: (id: string) => `/payment-method-citizen/${id}`,
   },
   ENTERPRISE: {
@@ -110,8 +120,14 @@ export const ENDPOINTS = {
     ME: "/driver/me",
     BY_ID: (id: string) => `/driver/${id}`,
   },
+  SUPERVISOR: {
+    BASE: "/supervisor",
+    ME: "/supervisor/me",
+    BY_ID: (id: string) => `/supervisor/${id}`,
+  },
   TURN: {
     BASE: "/turn",
+    START: "/turn/start",
     BY_ID: (id: string) => `/turn/${id}`,
   },
   INCIDENT_REPORTS: {

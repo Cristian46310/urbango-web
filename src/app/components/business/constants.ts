@@ -1,7 +1,11 @@
 export const BUSINESS_PAGE_SIZE = 10;
-export const BUSINESS_LOOKUP_PAGE_SIZE = 200;
+/** ms-business rechaza limit > 100 (ver OpenAPI). */
+export const BUSINESS_LOOKUP_PAGE_SIZE = 100;
 
-export function formatShortId(value: string): string {
+export function formatShortId(value: string | null | undefined): string {
+  if (!value) {
+    return "—";
+  }
   return value.slice(0, 8);
 }
 

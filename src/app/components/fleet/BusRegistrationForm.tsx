@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import {
   BUS_STATUS_LABELS,
+  BUS_STATUS_OPTIONS,
   type Bus,
   type BusStatus,
   type CreateBusDTO,
@@ -28,12 +29,6 @@ import { useBus } from '@/hooks/business/useBus';
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const CURRENT_YEAR = new Date().getFullYear();
-
-const STATUS_OPTIONS: BusStatus[] = [
-  'operativo',
-  'mantenimiento',
-  'fuera_de_servicio',
-];
 
 function parseOptionalInt(value: string): number | undefined {
   const trimmed = value.trim();
@@ -102,6 +97,7 @@ export function BusRegistrationForm() {
     useBus();
 
   const [plate, setPlate] = useState('');
+  const [color, setColor] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState(String(CURRENT_YEAR));
   const [seatedCapacity, setSeatedCapacity] = useState('40');
@@ -132,6 +128,7 @@ export function BusRegistrationForm() {
 
   const resetForm = () => {
     setPlate('');
+    setColor('');
     setModel('');
     setYear(String(CURRENT_YEAR));
     setSeatedCapacity('40');
@@ -163,6 +160,7 @@ export function BusRegistrationForm() {
 
   const validateForm = (): CreateBusDTO | null => {
     const trimmedPlate = plate.trim().toUpperCase();
+    const trimmedColor = color.trim();
     const trimmedModel = model.trim();
     const yearValue = Number.parseInt(year, 10);
     const seated = parseOptionalInt(seatedCapacity);
@@ -178,8 +176,8 @@ export function BusRegistrationForm() {
       return null;
     }
 
-    if (Number.isNaN(yearValue) || yearValue < 1900 || yearValue > CURRENT_YEAR + 1) {
-      setFormError(`El año debe estar entre 1900 y ${String(CURRENT_YEAR + 1)}`);
+    if (!trimmedColor) {
+      setFormError('El color es obligatorio');
       return null;
     }
 
@@ -188,13 +186,13 @@ export function BusRegistrationForm() {
       return null;
     }
 
-    if (seated != null && seated < 0) {
-      setFormError('La capacidad sentados no puede ser negativa');
+    if (standing == null || standing < 0) {
+      setFormError('Indica la capacidad de pasajeros de pie (0 o más)');
       return null;
     }
 
-    if (standing != null && standing < 0) {
-      setFormError('La capacidad parados no puede ser negativa');
+    if (seated + standing < 1) {
+      setFormError('La suma de sentados y parados debe ser al menos 1');
       return null;
     }
 
@@ -202,12 +200,11 @@ export function BusRegistrationForm() {
 
     return {
       plate: trimmedPlate,
+      color: trimmedColor,
       model: trimmedModel,
       year: yearValue,
       capacity: calculatedTotalCapacity,
       status,
-      ...(seated != null ? { seatedCapacity: seated } : {}),
-      ...(standing != null ? { standingCapacity: standing } : {}),
     };
   };
 
@@ -272,6 +269,17 @@ export function BusRegistrationForm() {
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="bus-color">Color</Label>
+              <Input
+                id="bus-color"
+                value={color}
+                onChange={(event) => { setColor(event.target.value); }}
+                placeholder="Blanco"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="grid gap-2">
               <Label htmlFor="bus-model">Modelo</Label>
               <Input
                 id="bus-model"
@@ -305,6 +313,7 @@ export function BusRegistrationForm() {
                 onChange={(event) => { setSeatedCapacity(event.target.value); }}
                 placeholder="40"
                 disabled={loading}
+                required
               />
             </div>
 
@@ -318,6 +327,7 @@ export function BusRegistrationForm() {
                 onChange={(event) => { setStandingCapacity(event.target.value); }}
                 placeholder="20"
                 disabled={loading}
+                required
               />
             </div>
 
@@ -338,7 +348,7 @@ export function BusRegistrationForm() {
                   <SelectValue>{BUS_STATUS_LABELS[status]}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {BUS_STATUS_OPTIONS.map((option) => (
                     <SelectItem key={option} value={option}>
                       {BUS_STATUS_LABELS[option]}
                     </SelectItem>

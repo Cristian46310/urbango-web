@@ -5,6 +5,11 @@ import { PageShell } from "@/app/components/security/page-shell";
 import { DialogField } from "@/app/components/security/dialog-field";
 import { useIncident } from "@/hooks/business";
 import type { IncidentStatus } from "@/core/domain/entities/business";
+import {
+  formatIncidentDate,
+  INCIDENT_STATUS_LABELS,
+  INCIDENT_STATUS_OPTIONS,
+} from "@/core/domain/entities/business";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,8 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const STATUS_OPTIONS: IncidentStatus[] = ["reported", "in_review", "closed"];
 
 export default function IncidentDetailPage() {
   const { incidentId = "" } = useParams();
@@ -63,9 +66,9 @@ export default function IncidentDetailPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
+                {INCIDENT_STATUS_OPTIONS.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {INCIDENT_STATUS_LABELS[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -91,7 +94,7 @@ export default function IncidentDetailPage() {
                     <p className="font-medium">{c.authorName ?? "Usuario"}</p>
                     <p>{c.text}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString()}
+                      {formatIncidentDate(c.createdAt)}
                     </p>
                   </div>
                 ))

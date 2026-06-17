@@ -43,6 +43,10 @@ import {
   IncidentsByBusPage,
   IncidentDetailPage,
   CitizenBoardingPage,
+  CitizenRoutesPage,
+  CitizenRouteDetailPage,
+  CitizenTripsPage,
+  CitizenTripDetailPage,
   DriverTurnStartPage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
@@ -129,10 +133,50 @@ function AppContent() {
             }
           />
           <Route
+            path="planning/routes"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRoutesPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="planning/routes/:id"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenRouteDetailPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="nearby-stops"
             element={
               <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
                 <NearbyStopsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="boarding"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenBoardingPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="trips/:historyId"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <CitizenTripDetailPage />
               </RoleGuard>
             }
           />
