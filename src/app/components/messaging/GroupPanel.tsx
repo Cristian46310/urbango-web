@@ -16,6 +16,7 @@ import {
 
 interface GroupPanelProps {
   group: MessageGroup;
+  memberCount?: number;
   currentUserId?: string;
   isAdmin: boolean;
   isMember: boolean;
@@ -30,6 +31,7 @@ interface GroupPanelProps {
 
 export function GroupPanel({
   group,
+  memberCount: memberCountProp,
   currentUserId,
   isAdmin,
   isMember,
@@ -45,7 +47,7 @@ export function GroupPanel({
   const [iconUrl, setIconUrl] = useState(group.iconUrl ?? "");
   const [inviteMembers, setInviteMembers] = useState<UserSearchResult[]>([]);
 
-  const memberCount = group.members?.length ?? 0;
+  const memberCount = memberCountProp ?? group.memberCount ?? group.members?.length ?? 0;
   const canManage = hasCitizenProfile === true && isAdmin;
 
   return (
@@ -137,9 +139,6 @@ export function GroupPanel({
           </div>
         ) : null}
 
-        <p className="text-xs text-muted-foreground">
-          Los mensajes grupales en el hilo estarán disponibles cuando el backend exponga envío por conversación grupal.
-        </p>
       </div>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

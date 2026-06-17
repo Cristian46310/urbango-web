@@ -13,6 +13,8 @@ export interface DirectConversation {
   createdAt: string;
 }
 
+export type MessageType = "direct" | "group";
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -23,6 +25,39 @@ export interface Message {
   createdAt: string;
   isRead: boolean;
   readAt?: string;
+  messageType?: MessageType;
+  groupId?: string;
+  groupName?: string;
+  readCount?: number;
+  totalRecipients?: number;
+}
+
+export interface SendGroupMessagePayload {
+  groupIds: string[];
+  body: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface MessageReadEntry {
+  userId: string;
+  readAt: string;
+}
+
+export interface MessageReadsResponse {
+  messageId: string;
+  conversationId?: string;
+  groupId?: string;
+  groupName?: string;
+  readBy: MessageReadEntry[];
+  totalMembers?: number;
+  readCount?: number;
+}
+
+export interface MessageDeletedPayload {
+  messageId: string;
+  conversationId: string;
+  groupId?: string;
 }
 
 export interface SendDirectMessagePayload {
@@ -36,6 +71,10 @@ export interface MessageReadPayload {
   messageId: string;
   conversationId: string;
   readAt: string;
+  readCount?: number;
+  totalRecipients?: number;
+  userId?: string;
+  groupId?: string;
 }
 
 export interface MessagesHealth {
@@ -68,6 +107,7 @@ export interface MessageGroup {
   conversationId: string;
   iconUrl?: string;
   members?: GroupMember[];
+  memberCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

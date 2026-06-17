@@ -4,11 +4,99 @@ import type {
   ConversationMeta,
   Message,
   MessageGroup,
+  MessageType,
 } from "@/core/types/messaging";
+
+function readString(source: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return "";
+}
+
+function readOptionalNumber(source: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readOptionalBoolean(source: Record<string, unknown>, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "boolean") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readMessageType(source: Record<string, unknown>): MessageType | undefined {
+  const raw = readString(source, "messageType", "message_type", "type");
+  if (raw === "direct" || raw === "group") {
+    return raw;
+  }
+  return undefined;
+}
+
+export function normalizeIncomingMessage(raw: unknown): Message | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const envelope = raw as Record<string, unknown>;
+  const source =
+    envelope.message && typeof envelope.message === "object"
+      ? (envelope.message as Record<string, unknown>)
+      : envelope;
+
+  const id = readString(source, "id", "_id");
+  const conversationId = readString(source, "conversationId", "conversation_id");
+  const senderId = readString(source, "senderId", "sender_id");
+  const body = readString(source, "body", "content", "text");
+
+  if (!id || !conversationId || !senderId) {
+    return null;
+  }
+
+  const messageType = readMessageType(source);
+  const groupId = readString(source, "groupId", "group_id");
+
+  return {
+    id,
+    conversationId,
+    senderId,
+    body,
+    latitude: readOptionalNumber(source, "latitude", "lat"),
+    longitude: readOptionalNumber(source, "longitude", "lng", "lon"),
+    createdAt: readString(source, "createdAt", "created_at") || new Date().toISOString(),
+    isRead: readOptionalBoolean(source, "isRead", "is_read") ?? false,
+    readAt: readString(source, "readAt", "read_at") || undefined,
+    messageType: messageType ?? (groupId ? "group" : "direct"),
+    groupId: groupId || undefined,
+    groupName: readString(source, "groupName", "group_name") || undefined,
+    readCount: readOptionalNumber(source, "readCount", "read_count"),
+    totalRecipients: readOptionalNumber(source, "totalRecipients", "total_recipients"),
+  };
+}
+
+export function isGroupMessage(message: Message): boolean {
+  return message.messageType === "group" || Boolean(message.groupId);
+}
 
 export function mergeMessages(existing: Message[], incoming: Message[]): Message[] {
   const map = new Map(existing.map((message) => [message.id, message]));
   for (const message of incoming) {
+    if (!message.id) continue;
     map.set(message.id, message);
   }
   return Array.from(map.values());
@@ -17,6 +105,20 @@ export function mergeMessages(existing: Message[], incoming: Message[]): Message
 export function getContactLabel(contact?: ContactInfo, fallback = "Usuario"): string {
   if (!contact) return fallback;
   return contact.name.trim() || contact.email || fallback;
+}
+
+export function getGroupMemberCount(
+  group: MessageGroup,
+  messages: Message[] = [],
+): number {
+  const fromField = group.memberCount ?? 0;
+  const fromMembers = group.members?.length ?? 0;
+  const fromMessages = messages.reduce(
+    (max, message) => Math.max(max, (message.totalRecipients ?? 0) + 1),
+    0,
+  );
+
+  return Math.max(fromField, fromMembers, fromMessages);
 }
 
 export function getAvatarLabel(title: string): string {

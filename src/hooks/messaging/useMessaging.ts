@@ -90,9 +90,11 @@ export function useMessaging(currentUserId: string | undefined) {
     });
   }, []);
 
-  const loadChats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadChats = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const [inbox, sent] = await Promise.all([
         getInbox({ page: 1, limit: PAGE_SIZE }),
@@ -101,11 +103,15 @@ export function useMessaging(currentUserId: string | undefined) {
       const merged = mergeMessages([], [...inbox.items, ...sent.items]);
       setMessages((prev) => mergeMessages(prev, merged));
     } catch (err) {
-      const message = getApiErrorMessage(err, "No se pudieron cargar los chats");
-      setError(message);
-      showErrorToast(message);
+      if (!silent) {
+        const message = getApiErrorMessage(err, "No se pudieron cargar los chats");
+        setError(message);
+        showErrorToast(message);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -247,13 +253,15 @@ export function useMessaging(currentUserId: string | undefined) {
     (message: Message) => {
       setMessages((prev) => mergeMessages(prev, [message]));
 
-      if (currentUserId && message.senderId !== currentUserId) {
-        rememberConversation({
-          conversationId: message.conversationId,
-          type: "direct",
-          peerId: message.senderId,
-        });
-      }
+      if (!currentUserId || message.senderId === currentUserId) return;
+
+      rememberConversation({
+        conversationId: message.conversationId,
+        type: message.messageType === "group" ? "group" : "direct",
+        peerId: message.senderId,
+        groupId: message.groupId,
+        groupName: message.groupName,
+      });
     },
     [currentUserId, rememberConversation],
   );
@@ -264,6 +272,10 @@ export function useMessaging(currentUserId: string | undefined) {
         item.id === messageId ? { ...item, isRead: true, readAt } : item,
       ),
     );
+  }, []);
+
+  const handleMessageDeleted = useCallback((messageId: string) => {
+    setMessages((prev) => prev.filter((item) => item.id !== messageId));
   }, []);
 
   const getConversationThread = useCallback(
@@ -301,9 +313,11 @@ export function useMessaging(currentUserId: string | undefined) {
     checkHealth,
     handleIncomingMessage,
     handleMessageRead,
+    handleMessageDeleted,
     getConversationThread,
     rememberContact,
     rememberConversation,
+    resolveContactProfiles,
     conversationMeta,
   };
 }

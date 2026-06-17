@@ -62,7 +62,7 @@ export function ChatComposer({
   };
 
   return (
-    <div className="border-t border-(--security-border) bg-card p-4">
+    <div className="shrink-0 border-t border-(--security-border) bg-card p-4">
       <div className="flex flex-col gap-3">
         <Textarea
           value={body}
