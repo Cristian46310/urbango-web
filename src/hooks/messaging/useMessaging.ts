@@ -21,7 +21,6 @@ import { showErrorToast } from "@/lib/toast";
 import {
   getConversationMessages,
   getInbox,
-  getInboxUnreadCount,
   getMessagesHealth,
   markMessageAsRead,
   openDirectConversation,
@@ -29,6 +28,7 @@ import {
   searchUsers,
   sendDirectMessage,
 } from "@/services/messageService";
+import { useInboxUnreadCountStore } from "@/store/messaging/inboxUnreadCountStore";
 
 const PAGE_SIZE = 50;
 const MAX_BODY_LENGTH = 500;
@@ -55,9 +55,11 @@ export function useMessaging(currentUserId: string | undefined) {
   const [conversationMeta, setConversationMeta] = useState<Record<string, ConversationMeta>>({});
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [healthStatus, setHealthStatus] = useState<string | null>(null);
-  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inboxUnreadCount = useInboxUnreadCountStore((state) => state.count);
+  const refreshUnreadCountFromStore = useInboxUnreadCountStore((state) => state.refreshUnreadCount);
+  const decrementUnreadCount = useInboxUnreadCountStore((state) => state.decrementUnreadCount);
 
   const chats = useMemo(() => {
     if (!currentUserId) return [];
@@ -80,18 +82,12 @@ export function useMessaging(currentUserId: string | undefined) {
 
   const refreshUnreadCount = useCallback(async () => {
     if (!currentUserId) {
-      setInboxUnreadCount(0);
+      useInboxUnreadCountStore.getState().resetUnreadCount();
       return 0;
     }
 
-    try {
-      const response = await getInboxUnreadCount();
-      setInboxUnreadCount(response.count);
-      return response.count;
-    } catch {
-      return 0;
-    }
-  }, [currentUserId]);
+    return refreshUnreadCountFromStore(true);
+  }, [currentUserId, refreshUnreadCountFromStore]);
 
   const resolveContactProfiles = useCallback(async (peerIds: string[]) => {
     const missingIds = [...new Set(peerIds.filter((peerId) => peerId.trim() && !contactsRef.current[peerId]))];
@@ -281,12 +277,19 @@ export function useMessaging(currentUserId: string | undefined) {
 
   const readMessage = useCallback(
     async (messageId: string, silent = false) => {
+      if (!silent) {
+        const existing = messages.find((item) => item.id === messageId);
+        if (existing && !existing.isRead) {
+          decrementUnreadCount();
+        }
+      }
+
       try {
         const updated = await markMessageAsRead(messageId);
         setMessages((prev) =>
           prev.map((item) => (item.id === updated.id ? updated : item)),
         );
-        await refreshUnreadCount();
+        void refreshUnreadCount();
         return updated;
       } catch (err) {
         if (!silent) {
@@ -297,7 +300,7 @@ export function useMessaging(currentUserId: string | undefined) {
         return null;
       }
     },
-    [refreshUnreadCount],
+    [messages, decrementUnreadCount, refreshUnreadCount],
   );
 
   const openMessageById = useCallback(
@@ -330,9 +333,14 @@ export function useMessaging(currentUserId: string | undefined) {
         currentUserId,
       );
 
+      if (unread.length > 0) {
+        decrementUnreadCount(unread.length);
+      }
+
       await Promise.all(unread.map((message) => readMessage(message.id, true)));
+      void refreshUnreadCount();
     },
-    [currentUserId, messages, readMessage],
+    [currentUserId, messages, readMessage, decrementUnreadCount, refreshUnreadCount],
   );
 
   const checkHealth = useCallback(async () => {

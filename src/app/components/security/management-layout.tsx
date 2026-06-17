@@ -28,7 +28,11 @@ import {
   Home,
   Wrench, // Icono para la sección de Administración Técnica
   MessageCircle,
+  Bell,
+  Megaphone,
 } from "lucide-react";
+
+import { GlobalAlertsListener } from "@/app/components/alerts/GlobalAlertsListener";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +56,9 @@ import {
 import busLogo from "@/assets/icons/images.png";
 import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePaymentReturn";
 import { useInboxUnreadCount } from "@/hooks/messaging/useInboxUnreadCount";
+import { useAlertsUnreadCount } from "@/hooks/alerts/useAlertsUnreadCount";
 import { useAuthStore } from "@/store/security/authStore";
+import { ROLES } from "@/core/domain/entities/security/Roles";
 
 interface MenuItem {
   title: string;
@@ -67,6 +73,7 @@ const securityMenuItems: MenuItem[] = [
   { title: "Perfiles", to: "/app/profiles", description: "Gestion de perfiles", icon: ShieldUser, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
   { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
+  { title: "Alertas masivas", to: "/app/admin/mass-alerts", description: "Envío de alertas masivas", icon: Megaphone, requiredRoles: [ROLES.ADMIN] },
 ];
 
 
@@ -102,6 +109,13 @@ const messagingMenuItem: MenuItem = {
   to: "/app/messaging",
   description: "Mensajes directos en tiempo real",
   icon: MessageCircle,
+};
+
+const alertsMenuItem: MenuItem = {
+  title: "Alertas",
+  to: "/app/alerts",
+  description: "Avisos del sistema",
+  icon: Bell,
 };
 
 const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
@@ -152,6 +166,7 @@ export function ManagementLayout() {
   const navigate = useNavigate();
   const { currentUser, logout, hasAnyRole } = useAuthStore();
   const { count: inboxUnreadCount } = useInboxUnreadCount(Boolean(currentUser?.id));
+  const { count: alertsUnreadCount } = useAlertsUnreadCount(Boolean(currentUser?.id));
   useCardRechargePaymentReturn();
 
   // Filter menu items based on user roles
@@ -182,6 +197,7 @@ export function ManagementLayout() {
   const securityActive = visibleSecurityItems.some((item) => isActivePath(location.pathname, item.to));
   const teamActive = isActivePath(location.pathname, teamMenuItem.to);
   const messagingActive = isActivePath(location.pathname, messagingMenuItem.to);
+  const alertsActive = isActivePath(location.pathname, alertsMenuItem.to);
   const fleetActive = visibleFleetItems.some((item) => isActivePath(location.pathname, item.to));
   const businessActive = visibleBusinessItems.some((item) => isActivePath(location.pathname, item.to));
   
@@ -208,6 +224,7 @@ export function ManagementLayout() {
 
   return (
     <SidebarProvider>
+      <GlobalAlertsListener enabled={Boolean(currentUser?.id)} />
       <Sidebar side="left" collapsible="icon" className="overflow-hidden">
         <SidebarHeader>
           <div
@@ -349,6 +366,25 @@ export function ManagementLayout() {
                       {inboxUnreadCount > 0 ? (
                         <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                           {inboxUnreadCount > 99 ? "99+" : inboxUnreadCount}
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={alertsActive}
+                    title={alertsMenuItem.title}
+                    size="sm"
+                  >
+                    <NavLink to={alertsMenuItem.to} className="relative">
+                      <Bell className="size-4" />
+                      <span className="font-medium">{alertsMenuItem.title}</span>
+                      {alertsUnreadCount > 0 ? (
+                        <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold text-destructive-foreground">
+                          {alertsUnreadCount > 99 ? "99+" : alertsUnreadCount}
                         </span>
                       ) : null}
                     </NavLink>

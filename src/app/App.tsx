@@ -49,6 +49,8 @@ import {
   DriverTurnStartPage,
   MessagingPage,
   AdminSchedulerCreatePage,
+  AlertsPage,
+  MassAlertsAdminPage,
 } from './pages'
 import { PageLoader } from './components/page-loader'
 import { ManagementLayout } from './components/security/management-layout'
@@ -59,6 +61,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
+import { ROLES } from '@/core/domain/entities/security/Roles'
 
 const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
 
@@ -126,6 +129,15 @@ function AppContent() {
           />
           <Route path="team" element={<TeamPage />} />
           <Route path="messaging" element={<MessagingPage />} />
+          <Route path="alerts" element={<AlertsPage />} />
+          <Route
+            path="admin/mass-alerts"
+            element={
+              <RoleGuard requiredRoles={[ROLES.ADMIN]}>
+                <MassAlertsAdminPage />
+              </RoleGuard>
+            }
+          />
           <Route
             path="fleet/register-bus"
             element={
