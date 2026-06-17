@@ -251,42 +251,49 @@ function AppContent() {
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
+
           <Route
-            path="driver/turn-start"
+            path="reports/age-distribution"
             element={
-              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
-                <DriverTurnStartPage />
-              </RoleGuard>
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminAgeDistributionPage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="routes/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminRouteCreatePage />
+              </JwtProtectedRoute>
+            }
+          />
+          <Route
+            path="schedulers/create"
+            element={
+              <JwtProtectedRoute roles={["admin"]}>
+                <AdminSchedulerCreatePage />
+              </JwtProtectedRoute>
             }
           />
         </Route>
 
         <Route
-          path="/admin/reports/age-distribution"
+          path="/driver/turn-start"
           element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminAgeDistributionPage />
+            <JwtProtectedRoute roles={["driver"]}>
+              <DriverTurnStartPage />
             </JwtProtectedRoute>
           }
         />
         <Route
-          path="/admin/routes/create"
+          path="/boarding"
           element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminRouteCreatePage />
+            <JwtProtectedRoute roles={["citizen"]}>
+              <CitizenBoardingPage />
             </JwtProtectedRoute>
           }
         />
-        <Route
-          path="/admin/schedulers/create"
-          element={
-            <JwtProtectedRoute roles={["admin"]}>
-              <AdminSchedulerCreatePage />
-            </JwtProtectedRoute>
-          }
-        />
-        <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
-        <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
