@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users } from "lucide-react";
+import { ShieldCheck, Users } from "lucide-react";
 
 import type { CreateGroupPayload, UserSearchResult } from "@/core/types/messaging";
 import { MemberSearchPicker } from "./MemberSearchPicker";
@@ -23,15 +23,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface CreateGroupCurrentUser {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 interface CreateGroupDialogProps {
   open: boolean;
   loading: boolean;
   hasCitizenProfile: boolean | null;
   results: UserSearchResult[];
-  currentUserId?: string;
+  currentUser?: CreateGroupCurrentUser;
   onOpenChange: (open: boolean) => void;
   onSearch: (query: string) => void;
   onCreate: (payload: CreateGroupPayload, iconUrl?: string) => Promise<boolean>;
+}
+
+function getCreatorDisplayName(user: CreateGroupCurrentUser): string {
+  if (user.name?.trim()) return user.name.trim();
+  const localPart = user.email.split("@")[0]?.trim();
+  return localPart || "Tú";
 }
 
 export function CreateGroupDialog({
@@ -39,7 +51,7 @@ export function CreateGroupDialog({
   loading,
   hasCitizenProfile,
   results,
-  currentUserId,
+  currentUser,
   onOpenChange,
   onSearch,
   onCreate,
@@ -59,6 +71,8 @@ export function CreateGroupDialog({
   };
 
   const handleAddMember = (user: UserSearchResult) => {
+    if (user.id === currentUser?.id) return;
+
     setMembers((prev) => {
       if (prev.some((member) => member.id === user.id)) return prev;
       return [...prev, user];
@@ -66,12 +80,16 @@ export function CreateGroupDialog({
   };
 
   const handleSubmit = async () => {
+    const invitedMemberIds = members
+      .filter((member) => member.id !== currentUser?.id)
+      .map((member) => member.id);
+
     const created = await onCreate(
       {
         name: name.trim(),
         description: description.trim() || undefined,
         visibility,
-        memberIds: members.map((member) => member.id),
+        memberIds: invitedMemberIds,
       },
       iconUrl.trim() || undefined,
     );
@@ -84,9 +102,12 @@ export function CreateGroupDialog({
 
   const canSubmit =
     hasCitizenProfile === true &&
+    Boolean(currentUser?.id) &&
     name.trim().length > 0 &&
     members.length >= 2 &&
     !loading;
+
+  const creatorLabel = currentUser ? getCreatorDisplayName(currentUser) : "Tú";
 
   return (
     <Dialog
@@ -164,15 +185,33 @@ export function CreateGroupDialog({
               />
             </DialogField>
 
+            {currentUser ? (
+              <DialogField label="Administrador del grupo">
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm">
+                  <ShieldCheck className="size-4 text-primary" />
+                  <span className="font-medium">{creatorLabel}</span>
+                  <span className="text-muted-foreground">({currentUser.email})</span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                    Tú
+                  </span>
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ya estás incluido en el grupo. Solo necesitas invitar a otras personas.
+                </p>
+              </DialogField>
+            ) : null}
+
             <MemberSearchPicker
               results={results}
               loading={loading}
               selectedMembers={members}
-              currentUserId={currentUserId}
+              currentUserId={currentUser?.id}
               minMembers={2}
+              creatorIncluded={Boolean(currentUser)}
               onSearch={onSearch}
               onAdd={handleAddMember}
               onRemove={(userId) => {
+                if (userId === currentUser?.id) return;
                 setMembers((prev) => prev.filter((member) => member.id !== userId));
               }}
             />

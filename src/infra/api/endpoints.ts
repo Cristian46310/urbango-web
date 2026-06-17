@@ -154,9 +154,13 @@ export const ENDPOINTS = {
   MESSAGES: {
     USERS_SEARCH: "/users/search",
     CONVERSATIONS_DIRECT: "/conversations/direct",
+    CONVERSATION_MESSAGES: (conversationId: string) =>
+      `/conversations/${conversationId}/messages`,
     DIRECT: "/messages/direct",
     INBOX: "/inbox",
+    INBOX_UNREAD_COUNT: "/inbox/unread-count",
     SENT: "/messages/sent",
+    BY_ID: (messageId: string) => `/messages/${messageId}`,
     READ: (messageId: string) => `/messages/${messageId}/read`,
     HEALTH: "/health",
     GROUPS: {

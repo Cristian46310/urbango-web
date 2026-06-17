@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ContactInfo,
   ConversationMeta,
+  InboxQuery,
   Message,
   SendDirectMessagePayload,
   UserSearchResult,
@@ -18,17 +19,33 @@ import { userRepository } from "@/infra/repository/security/UserRepository";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { showErrorToast } from "@/lib/toast";
 import {
+  getConversationMessages,
   getInbox,
+  getInboxUnreadCount,
   getMessagesHealth,
-  getSentMessages,
   markMessageAsRead,
   openDirectConversation,
+  openMessage,
   searchUsers,
   sendDirectMessage,
 } from "@/services/messageService";
 
 const PAGE_SIZE = 50;
 const MAX_BODY_LENGTH = 500;
+
+function rememberContactsFromMessages(
+  messages: Message[],
+  rememberContact: (contact: ContactInfo) => void,
+) {
+  for (const message of messages) {
+    if (!message.senderName && !message.senderEmail) continue;
+    rememberContact({
+      id: message.senderId,
+      name: message.senderName ?? "",
+      email: message.senderEmail ?? "",
+    });
+  }
+}
 
 export function useMessaging(currentUserId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,6 +55,7 @@ export function useMessaging(currentUserId: string | undefined) {
   const [conversationMeta, setConversationMeta] = useState<Record<string, ConversationMeta>>({});
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [healthStatus, setHealthStatus] = useState<string | null>(null);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +77,21 @@ export function useMessaging(currentUserId: string | undefined) {
       [meta.conversationId]: meta,
     }));
   }, []);
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (!currentUserId) {
+      setInboxUnreadCount(0);
+      return 0;
+    }
+
+    try {
+      const response = await getInboxUnreadCount();
+      setInboxUnreadCount(response.count);
+      return response.count;
+    } catch {
+      return 0;
+    }
+  }, [currentUserId]);
 
   const resolveContactProfiles = useCallback(async (peerIds: string[]) => {
     const missingIds = [...new Set(peerIds.filter((peerId) => peerId.trim() && !contactsRef.current[peerId]))];
@@ -90,30 +123,70 @@ export function useMessaging(currentUserId: string | undefined) {
     });
   }, []);
 
-  const loadChats = useCallback(async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
-      setError(null);
-    }
-    try {
-      const [inbox, sent] = await Promise.all([
-        getInbox({ page: 1, limit: PAGE_SIZE }),
-        getSentMessages({ page: 1, limit: PAGE_SIZE }),
-      ]);
-      const merged = mergeMessages([], [...inbox.items, ...sent.items]);
-      setMessages((prev) => mergeMessages(prev, merged));
-    } catch (err) {
+  const loadInbox = useCallback(
+    async (query: InboxQuery = { page: 1, limit: PAGE_SIZE }, silent = false) => {
       if (!silent) {
-        const message = getApiErrorMessage(err, "No se pudieron cargar los chats");
-        setError(message);
-        showErrorToast(message);
+        setLoading(true);
+        setError(null);
       }
-    } finally {
+      try {
+        const inbox = await getInbox(query);
+        rememberContactsFromMessages(inbox.items, rememberContact);
+        setMessages((prev) => mergeMessages(prev, inbox.items));
+        await refreshUnreadCount();
+        return inbox.items;
+      } catch (err) {
+        if (!silent) {
+          const message = getApiErrorMessage(err, "No se pudo cargar la bandeja");
+          setError(message);
+          showErrorToast(message);
+        }
+        return [];
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [rememberContact, refreshUnreadCount],
+  );
+
+  const loadChats = useCallback(
+    async (silent = false) => loadInbox({ page: 1, limit: PAGE_SIZE }, silent),
+    [loadInbox],
+  );
+
+  const loadConversationThread = useCallback(
+    async (conversationId: string, silent = false) => {
+      if (!conversationId.trim()) return [];
+
       if (!silent) {
-        setLoading(false);
+        setLoading(true);
+        setError(null);
       }
-    }
-  }, []);
+      try {
+        const page = await getConversationMessages(conversationId, {
+          page: 1,
+          limit: PAGE_SIZE,
+        });
+        rememberContactsFromMessages(page.items, rememberContact);
+        setMessages((prev) => mergeMessages(prev, page.items));
+        return page.items;
+      } catch (err) {
+        if (!silent) {
+          const message = getApiErrorMessage(err, "No se pudo cargar el hilo");
+          setError(message);
+          showErrorToast(message);
+        }
+        return [];
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [rememberContact],
+  );
 
   const searchPeople = useCallback(async (query: string) => {
     const trimmed = query.trim();
@@ -206,22 +279,46 @@ export function useMessaging(currentUserId: string | undefined) {
     [rememberConversation],
   );
 
-  const readMessage = useCallback(async (messageId: string, silent = false) => {
-    try {
-      const updated = await markMessageAsRead(messageId);
-      setMessages((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item)),
-      );
-      return updated;
-    } catch (err) {
-      if (!silent) {
-        const message = getApiErrorMessage(err, "No se pudo marcar como leído");
-        setError(message);
-        showErrorToast(message);
+  const readMessage = useCallback(
+    async (messageId: string, silent = false) => {
+      try {
+        const updated = await markMessageAsRead(messageId);
+        setMessages((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        await refreshUnreadCount();
+        return updated;
+      } catch (err) {
+        if (!silent) {
+          const message = getApiErrorMessage(err, "No se pudo marcar como leído");
+          setError(message);
+          showErrorToast(message);
+        }
+        return null;
       }
-      return null;
-    }
-  }, []);
+    },
+    [refreshUnreadCount],
+  );
+
+  const openMessageById = useCallback(
+    async (messageId: string, silent = false) => {
+      try {
+        const message = await openMessage(messageId);
+        rememberContactsFromMessages([message], rememberContact);
+        setMessages((prev) => mergeMessages(prev, [message]));
+        await refreshUnreadCount();
+        return message;
+      } catch (err) {
+        if (!silent) {
+          const message = getApiErrorMessage(err, "No se pudo abrir el mensaje");
+          setError(message);
+          showErrorToast(message);
+        }
+        return null;
+      }
+    },
+    [rememberContact, refreshUnreadCount],
+  );
 
   const markConversationAsRead = useCallback(
     async (conversationId: string) => {
@@ -251,6 +348,7 @@ export function useMessaging(currentUserId: string | undefined) {
 
   const handleIncomingMessage = useCallback(
     (message: Message) => {
+      rememberContactsFromMessages([message], rememberContact);
       setMessages((prev) => mergeMessages(prev, [message]));
 
       if (!currentUserId || message.senderId === currentUserId) return;
@@ -262,17 +360,23 @@ export function useMessaging(currentUserId: string | undefined) {
         groupId: message.groupId,
         groupName: message.groupName,
       });
+
+      void refreshUnreadCount();
     },
-    [currentUserId, rememberConversation],
+    [currentUserId, rememberContact, rememberConversation, refreshUnreadCount],
   );
 
-  const handleMessageRead = useCallback((messageId: string, readAt: string) => {
-    setMessages((prev) =>
-      prev.map((item) =>
-        item.id === messageId ? { ...item, isRead: true, readAt } : item,
-      ),
-    );
-  }, []);
+  const handleMessageRead = useCallback(
+    (messageId: string, readAt: string) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === messageId ? { ...item, isRead: true, readAt } : item,
+        ),
+      );
+      void refreshUnreadCount();
+    },
+    [refreshUnreadCount],
+  );
 
   const handleMessageDeleted = useCallback((messageId: string) => {
     setMessages((prev) => prev.filter((item) => item.id !== messageId));
@@ -281,11 +385,6 @@ export function useMessaging(currentUserId: string | undefined) {
   const getConversationThread = useCallback(
     (conversationId: string) => getThreadMessages(messages, conversationId),
     [messages],
-  );
-
-  const totalUnreadCount = useMemo(
-    () => chats.reduce((sum, chat) => sum + chat.unreadCount, 0),
-    [chats],
   );
 
   useEffect(() => {
@@ -303,14 +402,18 @@ export function useMessaging(currentUserId: string | undefined) {
     loading,
     error,
     maxBodyLength: MAX_BODY_LENGTH,
-    totalUnreadCount,
+    totalUnreadCount: inboxUnreadCount,
     loadChats,
+    loadInbox,
+    loadConversationThread,
     searchPeople,
     startDirectChat,
     sendMessage,
     readMessage,
+    openMessageById,
     markConversationAsRead,
     checkHealth,
+    refreshUnreadCount,
     handleIncomingMessage,
     handleMessageRead,
     handleMessageDeleted,

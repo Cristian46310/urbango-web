@@ -19,7 +19,10 @@ export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
+  senderName?: string;
+  senderEmail?: string;
   body: string;
+  preview?: string;
   latitude?: number;
   longitude?: number;
   createdAt: string;
@@ -30,6 +33,17 @@ export interface Message {
   groupName?: string;
   readCount?: number;
   totalRecipients?: number;
+}
+
+export interface InboxQuery extends BusinessPageableQuery {
+  unreadOnly?: boolean;
+  messageType?: MessageType;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface InboxUnreadCount {
+  count: number;
 }
 
 export interface SendGroupMessagePayload {
@@ -155,10 +169,12 @@ export interface ChatListItem {
   subtitle: string;
   updatedAt: string;
   unreadCount: number;
+  hasUnread: boolean;
   avatarLabel: string;
   peerId?: string;
   groupId?: string;
   iconUrl?: string;
+  lastMessageId?: string;
 }
 
 export type UserSearchPage = BusinessPage<UserSearchResult>;

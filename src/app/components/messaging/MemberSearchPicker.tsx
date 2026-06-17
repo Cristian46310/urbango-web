@@ -11,6 +11,7 @@ interface MemberSearchPickerProps {
   selectedMembers: UserSearchResult[];
   currentUserId?: string;
   minMembers?: number;
+  creatorIncluded?: boolean;
   onSearch: (query: string) => void;
   onAdd: (user: UserSearchResult) => void;
   onRemove: (userId: string) => void;
@@ -22,6 +23,7 @@ export function MemberSearchPicker({
   selectedMembers,
   currentUserId,
   minMembers = 2,
+  creatorIncluded = false,
   onSearch,
   onAdd,
   onRemove,
@@ -40,7 +42,11 @@ export function MemberSearchPicker({
   return (
     <div className="space-y-4">
       <DialogField
-        label={`Miembros iniciales (mínimo ${String(minMembers)})`}
+        label={
+          creatorIncluded
+            ? `Invitar miembros (mínimo ${String(minMembers)})`
+            : `Miembros iniciales (mínimo ${String(minMembers)})`
+        }
         htmlFor="member-search"
       >
         <div className="relative">
@@ -75,7 +81,9 @@ export function MemberSearchPicker({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Agrega al menos {minMembers} personas. Tú serás administrador automáticamente.
+          {creatorIncluded
+            ? `Agrega al menos ${String(minMembers)} personas más. Ya estás incluido como administrador.`
+            : `Agrega al menos ${String(minMembers)} personas. Tú serás administrador automáticamente.`}
         </p>
       )}
 
@@ -107,7 +115,8 @@ export function MemberSearchPicker({
       ) : null}
 
       <p className="text-xs text-muted-foreground">
-        {selectedMembers.length}/{minMembers} miembros seleccionados
+        {selectedMembers.length}/{minMembers}{" "}
+        {creatorIncluded ? "invitados seleccionados" : "miembros seleccionados"}
       </p>
     </div>
   );

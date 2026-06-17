@@ -75,7 +75,10 @@ export function normalizeIncomingMessage(raw: unknown): Message | null {
     id,
     conversationId,
     senderId,
+    senderName: readString(source, "senderName", "sender_name") || undefined,
+    senderEmail: readString(source, "senderEmail", "sender_email") || undefined,
     body,
+    preview: readString(source, "preview") || undefined,
     latitude: readOptionalNumber(source, "latitude", "lat"),
     longitude: readOptionalNumber(source, "longitude", "lng", "lon"),
     createdAt: readString(source, "createdAt", "created_at") || new Date().toISOString(),
@@ -105,6 +108,15 @@ export function mergeMessages(existing: Message[], incoming: Message[]): Message
 export function getContactLabel(contact?: ContactInfo, fallback = "Usuario"): string {
   if (!contact) return fallback;
   return contact.name.trim() || contact.email || fallback;
+}
+
+function getSenderContactFromMessage(message: Message): ContactInfo | undefined {
+  if (!message.senderName && !message.senderEmail) return undefined;
+  return {
+    id: message.senderId,
+    name: message.senderName ?? "",
+    email: message.senderEmail ?? "",
+  };
 }
 
 export function getGroupMemberCount(
@@ -163,10 +175,15 @@ function buildChatListItem(
     knownMeta,
   );
 
+  const peerContact = meta.peerId ? contacts[meta.peerId] : undefined;
+  const senderFromMessages = conversationMessages
+    .map((message) => getSenderContactFromMessage(message))
+    .find((contact) => contact?.name || contact?.email);
+
   const title =
     meta.type === "group"
       ? meta.groupName ?? "Grupo"
-      : getContactLabel(meta.peerId ? contacts[meta.peerId] : undefined, "Usuario");
+      : getContactLabel(peerContact ?? senderFromMessages, "Usuario");
 
   const sorted = [...conversationMessages].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
@@ -180,16 +197,19 @@ function buildChatListItem(
   if (lastMessage) {
     const isOwnLastMessage = lastMessage.senderId === currentUserId;
     const prefix = isOwnLastMessage ? "Tú: " : "";
+    const previewText = lastMessage.preview ?? lastMessage.body;
 
     return {
       conversationId,
       type: meta.type,
       title,
-      subtitle: `${prefix}${lastMessage.body}`,
+      subtitle: `${prefix}${previewText}`,
       updatedAt: lastMessage.createdAt,
       unreadCount,
+      hasUnread: unreadCount > 0,
       avatarLabel: getAvatarLabel(title),
       peerId: meta.peerId,
+      lastMessageId: lastMessage.id,
     };
   }
 
@@ -200,6 +220,7 @@ function buildChatListItem(
     subtitle: "Sin mensajes aún",
     updatedAt: knownMeta?.createdAt ?? new Date().toISOString(),
     unreadCount: 0,
+    hasUnread: false,
     avatarLabel: getAvatarLabel(title),
     peerId: meta.peerId,
   };
@@ -307,6 +328,7 @@ export function mergeGroupChats(
       subtitle: group.description || "Grupo sin mensajes",
       updatedAt: group.updatedAt ?? group.createdAt ?? new Date().toISOString(),
       unreadCount: 0,
+      hasUnread: false,
       avatarLabel: getAvatarLabel(group.name),
       groupId: group.id,
       iconUrl: group.iconUrl,
