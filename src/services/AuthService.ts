@@ -10,33 +10,54 @@ export interface DecodedToken {
   [key: string]: unknown;
 }
 
-/** Normaliza variantes del backend (p. ej. CITEZEN → CITIZEN). */
+/** Normaliza variantes del backend (p. ej. CITEZEN → CITIZEN, ROLE_ADMIN → ADMIN). */
 export function normalizeRoleName(role: string): string {
-  const upper = role.trim().toUpperCase();
+  const upper = role.trim().toUpperCase().replace(/^ROLE_/, '');
   if (upper === 'CITEZEN') {
     return 'CITIZEN';
+  }
+  if (upper === 'ADMINISTRATOR') {
+    return 'ADMIN';
   }
   return upper;
 }
 
-function normalizeRoles(rolesData: unknown): string[] {
-  const raw: string[] = [];
-
-  if (Array.isArray(rolesData)) {
-    raw.push(
-      ...rolesData.filter(
-        (role): role is string => typeof role === 'string' && role.trim().length > 0,
-      ),
-    );
-  } else if (typeof rolesData === 'string') {
-    raw.push(
-      ...rolesData
-        .split(/[,\s]+/)
-        .map((role) => role.trim())
-        .filter((role) => role.length > 0),
-    );
+function flattenRoleCandidate(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return value
+      .split(/[,\s]+/)
+      .map((role) => role.trim())
+      .filter((role) => role.length > 0);
   }
 
+  if (Array.isArray(value)) {
+    return value.flatMap(flattenRoleCandidate);
+  }
+
+  if (isRecord(value)) {
+    const named =
+      value.name ?? value.role ?? value.authority ?? value.roleName ?? value.code;
+    if (typeof named === 'string' && named.trim()) {
+      return [named];
+    }
+    return Object.values(value).flatMap(flattenRoleCandidate);
+  }
+
+  return [];
+}
+
+function extractRolesFromPayload(parsed: Record<string, unknown>): string[] {
+  const user = isRecord(parsed.user) ? parsed.user : null;
+  const candidates = [
+    parsed.roles,
+    parsed.role,
+    parsed.authorities,
+    user?.roles,
+    user?.role,
+    user?.authorities,
+  ];
+
+  const raw = candidates.flatMap(flattenRoleCandidate);
   return [...new Set(raw.map(normalizeRoleName))];
 }
 
@@ -70,7 +91,7 @@ function decodeToken(token: string): DecodedToken | null {
       email,
       iat,
       exp,
-      roles: normalizeRoles(parsed.roles),
+      roles: extractRolesFromPayload(parsed),
     };
   } catch {
     return null;

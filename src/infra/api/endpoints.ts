@@ -176,4 +176,16 @@ export const ENDPOINTS = {
     MESSAGE_READS: (messageId: string) => `/messages/${messageId}/reads`,
     DELETE_MESSAGE: (messageId: string) => `/messages/${messageId}`,
   },
+  ALERTS: {
+    BASE: "/alerts",
+    UNREAD_COUNT: "/alerts/unread-count",
+    BY_ID: (alertId: string) => `/alerts/${alertId}`,
+    READ: (alertId: string) => `/alerts/${alertId}/read`,
+  },
+  MASS_ALERTS: {
+    BASE: "/mass-alerts",
+    PREVIEW: "/mass-alerts/preview-recipients",
+    BY_ID: (alertId: string) => `/mass-alerts/${alertId}`,
+    STATS: (alertId: string) => `/mass-alerts/${alertId}/stats`,
+  },
 };

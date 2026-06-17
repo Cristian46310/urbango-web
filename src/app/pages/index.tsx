@@ -68,3 +68,5 @@ export const CitizenRouteDetailPage = lazy(() => import('./citizen/routes/[id]/p
 export const CitizenTripsPage = lazy(() => import('./citizen/trips/page'))
 export const CitizenTripDetailPage = lazy(() => import('./citizen/trips/[historyId]/page'))
 export const MessagingPage = lazy(() => import('./messaging/page'))
+export const AlertsPage = lazy(() => import('./alerts/page'))
+export const MassAlertsAdminPage = lazy(() => import('./admin/mass-alerts/page'))

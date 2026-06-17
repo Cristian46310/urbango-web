@@ -11,6 +11,7 @@ import {
   sendGroupMessage,
 } from "@/services/groupService";
 import { markMessageAsRead } from "@/services/messageService";
+import { useInboxUnreadCountStore } from "@/store/messaging/inboxUnreadCountStore";
 
 export function useGroupMessages() {
   const [messagesByGroup, setMessagesByGroup] = useState<Record<string, Message[]>>({});
@@ -83,6 +84,19 @@ export function useGroupMessages() {
   }, []);
 
   const markGroupMessageRead = useCallback(async (messageId: string, silent = true) => {
+    let wasUnread = false;
+    for (const messages of Object.values(messagesByGroup)) {
+      const existing = messages.find((item) => item.id === messageId);
+      if (existing && !existing.isRead) {
+        wasUnread = true;
+        break;
+      }
+    }
+
+    if (wasUnread) {
+      useInboxUnreadCountStore.getState().decrementUnreadCount();
+    }
+
     try {
       const updated = await markMessageAsRead(messageId);
       setMessagesByGroup((prev) => {
@@ -101,14 +115,18 @@ export function useGroupMessages() {
         }
         return next;
       });
+      void useInboxUnreadCountStore.getState().refreshUnreadCount();
       return updated;
     } catch (err) {
+      if (wasUnread) {
+        void useInboxUnreadCountStore.getState().refreshUnreadCount();
+      }
       if (!silent) {
         showErrorToast(getApiErrorMessage(err, "No se pudo marcar como leído"));
       }
       return null;
     }
-  }, []);
+  }, [messagesByGroup]);
 
   const removeGroupMessage = useCallback(async (messageId: string, groupId: string) => {
     setLoading(true);
