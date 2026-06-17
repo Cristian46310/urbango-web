@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
+import { io, type Socket } from "socket.io-client";
 
 import { PageShell } from "@/app/components/security/page-shell";
 import { useDashboard, useEnterprise } from "@/hooks/business";
@@ -25,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { dashboardRepository } from "@/infra/repository/business/DashboardRepository";
+import { buildRealtimeSocketConfig } from "@/infra/api/realtimeSocket";
 import type { RealtimeBusLocation, RealtimeIncident } from "@/core/domain/entities/business";
 
 const DEFAULT_CENTER: [number, number] = [4.6482837, -74.075816];
@@ -39,6 +41,74 @@ const defaultMarkerIcon = L.icon({
 });
 
 const MONTH_OPTIONS = [3, 6, 12] as const;
+
+function isBusLikeItem(item: unknown): item is RealtimeBusLocation {
+  if (!item || typeof item !== "object") {
+    return false;
+  }
+
+  const candidate = item as Record<string, unknown>;
+  return typeof candidate.busId === "string" && typeof candidate.lat === "number" && typeof candidate.lng === "number";
+}
+
+function isIncidentLikeItem(item: unknown): item is RealtimeIncident {
+  if (!item || typeof item !== "object") {
+    return false;
+  }
+
+  const candidate = item as Record<string, unknown>;
+  return typeof candidate.id === "string" && typeof candidate.description === "string";
+}
+
+function normalizeFleetPayload(payload: unknown): RealtimeBusLocation[] | null {
+  if (Array.isArray(payload) && payload.every(isBusLikeItem)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === "object") {
+    const candidate = payload as Record<string, unknown>;
+    if (Array.isArray(candidate.fleet) && candidate.fleet.every(isBusLikeItem)) {
+      return candidate.fleet;
+    }
+
+    if (Array.isArray(candidate.items) && candidate.items.every(isBusLikeItem)) {
+      return candidate.items;
+    }
+
+    if (Array.isArray(candidate.buses) && candidate.buses.every(isBusLikeItem)) {
+      return candidate.buses;
+    }
+
+    if (isBusLikeItem(candidate.bus)) {
+      return [candidate.bus];
+    }
+  }
+
+  return null;
+}
+
+function normalizeIncidentsPayload(payload: unknown): RealtimeIncident[] | null {
+  if (Array.isArray(payload) && payload.every(isIncidentLikeItem)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === "object") {
+    const candidate = payload as Record<string, unknown>;
+    if (Array.isArray(candidate.incidents) && candidate.incidents.every(isIncidentLikeItem)) {
+      return candidate.incidents;
+    }
+
+    if (Array.isArray(candidate.items) && candidate.items.every(isIncidentLikeItem)) {
+      return candidate.items;
+    }
+
+    if (isIncidentLikeItem(candidate.incident)) {
+      return [candidate.incident];
+    }
+  }
+
+  return null;
+}
 
 export default function BusinessDashboardPage() {
   const {
@@ -57,13 +127,13 @@ export default function BusinessDashboardPage() {
   const [enterpriseId, setEnterpriseId] = useState<string>("all");
   const [enterpriseOptions, setEnterpriseOptions] = useState<{ value: string; label: string }[]>([]);
   const [fleetBuses, setFleetBuses] = useState<RealtimeBusLocation[]>([]);
-  const [fleetLoading, setFleetLoading] = useState(false);
   const [fleetError, setFleetError] = useState<string | null>(null);
   const [routeFilter, setRouteFilter] = useState<string>("all");
   const [routeOptions, setRouteOptions] = useState<{ value: string; label: string }[]>([]);
   const [selectedBus, setSelectedBus] = useState<RealtimeBusLocation | null>(null);
   const [activeIncidents, setActiveIncidents] = useState<RealtimeIncident[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const realtimeSocketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     void loadPaymentIncome(incomeMonths);
@@ -80,8 +150,7 @@ export default function BusinessDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadRealtimeData = async () => {
-    setFleetLoading(true);
+  const loadRealtimeData = useCallback(async () => {
     setFleetError(null);
 
     try {
@@ -89,13 +158,14 @@ export default function BusinessDashboardPage() {
         enterpriseId === "all" ? undefined : enterpriseId,
         routeFilter === "all" ? undefined : routeFilter,
       );
+      const fleet = normalizeFleetPayload(items) ?? [];
 
-      setFleetBuses(items ?? []);
-      if (items?.length) {
-        setMapCenter([items[0].lat, items[0].lng]);
+      setFleetBuses(fleet);
+      if (fleet.length > 0) {
+        setMapCenter([fleet[0].lat, fleet[0].lng]);
       }
 
-      const routes = items
+      const routes = fleet
         .filter((bus) => bus.routeId)
         .reduce<{ value: string; label: string }[]>((acc, bus) => {
           if (!acc.some((item) => item.value === bus.routeId)) {
@@ -108,25 +178,87 @@ export default function BusinessDashboardPage() {
       const message = error instanceof Error ? error.message : "Error al cargar la flota en tiempo real";
       setFleetError(message);
       toast.error(message);
-    } finally {
-      setFleetLoading(false);
     }
 
     try {
       const incidents = await dashboardRepository.getActiveRealtimeIncidents();
-      setActiveIncidents(Array.isArray(incidents) ? incidents : []);
+      setActiveIncidents(normalizeIncidentsPayload(incidents) ?? []);
     } catch (error) {
       console.warn("Error al cargar incidentes activos", error);
     }
-  };
+  }, [enterpriseId, routeFilter]);
 
   useEffect(() => {
     void loadRealtimeData();
-    const interval = window.setInterval(() => {
-      void loadRealtimeData();
-    }, 30000);
-    return () => window.clearInterval(interval);
-  }, [enterpriseId, routeFilter]);
+  }, [loadRealtimeData]);
+
+  useEffect(() => {
+    const socketConfig = buildRealtimeSocketConfig();
+
+    if (!socketConfig) {
+      return;
+    }
+
+    const socket = io(socketConfig.url, {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionDelay: 3000,
+    });
+    realtimeSocketRef.current = socket;
+
+    const handleFleetUpdate = (payload: unknown) => {
+      const fleet = normalizeFleetPayload(payload);
+
+      if (!fleet) {
+        console.warn("Payload realtime de flota no reconocido", payload);
+        return;
+      }
+
+      setFleetBuses(fleet);
+      if (fleet.length > 0) {
+        setMapCenter([fleet[0].lat, fleet[0].lng]);
+      }
+
+      const routes = fleet
+        .filter((bus) => bus.routeId)
+        .reduce<{ value: string; label: string }[]>((acc, bus) => {
+          if (!acc.some((item) => item.value === bus.routeId)) {
+            acc.push({
+              value: bus.routeId ?? "",
+              label: bus.routeName ?? bus.routeCode ?? bus.routeId ?? "Ruta desconocida",
+            });
+          }
+          return acc;
+        }, []);
+      setRouteOptions(routes);
+    };
+
+    const handleIncidentsUpdate = (payload: unknown) => {
+      const incidents = normalizeIncidentsPayload(payload);
+
+      if (incidents) {
+        setActiveIncidents(incidents);
+      }
+    };
+
+    socket.on("dashboard:realtime:fleet", handleFleetUpdate);
+    socket.on("dashboard:realtime:incidents", handleIncidentsUpdate);
+    socket.on("connect_error", (error) => {
+      console.warn("Error de conexion realtime", {
+        message: error.message,
+        url: socketConfig.url,
+        namespace: socketConfig.namespace,
+        origin: socketConfig.origin,
+      });
+    });
+
+    return () => {
+      socket.off("dashboard:realtime:fleet", handleFleetUpdate);
+      socket.off("dashboard:realtime:incidents", handleIncidentsUpdate);
+      socket.disconnect();
+      realtimeSocketRef.current = null;
+    };
+  }, []);
 
   const incomeChartData = useMemo(() => {
     if (!paymentIncome) return [];
@@ -197,7 +329,7 @@ export default function BusinessDashboardPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Select value={routeFilter} onValueChange={setRouteFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-40">
                   <SelectValue placeholder="Todas las rutas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,7 +342,7 @@ export default function BusinessDashboardPage() {
                 </SelectContent>
               </Select>
               <Select value={enterpriseId} onValueChange={setEnterpriseId}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder="Empresa" />
                 </SelectTrigger>
                 <SelectContent>
@@ -255,7 +387,7 @@ export default function BusinessDashboardPage() {
                   </div>
                 )}
 
-                <div className="h-[420px] rounded-lg overflow-hidden border">
+                <div className="h-105 rounded-lg overflow-hidden border">
                   <MapContainer center={mapCenter} zoom={12} className="h-full w-full">
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -266,14 +398,14 @@ export default function BusinessDashboardPage() {
                         key={bus.busId}
                         position={[bus.lat, bus.lng]}
                         icon={defaultMarkerIcon}
-                        eventHandlers={{ click: () => setSelectedBus(bus) }}
+                        eventHandlers={{ click: () => { setSelectedBus(bus); } }}
                       >
                         <Popup>
                           <div className="space-y-1 text-sm">
                             <p className="font-semibold">{bus.plate}</p>
                             <p>{bus.routeName ?? bus.routeCode ?? "Ruta desconocida"}</p>
                             <p>{bus.nearestStop?.name ? `Próximo: ${bus.nearestStop.name}` : "Paradero cercano no disponible"}</p>
-                            <p>{bus.estimatedMinutesToNextStop != null ? `ETA: ${bus.estimatedMinutesToNextStop} min` : "ETA no disponible"}</p>
+                            <p>{bus.estimatedMinutesToNextStop != null ? `ETA: ${String(bus.estimatedMinutesToNextStop)} min` : "ETA no disponible"}</p>
                             <p>{bus.delayAlert ? "Retrasado" : "A tiempo"}</p>
                           </div>
                         </Popup>
@@ -308,11 +440,11 @@ export default function BusinessDashboardPage() {
                         </div>
                         <div>
                           <p className="text-slate-500">Tiempo estimado</p>
-                          <p>{selectedBus.estimatedMinutesToNextStop != null ? `${selectedBus.estimatedMinutesToNextStop} min` : "N/A"}</p>
+                          <p>{selectedBus.estimatedMinutesToNextStop != null ? `${String(selectedBus.estimatedMinutesToNextStop)} min` : "N/A"}</p>
                         </div>
                         <div>
                           <p className="text-slate-500">Ocupación</p>
-                          <p>{selectedBus.isFull ? "Máxima" : `${selectedBus.occupancyPercent ?? 0}%`}</p>
+                          <p>{selectedBus.isFull ? "Máxima" : `${String(selectedBus.occupancyPercent ?? 0)}%`}</p>
                         </div>
                       </div>
                     ) : (
@@ -397,7 +529,7 @@ export default function BusinessDashboardPage() {
                 value={String(incomeMonths)}
                 onValueChange={(v) => { setIncomeMonths(Number(v)); }}
               >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-30">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -422,7 +554,7 @@ export default function BusinessDashboardPage() {
             {loading && !paymentIncome ? (
               <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : incomeChartData.length > 0 ? (
-              <ChartContainer config={incomeChartConfig} className="h-[360px] w-full">
+              <ChartContainer config={incomeChartConfig} className="h-90 w-full">
                 <BarChart data={incomeChartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} />
@@ -462,7 +594,7 @@ export default function BusinessDashboardPage() {
                 value={String(trendMonths)}
                 onValueChange={(v) => { setTrendMonths(Number(v)); }}
               >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-30">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -474,7 +606,7 @@ export default function BusinessDashboardPage() {
                 </SelectContent>
               </Select>
               <Select value={enterpriseId} onValueChange={setEnterpriseId}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder="Empresa" />
                 </SelectTrigger>
                 <SelectContent>
@@ -505,7 +637,7 @@ export default function BusinessDashboardPage() {
             {loading && !incidentTrend ? (
               <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : trendChartData.length > 0 ? (
-              <ChartContainer config={trendChartConfig} className="h-[360px] w-full">
+              <ChartContainer config={trendChartConfig} className="h-90 w-full">
                 <LineChart data={trendChartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} />
