@@ -175,6 +175,7 @@ export const ENDPOINTS = {
       BY_ID: (groupId: string) => `/groups/${groupId}`,
       MESSAGES: (groupId: string) => `/groups/${groupId}/messages`,
       JOIN: (groupId: string) => `/groups/${groupId}/join`,
+      LEAVE: (groupId: string) => `/groups/${groupId}/leave`,
       MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
       ICON: (groupId: string) => `/groups/${groupId}/icon`,
     },
