@@ -31,6 +31,8 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -77,6 +79,7 @@ export default function MessagingPage() {
     loadGroups,
     createNewGroup,
     joinPublicGroup,
+    leaveGroup,
     inviteMembers,
     changeGroupIcon,
     findGroupByConversationId,
@@ -107,6 +110,7 @@ export default function MessagingPage() {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [mobileShowThread, setMobileShowThread] = useState(false);
   const [groupInfoOpen, setGroupInfoOpen] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
 
   const loading = messagingLoading || groupsLoading || groupMessagesLoading;
@@ -509,14 +513,24 @@ export default function MessagingPage() {
                       showBackButton
                       onBack={() => { setMobileShowThread(false); }}
                       headerAction={
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { setGroupInfoOpen(true); }}
-                        >
-                          Info
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setGroupInfoOpen(true); }}
+                          >
+                            Info
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => { setLeaveConfirmOpen(true); }}
+                          >
+                            Salir
+                          </Button>
+                        </div>
                       }
                       canDeleteMessage={canDeleteMessage}
                       canViewReads={canViewReads}
@@ -657,6 +671,45 @@ export default function MessagingPage() {
               }}
               onSearch={searchPeople}
             />
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
+      {activeGroup ? (
+        <Dialog open={leaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Abandonar grupo</DialogTitle>
+              <DialogDescription>
+                ¿Seguro que deseas abandonar &quot;{activeGroup.name}&quot;? Dejarás de recibir sus mensajes y notificaciones.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setLeaveConfirmOpen(false); }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={loading}
+                onClick={async () => {
+                  const ok = await leaveGroup(activeGroup.id);
+                  if (ok) {
+                    setLeaveConfirmOpen(false);
+                    setGroupInfoOpen(false);
+                    setActiveConversationId(null);
+                    setMobileShowThread(false);
+                    await loadGroups(hasDriverProfile === true);
+                  }
+                }}
+              >
+                {loading ? "Saliendo..." : "Abandonar grupo"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       ) : null}
