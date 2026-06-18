@@ -14,6 +14,7 @@ import {
   getGroups,
   getMyDriverGroups,
   joinGroup,
+  leaveGroup as leaveGroupService,
   updateGroupIcon,
 } from "@/services/groupService";
 
@@ -119,6 +120,24 @@ export function useGroups() {
     }
   }, []);
 
+  const leaveGroup = useCallback(async (groupId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await leaveGroupService(groupId);
+      setGroups((prev) => prev.filter((item) => item.id !== groupId));
+      showSuccessToast("Abandonaste el grupo");
+      return true;
+    } catch (err) {
+      const message = getApiErrorMessage(err, "No se pudo abandonar el grupo");
+      setError(message);
+      showErrorToast(message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const inviteMembers = useCallback(async (groupId: string, memberIds: string[]) => {
     setLoading(true);
     setError(null);
@@ -201,6 +220,7 @@ export function useGroups() {
     loadGroups,
     createNewGroup,
     joinPublicGroup,
+    leaveGroup,
     inviteMembers,
     changeGroupIcon,
     upsertGroup,

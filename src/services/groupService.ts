@@ -70,6 +70,10 @@ export async function joinGroup(groupId: string): Promise<MessageGroup> {
   return httpMsMessages.post<MessageGroup>(ENDPOINTS.MESSAGES.GROUPS.JOIN(groupId));
 }
 
+export async function leaveGroup(groupId: string): Promise<void> {
+  await httpMsMessages.post<void>(ENDPOINTS.MESSAGES.GROUPS.LEAVE(groupId));
+}
+
 export async function addGroupMembers(
   groupId: string,
   payload: AddGroupMembersPayload,
