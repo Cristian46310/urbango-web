@@ -1,6 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { BusinessCrudPage } from "@/app/components/business/business-crud-page";
-import { formatOptionalText } from "@/app/components/business/constants";
 import { TextField } from "@/app/components/business/form-fields";
 import { useEnterprise } from "@/hooks/business";
 import type { Enterprise } from "@/core/domain/entities/business";
@@ -9,10 +8,9 @@ interface EnterpriseForm {
   id: string;
   name: string;
   nit: string;
-  supervisorEmail: string;
 }
 
-const initialForm: EnterpriseForm = { id: "", name: "", nit: "", supervisorEmail: "" };
+const initialForm: EnterpriseForm = { id: "", name: "", nit: "" };
 const columnHelper = createColumnHelper<Enterprise>();
 
 export default function EnterprisesPage() {
@@ -40,26 +38,19 @@ export default function EnterprisesPage() {
         id: e.id,
         name: e.name,
         nit: e.nit,
-        supervisorEmail: e.supervisorEmail ?? "",
       })}
       getId={(f) => f.id}
       buildCreatePayload={(f) => ({
         name: f.name.trim(),
         nit: f.nit.trim(),
-        ...(f.supervisorEmail.trim() ? { supervisorEmail: f.supervisorEmail.trim() } : {}),
       })}
       buildUpdatePayload={(f) => ({
         name: f.name.trim(),
         nit: f.nit.trim(),
-        supervisorEmail: f.supervisorEmail.trim() || undefined,
       })}
       columns={[
         columnHelper.accessor("name", { header: "Nombre" }),
         columnHelper.accessor("nit", { header: "NIT" }),
-        columnHelper.accessor("supervisorEmail", {
-          header: "Email supervisor",
-          cell: (i) => formatOptionalText(i.getValue() as string | undefined),
-        }),
       ]}
       renderForm={(form, setForm, mode) => (
         <>
@@ -76,14 +67,6 @@ export default function EnterprisesPage() {
             value={form.nit}
             onChange={(v) => { setForm((c) => ({ ...c, nit: v })); }}
             disabled={mode === "view"}
-          />
-          <TextField
-            id="supervisorEmail"
-            label="Email supervisor"
-            value={form.supervisorEmail}
-            onChange={(v) => { setForm((c) => ({ ...c, supervisorEmail: v })); }}
-            disabled={mode === "view"}
-            type="email"
           />
         </>
       )}

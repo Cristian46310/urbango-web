@@ -1,7 +1,7 @@
 import { httpMsBussines } from '../api/builderHttp';
 import { ENDPOINTS } from '../api/endpoints';
 
-export type PersonProfileType = 'driver' | 'citizen';
+export type PersonProfileType = 'driver' | 'citizen' | 'supervisor';
 
 export interface RegisterPersonPayload {
   name: string;
@@ -11,8 +11,18 @@ export interface RegisterPersonPayload {
   licenseNumber?: string;
   licenseExpiry?: string;
   extraInfo?: string;
-  /** Obligatorio al registrar conductor (POST /driver). */
+  /** Obligatorio para conductor y supervisor. */
   enterpriseId?: string;
+}
+
+function profileEndpoint(type: PersonProfileType, me = false): string {
+  if (type === 'driver') {
+    return me ? ENDPOINTS.DRIVER.ME : ENDPOINTS.DRIVER.BASE;
+  }
+  if (type === 'supervisor') {
+    return me ? ENDPOINTS.SUPERVISOR.ME : ENDPOINTS.SUPERVISOR.BASE;
+  }
+  return me ? ENDPOINTS.CITIZEN.ME : ENDPOINTS.CITIZEN.BASE;
 }
 
 export interface PersonProfileResponse {
@@ -28,18 +38,19 @@ export const personRepository = {
     type: PersonProfileType,
     payload: RegisterPersonPayload,
   ): Promise<PersonProfileResponse> {
-    const endpoint =
-      type === 'driver' ? ENDPOINTS.DRIVER.BASE : ENDPOINTS.CITIZEN.BASE;
-    return httpMsBussines.post<PersonProfileResponse>(endpoint, payload);
+    return httpMsBussines.post<PersonProfileResponse>(
+      profileEndpoint(type),
+      payload,
+    );
   },
 
   async getMyProfile(
     type: PersonProfileType,
   ): Promise<PersonProfileResponse | null> {
-    const endpoint =
-      type === 'driver' ? ENDPOINTS.DRIVER.ME : ENDPOINTS.CITIZEN.ME;
     try {
-      return await httpMsBussines.get<PersonProfileResponse>(endpoint);
+      return await httpMsBussines.get<PersonProfileResponse>(
+        profileEndpoint(type, true),
+      );
     } catch {
       return null;
     }

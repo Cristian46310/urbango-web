@@ -100,7 +100,13 @@ function mapCard(raw: unknown): RechargeableCard | null {
     record.cardNumber ?? record.maskedNumber ?? record.number ?? record.card_number,
   );
   const label =
-    toStringValue(record.label ?? record.displayName ?? record.name) ||
+    toStringValue(
+      record.label ??
+        record.displayName ??
+        record.paymentMethodName ??
+        record.name,
+    ) ||
+    toStringValue(record.cardDisplay) ||
     (cardNumber ? `Tarjeta #${cardNumber}` : `Tarjeta ${id.slice(0, 8)}`);
 
   return {

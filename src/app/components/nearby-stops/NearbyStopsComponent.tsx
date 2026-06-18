@@ -37,6 +37,8 @@ export const NearbyStopsComponent: React.FC = () => {
   const [subscribing, setSubscribing] = useState(false);
   const itemsPerPage = 5;
 
+  const lastFetchCoordsRef = React.useRef<{ lat: number; lon: number } | null>(null);
+
   const fetchNearbyStops = useCallback(async () => {
     if (!coordinates) return;
 
@@ -48,10 +50,14 @@ export const NearbyStopsComponent: React.FC = () => {
       const nearbyStops = await stopRepository.findNearbyStops(
         coordinates.latitude,
         coordinates.longitude,
-        100,
+        5,
         1000
       );
       setStops(nearbyStops);
+      lastFetchCoordsRef.current = {
+        lat: coordinates.latitude,
+        lon: coordinates.longitude,
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al obtener paraderos cercanos';
       setError(errorMessage);
@@ -62,7 +68,18 @@ export const NearbyStopsComponent: React.FC = () => {
   }, [coordinates]);
 
   useEffect(() => {
-    if (coordinates) {
+    if (!coordinates) return;
+
+    const last = lastFetchCoordsRef.current;
+    if (!last) {
+      void fetchNearbyStops();
+      return;
+    }
+
+    const movedKm =
+      Math.hypot(coordinates.latitude - last.lat, coordinates.longitude - last.lon) *
+      111;
+    if (movedKm >= 0.15) {
       void fetchNearbyStops();
     }
   }, [coordinates, fetchNearbyStops]);

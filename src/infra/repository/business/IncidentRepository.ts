@@ -9,6 +9,7 @@ import type {
   UpdateIncidentStatusDTO,
 } from "@/core/domain/entities/business";
 import type { BusinessPage, BusinessPageableQuery } from "@/core/types/BusinessPage";
+import { mapIncidentFromApi, mapIncidentsFromApi } from "./incidentMapper";
 
 export interface BusIncidentQuery extends BusinessPageableQuery {
   type?: string;
@@ -17,15 +18,17 @@ export interface BusIncidentQuery extends BusinessPageableQuery {
 
 export class IncidentRepository {
   async findAll(pageable: BusinessPageableQuery): Promise<BusinessPage<Incident>> {
-    return await httpMsBussines.get<BusinessPage<Incident>>(ENDPOINTS.INCIDENT_REPORTS.LIST, {
+    const page = await httpMsBussines.get<BusinessPage<Incident>>(ENDPOINTS.INCIDENT_REPORTS.LIST, {
       params: pageable,
     });
+    return { ...page, items: mapIncidentsFromApi(page.items) };
   }
 
   async findByBus(busId: string, query: BusIncidentQuery): Promise<BusIncidentList> {
-    return await httpMsBussines.get<BusIncidentList>(ENDPOINTS.INCIDENT_REPORTS.BY_BUS(busId), {
+    const result = await httpMsBussines.get<BusIncidentList>(ENDPOINTS.INCIDENT_REPORTS.BY_BUS(busId), {
       params: query,
     });
+    return { ...result, items: mapIncidentsFromApi(result.items) };
   }
 
   async listComments(incidentId: string): Promise<IncidentComment[]> {
@@ -45,7 +48,8 @@ export class IncidentRepository {
 
   async updateStatus(incidentId: string, status: IncidentStatus): Promise<Incident> {
     const body: UpdateIncidentStatusDTO = { status };
-    return await httpMsBussines.patch<Incident>(ENDPOINTS.INCIDENT_REPORTS.STATUS(incidentId), body);
+    const updated = await httpMsBussines.put<Incident>(ENDPOINTS.INCIDENT_REPORTS.STATUS(incidentId), body);
+    return mapIncidentFromApi(updated);
   }
 }
 

@@ -35,12 +35,24 @@ export interface UpdateEnterpriseDTO {
   supervisorEmail?: string;
 }
 
+/** Valores aceptados por ms-business en POST/PATCH /stop */
+export type StopType = "terminal" | "intermediate" | "regular";
+
+export const STOP_TYPE_LABELS: Record<StopType, string> = {
+  regular: "Básico (Paradero de calle)",
+  intermediate: "Estación / Troncal",
+  terminal: "Terminal de integración",
+};
+
+export const STOP_TYPE_OPTIONS: StopType[] = ["regular", "intermediate", "terminal"];
+
 export interface Stop {
   id: string;
   name: string;
   location: string;
   latitude: number;
   longitude: number;
+  type?: StopType;
   createdAt?: string;
 }
 
@@ -49,6 +61,7 @@ export interface CreateStopDTO {
   location: string;
   latitude: number;
   longitude: number;
+  type: StopType;
 }
 
 export interface UpdateStopDTO {
@@ -56,6 +69,7 @@ export interface UpdateStopDTO {
   location?: string;
   latitude?: number;
   longitude?: number;
+  type?: StopType;
 }
 
 export interface PaymentMethod {
@@ -133,7 +147,23 @@ export interface UpdateDriverDTO {
 export interface RouteNodeInput {
   order: number;
   stopId: string;
+  estimatedTimeMinutes: number;
 }
+
+export type {
+  RouteListItem,
+  RouteDetail,
+  RouteNode,
+  RouteStop,
+  BoardingPayload,
+  BoardingResponse,
+  AlightPayload,
+  AlightResponse,
+  CitizenTicket,
+  TripDetails,
+  StartTurnPayload,
+  StartTurnResponse,
+} from './Transit';
 
 export interface Route {
   id: string;
@@ -174,60 +204,58 @@ export interface UpdateNodeDTO {
   order?: number;
 }
 
-export interface Bus {
-  id: string;
-  plate: string;
-  model: string;
-  color: string;
-  capacity: number;
-  enterpriseId?: string;
-  createdAt?: string;
-}
+import type { Bus as BusEntity } from './Bus';
 
-export interface CreateBusDTO {
-  plate: string;
-  model: string;
-  color: string;
-  capacity: number;
-  enterpriseId: string;
-}
-
-export interface UpdateBusDTO {
-  plate?: string;
-  model?: string;
-  color?: string;
-  capacity?: number;
-  enterpriseId?: string;
-}
+export type { Bus, BusStatus, CreateBusDTO, UpdateBusDTO } from './Bus';
+export { BUS_STATUS_LABELS, BUS_STATUS_OPTIONS } from './Bus';
 
 export interface Scheduler {
   id: string;
-  bus?: Bus;
+  bus?: BusEntity;
   route?: Route;
-  startTime: string;
-  endTime: string;
+  date?: string;
+  departureTime?: string;
+  /** Legacy: algunas respuestas aún pueden incluir ventana explícita. */
+  startTime?: string;
+  endTime?: string;
   createdAt?: string;
 }
 
 export interface CreateSchedulerDTO {
   busId: string;
   routeId: string;
-  startTime: string;
-  endTime: string;
+  date: string;
+  departureTime: string;
 }
 
 export interface UpdateSchedulerDTO {
   busId?: string;
   routeId?: string;
-  startTime?: string;
-  endTime?: string;
+  date?: string;
+  departureTime?: string;
 }
+
+export type TurnStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export const TURN_STATUS_OPTIONS: TurnStatus[] = [
+  'scheduled',
+  'in_progress',
+  'completed',
+  'cancelled',
+];
+
+export const TURN_STATUS_LABELS: Record<TurnStatus, string> = {
+  scheduled: 'Programado',
+  in_progress: 'En curso',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+};
 
 export interface Turn {
   id: string;
   startTime: string;
   endTime: string;
-  status: string;
+  status: TurnStatus;
   busId?: string;
   driverId?: string;
   createdAt?: string;
@@ -236,7 +264,7 @@ export interface Turn {
 export interface CreateTurnDTO {
   startTime: string;
   endTime: string;
-  status: string;
+  status?: TurnStatus;
   busId: string;
   driverId: string;
 }
@@ -244,7 +272,7 @@ export interface CreateTurnDTO {
 export interface UpdateTurnDTO {
   startTime?: string;
   endTime?: string;
-  status?: string;
+  status?: TurnStatus;
   busId?: string;
   driverId?: string;
 }
@@ -299,6 +327,8 @@ export interface PaymentMethodCitizen {
   id: string;
   citizenId: string;
   paymentMethodId: string;
+  citizen?: Pick<Citizen, "id" | "name" | "document">;
+  paymentMethod?: Pick<PaymentMethod, "id" | "name">;
   createdAt?: string;
 }
 
@@ -312,20 +342,23 @@ export interface UpdatePaymentMethodCitizenDTO {
   paymentMethodId?: string;
 }
 
-export type IncidentType = "mechanical" | "accident" | "delay" | "passenger" | "other";
-export type IncidentSeverity = "low" | "medium" | "high" | "critical";
-export type IncidentStatus = "reported" | "in_review" | "closed";
-
-export interface Incident {
-  id: string;
-  reportedAt: string;
-  type: IncidentType;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
-  description: string;
-  driver?: { id?: string; name?: string };
-  photos?: { id: string; url?: string }[];
-}
+export type {
+  Incident,
+  IncidentType,
+  IncidentSeverity,
+  IncidentStatus,
+} from './Incident';
+export {
+  INCIDENT_TYPE_LABELS,
+  INCIDENT_SEVERITY_LABELS,
+  INCIDENT_STATUS_LABELS,
+  INCIDENT_TYPE_OPTIONS,
+  INCIDENT_STATUS_OPTIONS,
+  formatIncidentDate,
+  incidentTypeLabel,
+  incidentSeverityLabel,
+  incidentStatusLabel,
+} from './Incident';
 
 export interface IncidentStatistics {
   total: number;

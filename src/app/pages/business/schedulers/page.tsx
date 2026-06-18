@@ -10,49 +10,73 @@ interface SchedulerForm {
   id: string;
   busId: string;
   routeId: string;
-  startTime: string;
-  endTime: string;
-  recurrence: "none" | "daily" | "weekday" | "weekend";
-  toleranceMinutes: number;
-  status: string;
+  date: string;
+  departureTime: string;
 }
 
 const initialForm: SchedulerForm = {
   id: "",
   busId: "",
   routeId: "",
-  startTime: "",
-  endTime: "",
-  recurrence: "none",
-  toleranceMinutes: 5,
-  status: "programado",
+  date: "",
+  departureTime: "",
 };
 
 const columnHelper = createColumnHelper<Scheduler>();
 
-const RECURRENCE_OPTIONS = [
-  { value: "none", label: "No recurrente" },
-  { value: "daily", label: "Diaria" },
-  { value: "weekday", label: "Lunes a Viernes" },
-  { value: "weekend", label: "Fines de semana" },
-];
+function toDateInput(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+  return value.slice(0, 10);
+}
 
-function toLocalDatetime(iso: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
+function toTimeInput(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+  if (/^\d{2}:\d{2}/.test(value)) {
+    return value.slice(0, 5);
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function toServiceDate(date: string): string {
+  return date.includes("T") ? date.slice(0, 10) : date;
+}
+
+function toDepartureTimePayload(time: string): string {
+  const trimmed = time.trim();
+  if (/^\d{2}:\d{2}:\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^\d{2}:\d{2}$/.test(trimmed)) {
+    return `${trimmed}:00`;
+  }
+  return trimmed;
+}
+
+function formatSchedulerLabel(scheduler: Scheduler): string {
+  const dateLabel = scheduler.date
+    ? new Date(scheduler.date).toLocaleDateString("es-CO")
+    : scheduler.startTime
+      ? new Date(scheduler.startTime).toLocaleDateString("es-CO")
+      : "—";
+  const timeLabel = scheduler.departureTime ?? toTimeInput(scheduler.startTime) ?? "—";
+  return `${dateLabel} ${timeLabel}`;
 }
 
 function buildPayload(form: SchedulerForm) {
   return {
     busId: form.busId,
     routeId: form.routeId,
-    startTime: new Date(form.startTime).toISOString(),
-    endTime: new Date(form.endTime).toISOString(),
-    recurrence: form.recurrence,
-    toleranceMinutes: Number(form.toleranceMinutes),
-    status: form.status || "programado",
+    date: toServiceDate(form.date),
+    departureTime: toDepartureTimePayload(form.departureTime),
   };
 }
 
@@ -89,15 +113,12 @@ export default function SchedulersPage() {
       editItem={crud.editItem}
       removeItem={crud.removeItem}
       initialForm={initialForm}
-      mapToForm={(e: any) => ({
+      mapToForm={(e: Scheduler) => ({
         id: e.id,
         busId: e.bus?.id ?? "",
         routeId: e.route?.id ?? "",
-        startTime: toLocalDatetime(e.startTime),
-        endTime: toLocalDatetime(e.endTime),
-        recurrence: e.recurrence ?? "none",
-        toleranceMinutes: e.toleranceMinutes ?? 5,
-        status: e.status ?? "programado",
+        date: toDateInput(e.date ?? e.startTime),
+        departureTime: e.departureTime ?? toTimeInput(e.startTime),
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}
@@ -111,9 +132,10 @@ export default function SchedulersPage() {
           header: "Ruta",
           cell: (i) => (i.getValue() as Route | undefined)?.name ?? "—",
         }),
-        columnHelper.accessor("startTime", {
-          header: "Inicio",
-          cell: (i) => new Date(String(i.getValue())).toLocaleString(),
+        columnHelper.display({
+          id: "schedule",
+          header: "Salida",
+          cell: ({ row }) => formatSchedulerLabel(row.original),
         }),
         columnHelper.accessor("status", {
           header: "Estado",
@@ -137,20 +159,20 @@ export default function SchedulersPage() {
             options={routeOptions}
           />
           <TextField
-            id="startTime"
-            label="Inicio"
-            value={form.startTime}
-            onChange={(v) => { setForm((c) => ({ ...c, startTime: v })); }}
+            id="date"
+            label="Fecha"
+            value={form.date}
+            onChange={(v) => { setForm((c) => ({ ...c, date: v })); }}
             disabled={mode === "view"}
-            type="datetime-local"
+            type="date"
           />
           <TextField
-            id="endTime"
-            label="Fin"
-            value={form.endTime}
-            onChange={(v) => { setForm((c) => ({ ...c, endTime: v })); }}
+            id="departureTime"
+            label="Hora de salida"
+            value={form.departureTime}
+            onChange={(v) => { setForm((c) => ({ ...c, departureTime: v })); }}
             disabled={mode === "view"}
-            type="datetime-local"
+            type="time"
           />
           <SelectField
             label="Recurrencia"

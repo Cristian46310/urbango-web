@@ -1,16 +1,8 @@
-import { httpMsSecurity } from "@/infra/api/builderHttp";
+import type { BoardingPayload, BoardingResponse } from '@/core/domain/entities/business/Transit';
+import { transitRepository } from '@/infra/repository/transit';
 
-export interface BoardingPayload {
-  busId: string;
-  paymentMethodCitizenId: string;
-  nodeId: string;
-}
-
-export interface BoardingResponse {
-  remainingBalance?: number;
-  message?: string;
-}
+export type { BoardingPayload, BoardingResponse };
 
 export async function board(payload: BoardingPayload): Promise<BoardingResponse> {
-  return httpMsSecurity.post<BoardingResponse>("/boarding", payload);
+  return transitRepository.board(payload);
 }

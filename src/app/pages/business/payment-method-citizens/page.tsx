@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { BusinessCrudPage } from "@/app/components/business/business-crud-page";
-import { formatShortId } from "@/app/components/business/constants";
+import { formatOptionalText, formatShortId } from "@/app/components/business/constants";
 import { SelectField } from "@/app/components/business/form-fields";
 import { BUSINESS_LOOKUP_PAGE_SIZE } from "@/app/components/business/constants";
 import { useCitizen, usePaymentMethod, usePaymentMethodCitizen } from "@/hooks/business";
@@ -64,13 +64,26 @@ export default function PaymentMethodCitizensPage() {
         paymentMethodId: f.paymentMethodId,
       })}
       columns={[
-        columnHelper.accessor("citizenId", {
+        columnHelper.display({
+          id: "citizen",
           header: "Ciudadano",
-          cell: (i) => formatShortId(String(i.getValue())),
+          cell: ({ row }) => {
+            const { citizen, citizenId } = row.original;
+            if (citizen?.name) {
+              const doc = citizen.document ? ` (${citizen.document})` : "";
+              return `${citizen.name}${doc}`;
+            }
+            return formatShortId(citizenId);
+          },
         }),
-        columnHelper.accessor("paymentMethodId", {
+        columnHelper.display({
+          id: "paymentMethod",
           header: "Método",
-          cell: (i) => formatShortId(String(i.getValue())),
+          cell: ({ row }) =>
+            formatOptionalText(
+              row.original.paymentMethod?.name,
+              formatShortId(row.original.paymentMethodId),
+            ),
         }),
       ]}
       renderForm={(form, setForm, mode) => (

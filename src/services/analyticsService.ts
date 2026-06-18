@@ -1,4 +1,4 @@
-import { httpMsSecurity } from "@/infra/api/builderHttp";
+import { httpMsBussines } from "@/infra/api/builderHttp";
 
 export interface AgeDistributionParams {
   routeId: string;
@@ -20,13 +20,13 @@ export interface AgeDistributionResponse {
 }
 
 export async function getAgeDistribution(params: AgeDistributionParams): Promise<AgeDistributionResponse> {
-  return httpMsSecurity.get<AgeDistributionResponse>("/analytics/passengers/age-distribution", {
+  return httpMsBussines.get<AgeDistributionResponse>("/analytics/passengers/age-distribution", {
     params,
   });
 }
 
 export async function exportAgeDistributionExcel(params: AgeDistributionParams): Promise<Blob> {
-  return httpMsSecurity.get<Blob>(
+  return httpMsBussines.get<Blob>(
     "/analytics/passengers/age-distribution/export/excel",
     {
       params,
