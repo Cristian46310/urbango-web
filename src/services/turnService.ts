@@ -14,3 +14,10 @@ export async function updateBusGps(
 ): Promise<void> {
   return transitRepository.updateBusGps(busId, latitude, longitude);
 }
+
+export async function updateTurnGps(
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  return transitRepository.updateTurnGps(latitude, longitude);
+}

@@ -26,6 +26,8 @@ export interface RealtimeSocketConfig {
   origin: string;
   namespace: string;
   url: string;
+  /** Socket.IO handshake path: `<namespace>/ws` */
+  wsPath: string;
 }
 
 export function buildRealtimeSocketConfig(namespace = DEFAULT_REALTIME_NAMESPACE): RealtimeSocketConfig | null {
@@ -47,6 +49,7 @@ export function buildRealtimeSocketConfig(namespace = DEFAULT_REALTIME_NAMESPACE
       origin,
       namespace: normalizedNamespace,
       url: `${origin}${normalizedNamespace}`,
+      wsPath: `${normalizedNamespace}/ws`,
     };
   }
 

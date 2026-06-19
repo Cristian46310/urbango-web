@@ -1,6 +1,14 @@
 import { httpMsBussines } from "@/infra/api/builderHttp";
 import { ENDPOINTS } from "@/infra/api/endpoints";
-import type { IncidentTrend, PaymentMethodIncome, RealtimeBusLocation, RealtimeIncident, CreateArrivalNotificationDTO, ArrivalNotificationResponse } from "@/core/domain/entities/business";
+import type {
+  IncidentTrend,
+  PaymentMethodIncome,
+  RealtimeBusLocation,
+  RealtimeDashboardSummary,
+  RealtimeIncident,
+  CreateArrivalNotificationDTO,
+  ArrivalNotificationResponse,
+} from "@/core/domain/entities/business";
 
 type RecordLike = Record<string, unknown>;
 
@@ -105,6 +113,118 @@ function normalizeIncidentTrend(value: unknown, months: number): IncidentTrend {
   };
 }
 
+function normalizeRealtimeBus(value: unknown): RealtimeBusLocation | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const lat = toNumber(value.lat ?? value.latitude, Number.NaN);
+  const lng = toNumber(value.lng ?? value.longitude, Number.NaN);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || typeof value.busId !== "string") {
+    return null;
+  }
+
+  const nearestStop = isRecord(value.nearestStop)
+    ? {
+        id: String(value.nearestStop.id ?? ""),
+        name: String(value.nearestStop.name ?? ""),
+        distance: value.nearestStop.distance != null ? toNumber(value.nearestStop.distance) : undefined,
+      }
+    : undefined;
+
+  return {
+    busId: value.busId,
+    plate: typeof value.plate === "string" ? value.plate : value.busId,
+    routeId: typeof value.routeId === "string" ? value.routeId : undefined,
+    routeName: typeof value.routeName === "string" ? value.routeName : undefined,
+    routeCode: typeof value.routeCode === "string" ? value.routeCode : undefined,
+    lat,
+    lng,
+    statusColor: typeof value.statusColor === "string" ? value.statusColor : undefined,
+    delayAlert: value.delayAlert === true,
+    isFull: value.isFull === true,
+    occupancyPercent: value.occupancyPercent != null ? toNumber(value.occupancyPercent) : undefined,
+    estimatedMinutesToNextStop:
+      value.estimatedMinutesToNextStop != null ? toNumber(value.estimatedMinutesToNextStop) : undefined,
+    estimatedMinutesToWaitingStop:
+      value.estimatedMinutesToWaitingStop != null ? toNumber(value.estimatedMinutesToWaitingStop) : undefined,
+    nearestStop,
+    activePassengers: value.activePassengers != null ? toNumber(value.activePassengers) : undefined,
+    stopName: typeof value.stopName === "string" ? value.stopName : undefined,
+    trackingPath: typeof value.trackingPath === "string" ? value.trackingPath : undefined,
+    paymentActionPath: typeof value.paymentActionPath === "string" ? value.paymentActionPath : undefined,
+  };
+}
+
+function normalizeRealtimeFleet(value: unknown): RealtimeBusLocation[] {
+  const raw = unwrapResponse(value);
+
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeRealtimeBus).filter((bus): bus is RealtimeBusLocation => bus != null);
+  }
+
+  if (isRecord(raw)) {
+    const collections = [raw.items, raw.fleet, raw.buses];
+    for (const collection of collections) {
+      if (Array.isArray(collection)) {
+        return collection.map(normalizeRealtimeBus).filter((bus): bus is RealtimeBusLocation => bus != null);
+      }
+    }
+
+    const singleBus = normalizeRealtimeBus(raw.bus ?? raw);
+    return singleBus ? [singleBus] : [];
+  }
+
+  return [];
+}
+
+function normalizeRealtimeIncident(value: unknown): RealtimeIncident | null {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.description !== "string") {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    busId: typeof value.busId === "string" ? value.busId : "",
+    busPlate: typeof value.busPlate === "string" ? value.busPlate : undefined,
+    routeId: typeof value.routeId === "string" ? value.routeId : undefined,
+    routeName: typeof value.routeName === "string" ? value.routeName : undefined,
+    type: typeof value.type === "string" ? value.type : "unknown",
+    description: value.description,
+    status: typeof value.status === "string" ? value.status : "reported",
+    createdAt: typeof value.createdAt === "string" ? value.createdAt : new Date().toISOString(),
+  };
+}
+
+function normalizeRealtimeIncidents(value: unknown): RealtimeIncident[] {
+  const raw = unwrapResponse(value);
+
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeRealtimeIncident).filter((item): item is RealtimeIncident => item != null);
+  }
+
+  if (isRecord(raw) && Array.isArray(raw.incidents)) {
+    return raw.incidents
+      .map(normalizeRealtimeIncident)
+      .filter((item): item is RealtimeIncident => item != null);
+  }
+
+  return [];
+}
+
+function normalizeRealtimeSummary(value: unknown): RealtimeDashboardSummary {
+  const raw = unwrapResponse(value);
+  const source = isRecord(raw) ? raw : {};
+
+  return {
+    totalPassengersInTransit: toNumber(source.totalPassengersInTransit),
+    updatedAt: typeof source.updatedAt === "string" ? source.updatedAt : undefined,
+    fullBusAlerts: normalizeRealtimeFleet(source.fullBusAlerts),
+    incidents: normalizeRealtimeIncidents(source.incidents),
+  };
+}
+
 export class DashboardRepository {
   async getPaymentMethodIncome(months: number): Promise<PaymentMethodIncome> {
     const response = await httpMsBussines.get<unknown>(
@@ -135,18 +255,34 @@ export class DashboardRepository {
     });
   }
 
-  async getRealtimeFleet(enterpriseId?: string, routeId?: string): Promise<RealtimeBusLocation[]> {
-    return await httpMsBussines.get<RealtimeBusLocation[]>(ENDPOINTS.DASHBOARD.REALTIME.FLEET, {
-      params: { ...(enterpriseId ? { enterpriseId } : {}), ...(routeId ? { routeId } : {}) },
+  async getRealtimeFleet(enterpriseId?: string, routeId?: string, stopId?: string): Promise<RealtimeBusLocation[]> {
+    const response = await httpMsBussines.get<unknown>(ENDPOINTS.DASHBOARD.REALTIME.FLEET, {
+      params: {
+        ...(enterpriseId ? { enterpriseId } : {}),
+        ...(routeId ? { routeId } : {}),
+        ...(stopId ? { stopId } : {}),
+      },
     });
+    return normalizeRealtimeFleet(response);
   }
 
-  async getRealtimeBus(busId: string): Promise<RealtimeBusLocation> {
-    return await httpMsBussines.get<RealtimeBusLocation>(ENDPOINTS.DASHBOARD.REALTIME.BUS_BY_ID(busId));
+  async getRealtimeSummary(enterpriseId?: string): Promise<RealtimeDashboardSummary> {
+    const response = await httpMsBussines.get<unknown>(ENDPOINTS.DASHBOARD.REALTIME.SUMMARY, {
+      params: { ...(enterpriseId ? { enterpriseId } : {}) },
+    });
+    return normalizeRealtimeSummary(response);
+  }
+
+  async getRealtimeBus(busId: string, stopId?: string): Promise<RealtimeBusLocation> {
+    const response = await httpMsBussines.get<unknown>(ENDPOINTS.DASHBOARD.REALTIME.BUS_BY_ID(busId), {
+      params: { ...(stopId ? { stopId } : {}) },
+    });
+    return normalizeRealtimeBus(unwrapResponse(response)) ?? { busId, plate: busId, lat: 0, lng: 0 };
   }
 
   async getActiveRealtimeIncidents(): Promise<RealtimeIncident[]> {
-    return await httpMsBussines.get<RealtimeIncident[]>(ENDPOINTS.DASHBOARD.REALTIME.INCIDENTS);
+    const response = await httpMsBussines.get<unknown>(ENDPOINTS.DASHBOARD.REALTIME.INCIDENTS);
+    return normalizeRealtimeIncidents(response);
   }
 
   async createArrivalNotification(payload: CreateArrivalNotificationDTO): Promise<ArrivalNotificationResponse> {

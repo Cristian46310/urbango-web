@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { Globe, Lock, UserPlus } from "lucide-react";
 
-import type { MessageGroup, UserSearchResult } from "@/core/types/messaging";
+import type {
+  GroupMemberDetail,
+  GroupMemberRole,
+  MembershipLogEntry,
+  MessageGroup,
+  UserSearchResult,
+} from "@/core/types/messaging";
+import { GroupMembersAdminTab } from "./GroupMembersAdminTab";
+import { GroupMembershipLogTab } from "./GroupMembershipLogTab";
 import { MemberSearchPicker } from "./MemberSearchPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DialogField } from "@/app/components/security/dialog-field";
 import {
   Dialog,
@@ -18,20 +27,30 @@ interface GroupPanelProps {
   group: MessageGroup;
   memberCount?: number;
   currentUserId?: string;
+  myRole?: GroupMemberRole;
   isAdmin: boolean;
   isMember: boolean;
   loading: boolean;
   hasCitizenProfile: boolean | null;
   searchResults: UserSearchResult[];
+  members: GroupMemberDetail[];
+  membersLoading: boolean;
+  membershipLog: MembershipLogEntry[];
+  membershipLogLoading: boolean;
   onJoin: () => Promise<void>;
   onInvite: (memberIds: string[]) => Promise<void>;
   onUpdateIcon: (iconUrl: string) => Promise<void>;
   onSearch: (query: string) => void;
+  onLoadMembers: (groupId: string, q?: string) => Promise<GroupMemberDetail[]>;
+  onPromoteMember: (groupId: string, userId: string) => Promise<boolean>;
+  onDemoteMember: (groupId: string, userId: string) => Promise<boolean>;
+  onRemoveMember: (groupId: string, userId: string, block?: boolean) => Promise<boolean>;
+  onLoadMembershipLog: (groupId: string) => Promise<MembershipLogEntry[]>;
 }
 
-export function GroupPanel({
+function GroupInfoTab({
   group,
-  memberCount: memberCountProp,
+  memberCount,
   currentUserId,
   isAdmin,
   isMember,
@@ -42,16 +61,29 @@ export function GroupPanel({
   onInvite,
   onUpdateIcon,
   onSearch,
-}: GroupPanelProps) {
+}: Pick<
+  GroupPanelProps,
+  | "group"
+  | "memberCount"
+  | "currentUserId"
+  | "isAdmin"
+  | "isMember"
+  | "loading"
+  | "hasCitizenProfile"
+  | "searchResults"
+  | "onJoin"
+  | "onInvite"
+  | "onUpdateIcon"
+  | "onSearch"
+>) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [iconUrl, setIconUrl] = useState(group.iconUrl ?? "");
   const [inviteMembers, setInviteMembers] = useState<UserSearchResult[]>([]);
 
-  const memberCount = memberCountProp ?? group.memberCount ?? group.members?.length ?? 0;
   const canManage = hasCitizenProfile === true && isAdmin;
 
   return (
-    <div className="flex h-full flex-col bg-(--security-surface) p-6">
+    <>
       <div className="mx-auto w-full max-w-md space-y-6 text-center">
         {group.iconUrl ? (
           <img
@@ -138,7 +170,6 @@ export function GroupPanel({
             </Button>
           </div>
         ) : null}
-
       </div>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
@@ -183,6 +214,93 @@ export function GroupPanel({
           </Button>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export function GroupPanel({
+  group,
+  memberCount: memberCountProp,
+  currentUserId,
+  myRole,
+  isAdmin,
+  isMember,
+  loading,
+  hasCitizenProfile,
+  searchResults,
+  members,
+  membersLoading,
+  membershipLog,
+  membershipLogLoading,
+  onJoin,
+  onInvite,
+  onUpdateIcon,
+  onSearch,
+  onLoadMembers,
+  onPromoteMember,
+  onDemoteMember,
+  onRemoveMember,
+  onLoadMembershipLog,
+}: GroupPanelProps) {
+  const memberCount = memberCountProp ?? group.memberCount ?? group.members?.length ?? 0;
+  const showAdminTabs = myRole === "admin" || isAdmin;
+
+  return (
+    <div className="flex h-full flex-col bg-(--security-surface) p-2">
+      <Tabs defaultValue="info" className="w-full">
+        <TabsList className={`grid w-full ${showAdminTabs ? "grid-cols-3" : "grid-cols-1"}`}>
+          <TabsTrigger value="info">Info</TabsTrigger>
+          {showAdminTabs ? (
+            <>
+              <TabsTrigger value="members">Miembros</TabsTrigger>
+              <TabsTrigger value="activity">Actividad</TabsTrigger>
+            </>
+          ) : null}
+        </TabsList>
+
+        <TabsContent value="info" className="mt-4">
+          <GroupInfoTab
+            group={group}
+            memberCount={memberCount}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+            isMember={isMember}
+            loading={loading}
+            hasCitizenProfile={hasCitizenProfile}
+            searchResults={searchResults}
+            onJoin={onJoin}
+            onInvite={onInvite}
+            onUpdateIcon={onUpdateIcon}
+            onSearch={onSearch}
+          />
+        </TabsContent>
+
+        {showAdminTabs ? (
+          <>
+            <TabsContent value="members" className="mt-4">
+              <GroupMembersAdminTab
+                groupId={group.id}
+                currentUserId={currentUserId}
+                members={members}
+                loading={membersLoading || loading}
+                onLoadMembers={onLoadMembers}
+                onPromote={onPromoteMember}
+                onDemote={onDemoteMember}
+                onRemove={onRemoveMember}
+              />
+            </TabsContent>
+
+            <TabsContent value="activity" className="mt-4">
+              <GroupMembershipLogTab
+                groupId={group.id}
+                entries={membershipLog}
+                loading={membershipLogLoading}
+                onLoadLog={onLoadMembershipLog}
+              />
+            </TabsContent>
+          </>
+        ) : null}
+      </Tabs>
     </div>
   );
 }

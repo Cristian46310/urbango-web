@@ -4,7 +4,14 @@ import { BusinessCrudPage } from "@/app/components/business/business-crud-page";
 import { SelectField, TextField } from "@/app/components/business/form-fields";
 import { BUSINESS_LOOKUP_PAGE_SIZE } from "@/app/components/business/constants";
 import { useBus, useRoute, useScheduler } from "@/hooks/business";
-import type { Bus, Route, Scheduler } from "@/core/domain/entities/business";
+import type { Bus, Route, Scheduler, SchedulerStatus } from "@/core/domain/entities/business";
+
+const SCHEDULER_STATUS_OPTIONS: { value: SchedulerStatus; label: string }[] = [
+  { value: "programado", label: "Programado" },
+  { value: "en_curso", label: "En curso" },
+  { value: "completado", label: "Completado" },
+  { value: "cancelado", label: "Cancelado" },
+];
 
 interface SchedulerForm {
   id: string;
@@ -12,6 +19,7 @@ interface SchedulerForm {
   routeId: string;
   date: string;
   departureTime: string;
+  status: SchedulerStatus;
 }
 
 const initialForm: SchedulerForm = {
@@ -20,6 +28,7 @@ const initialForm: SchedulerForm = {
   routeId: "",
   date: "",
   departureTime: "",
+  status: "programado",
 };
 
 const columnHelper = createColumnHelper<Scheduler>();
@@ -77,6 +86,7 @@ function buildPayload(form: SchedulerForm) {
     routeId: form.routeId,
     date: toServiceDate(form.date),
     departureTime: toDepartureTimePayload(form.departureTime),
+    status: form.status,
   };
 }
 
@@ -119,6 +129,7 @@ export default function SchedulersPage() {
         routeId: e.route?.id ?? "",
         date: toDateInput(e.date ?? e.startTime),
         departureTime: e.departureTime ?? toTimeInput(e.startTime),
+        status: e.status ?? "programado",
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}
@@ -175,19 +186,11 @@ export default function SchedulersPage() {
             type="time"
           />
           <SelectField
-            label="Recurrencia"
-            value={form.recurrence}
-            onChange={(v) => { setForm((c) => ({ ...c, recurrence: v as any })); }}
+            label="Estado"
+            value={form.status}
+            onChange={(v) => { setForm((c) => ({ ...c, status: v as SchedulerStatus })); }}
             disabled={mode === "view"}
-            options={RECURRENCE_OPTIONS}
-          />
-          <TextField
-            id="toleranceMinutes"
-            label="Margen de tolerancia (Minutos)"
-            value={String(form.toleranceMinutes)}
-            onChange={(v) => { setForm((c) => ({ ...c, toleranceMinutes: Number(v) })); }}
-            disabled={mode === "view"}
-            type="number"
+            options={SCHEDULER_STATUS_OPTIONS}
           />
         </>
       )}

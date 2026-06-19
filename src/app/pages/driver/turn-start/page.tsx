@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageShell } from "@/app/components/security/page-shell";
-import { startTurn, updateBusGps } from "@/services/turnService";
+import { startTurn, updateTurnGps } from "@/services/turnService";
 import type { StartTurnResponse } from "@/services/turnService";
 import { personRepository } from "@/infra/repository/person";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
@@ -17,7 +17,7 @@ const BUS_STATUS_OPTIONS = [
   { value: "con observaciones", label: "Con observaciones" },
 ];
 
-const GPS_INTERVAL_MS = 30_000;
+const GPS_INTERVAL_MS = 10_000;
 
 export default function DriverTurnStartPage() {
   const [busStatus, setBusStatus] = useState(BUS_STATUS_OPTIONS[0].value);
@@ -38,8 +38,7 @@ export default function DriverTurnStartPage() {
   }, []);
 
   useEffect(() => {
-    const busId = response?.bus?.id;
-    if (!busId || response?.status !== "in_progress") {
+    if (response?.status !== "in_progress") {
       return;
     }
 
@@ -47,7 +46,7 @@ export default function DriverTurnStartPage() {
       if (geolocation.latitude == null || geolocation.longitude == null) {
         return;
       }
-      void updateBusGps(busId, geolocation.latitude, geolocation.longitude).catch(() => {
+      void updateTurnGps(geolocation.latitude, geolocation.longitude).catch(() => {
         /* silent retry on next tick */
       });
     };
@@ -160,7 +159,7 @@ export default function DriverTurnStartPage() {
 
       {response?.status === "in_progress" ? (
         <p className="mt-4 text-xs text-muted-foreground">
-          Enviando posición GPS cada {GPS_INTERVAL_MS / 1000}s al bus asignado.
+          Enviando posición GPS cada {GPS_INTERVAL_MS / 1000}s vía turno activo.
         </p>
       ) : null}
     </PageShell>

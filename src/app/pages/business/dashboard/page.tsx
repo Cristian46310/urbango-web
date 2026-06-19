@@ -31,14 +31,56 @@ import type { RealtimeBusLocation, RealtimeIncident } from "@/core/domain/entiti
 
 const DEFAULT_CENTER: [number, number] = [4.6482837, -74.075816];
 
-const defaultMarkerIcon = L.icon({
-  iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).toString(),
-  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString(),
-  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString(),
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
+const BUS_MARKER_COLORS = {
+  green: "#16a34a",
+  red: "#dc2626",
+  default: "#2563eb",
+} as const;
+
+function resolveBusMarkerColor(statusColor?: string): string {
+  if (statusColor === "red") {
+    return BUS_MARKER_COLORS.red;
+  }
+
+  if (statusColor === "green") {
+    return BUS_MARKER_COLORS.green;
+  }
+
+  return BUS_MARKER_COLORS.default;
+}
+
+function createBusMarkerIcon(statusColor?: string) {
+  const color = resolveBusMarkerColor(statusColor);
+
+  return L.divIcon({
+    className: "bus-marker-icon",
+    html: `<div style="
+      background:${color};
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      border:2px solid #ffffff;
+      box-shadow:0 2px 6px rgba(15,23,42,.35);
+    "></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -10],
+  });
+}
+
+const busMarkerIcons = new Map<string, L.DivIcon>();
+
+function getBusMarkerIcon(statusColor?: string): L.DivIcon {
+  const key = statusColor ?? "default";
+  const cached = busMarkerIcons.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const icon = createBusMarkerIcon(statusColor);
+  busMarkerIcons.set(key, icon);
+  return icon;
+}
 
 const MONTH_OPTIONS = [3, 6, 12] as const;
 
@@ -132,8 +174,11 @@ export default function BusinessDashboardPage() {
   const [routeOptions, setRouteOptions] = useState<{ value: string; label: string }[]>([]);
   const [selectedBus, setSelectedBus] = useState<RealtimeBusLocation | null>(null);
   const [activeIncidents, setActiveIncidents] = useState<RealtimeIncident[]>([]);
+  const [totalPassengersInTransit, setTotalPassengersInTransit] = useState<number>(0);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const realtimeSocketRef = useRef<Socket | null>(null);
+  const enterpriseFilterRef = useRef(enterpriseId);
+  const routeFilterRef = useRef(routeFilter);
 
   useEffect(() => {
     void loadPaymentIncome(incomeMonths);
@@ -154,11 +199,10 @@ export default function BusinessDashboardPage() {
     setFleetError(null);
 
     try {
-      const items = await dashboardRepository.getRealtimeFleet(
+      const fleet = await dashboardRepository.getRealtimeFleet(
         enterpriseId === "all" ? undefined : enterpriseId,
         routeFilter === "all" ? undefined : routeFilter,
       );
-      const fleet = normalizeFleetPayload(items) ?? [];
 
       setFleetBuses(fleet);
       if (fleet.length > 0) {
@@ -182,15 +226,42 @@ export default function BusinessDashboardPage() {
 
     try {
       const incidents = await dashboardRepository.getActiveRealtimeIncidents();
-      setActiveIncidents(normalizeIncidentsPayload(incidents) ?? []);
+      setActiveIncidents(incidents);
     } catch (error) {
       console.warn("Error al cargar incidentes activos", error);
+    }
+
+    try {
+      const summary = await dashboardRepository.getRealtimeSummary(
+        enterpriseId === "all" ? undefined : enterpriseId,
+      );
+      setTotalPassengersInTransit(summary.totalPassengersInTransit);
+      if (summary.incidents?.length) {
+        setActiveIncidents(summary.incidents);
+      }
+    } catch (error) {
+      console.warn("Error al cargar resumen en tiempo real", error);
     }
   }, [enterpriseId, routeFilter]);
 
   useEffect(() => {
     void loadRealtimeData();
   }, [loadRealtimeData]);
+
+  useEffect(() => {
+    enterpriseFilterRef.current = enterpriseId;
+    routeFilterRef.current = routeFilter;
+    const socket = realtimeSocketRef.current;
+    if (socket?.connected) {
+      socket.emit("dashboard:subscribe-fleet", {
+        enterpriseId: enterpriseId === "all" ? undefined : enterpriseId,
+        routeId: routeFilter === "all" ? undefined : routeFilter,
+      });
+      socket.emit("dashboard:subscribe-dashboard", {
+        enterpriseId: enterpriseId === "all" ? undefined : enterpriseId,
+      });
+    }
+  }, [enterpriseId, routeFilter]);
 
   useEffect(() => {
     const socketConfig = buildRealtimeSocketConfig();
@@ -200,20 +271,24 @@ export default function BusinessDashboardPage() {
     }
 
     const socket = io(socketConfig.url, {
-      transports: ["websocket"],
+      path: socketConfig.wsPath,
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 3000,
     });
     realtimeSocketRef.current = socket;
 
-    const handleFleetUpdate = (payload: unknown) => {
-      const fleet = normalizeFleetPayload(payload);
+    socket.on("connect", () => {
+      socket.emit("dashboard:subscribe-fleet", {
+        enterpriseId: enterpriseFilterRef.current === "all" ? undefined : enterpriseFilterRef.current,
+        routeId: routeFilterRef.current === "all" ? undefined : routeFilterRef.current,
+      });
+      socket.emit("dashboard:subscribe-dashboard", {
+        enterpriseId: enterpriseFilterRef.current === "all" ? undefined : enterpriseFilterRef.current,
+      });
+    });
 
-      if (!fleet) {
-        console.warn("Payload realtime de flota no reconocido", payload);
-        return;
-      }
-
+    const applyFleetUpdate = (fleet: RealtimeBusLocation[]) => {
       setFleetBuses(fleet);
       if (fleet.length > 0) {
         setMapCenter([fleet[0].lat, fleet[0].lng]);
@@ -233,6 +308,38 @@ export default function BusinessDashboardPage() {
       setRouteOptions(routes);
     };
 
+    const handleFleetUpdate = (payload: unknown) => {
+      const fleet = normalizeFleetPayload(payload);
+
+      if (!fleet) {
+        console.warn("Payload realtime de flota no reconocido", payload);
+        return;
+      }
+
+      applyFleetUpdate(fleet);
+    };
+
+    const handleSummaryUpdate = (payload: unknown) => {
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+
+      const summary = payload as Record<string, unknown>;
+      if (typeof summary.totalPassengersInTransit === "number") {
+        setTotalPassengersInTransit(summary.totalPassengersInTransit);
+      }
+
+      const incidents = normalizeIncidentsPayload(summary.incidents);
+      if (incidents) {
+        setActiveIncidents(incidents);
+      }
+
+      const fleet = normalizeFleetPayload(summary.fleet);
+      if (fleet) {
+        applyFleetUpdate(fleet);
+      }
+    };
+
     const handleIncidentsUpdate = (payload: unknown) => {
       const incidents = normalizeIncidentsPayload(payload);
 
@@ -242,6 +349,7 @@ export default function BusinessDashboardPage() {
     };
 
     socket.on("dashboard:realtime:fleet", handleFleetUpdate);
+    socket.on("dashboard:realtime:summary", handleSummaryUpdate);
     socket.on("dashboard:realtime:incidents", handleIncidentsUpdate);
     socket.on("connect_error", (error) => {
       console.warn("Error de conexion realtime", {
@@ -253,7 +361,9 @@ export default function BusinessDashboardPage() {
     });
 
     return () => {
+      socket.off("connect");
       socket.off("dashboard:realtime:fleet", handleFleetUpdate);
+      socket.off("dashboard:realtime:summary", handleSummaryUpdate);
       socket.off("dashboard:realtime:incidents", handleIncidentsUpdate);
       socket.disconnect();
       realtimeSocketRef.current = null;
@@ -311,7 +421,10 @@ export default function BusinessDashboardPage() {
     [fleetBuses, routeFilter],
   );
 
-  const totalActivePassengers = displayedFleetBuses.reduce((acc, bus) => acc + (bus.activePassengers ?? 0), 0);
+  const totalActivePassengers = useMemo(() => {
+    const fleetTotal = displayedFleetBuses.reduce((acc, bus) => acc + (bus.activePassengers ?? 0), 0);
+    return Math.max(totalPassengersInTransit, fleetTotal);
+  }, [displayedFleetBuses, totalPassengersInTransit]);
   const totalFullBuses = displayedFleetBuses.filter((bus) => bus.isFull).length;
   const delayedBusesCount = displayedFleetBuses.filter((bus) => bus.delayAlert).length;
 
@@ -367,9 +480,9 @@ export default function BusinessDashboardPage() {
                     <p className="text-sm text-slate-500">Buses activos</p>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">{displayedFleetBuses.length}</p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm text-slate-500">Pasajeros en tránsito</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">{totalActivePassengers}</p>
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm text-emerald-700">Pasajeros en tránsito</p>
+                    <p className="mt-2 text-2xl font-semibold text-emerald-900">{totalActivePassengers}</p>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm text-slate-500">Ocupación máxima</p>
@@ -387,7 +500,18 @@ export default function BusinessDashboardPage() {
                   </div>
                 )}
 
-                <div className="h-105 rounded-lg overflow-hidden border">
+                <div className="relative h-105 rounded-lg overflow-hidden border">
+                  <div className="absolute right-3 top-3 z-1000 rounded-lg border border-slate-200 bg-white/95 p-3 text-xs text-slate-700 shadow-sm">
+                    <p className="mb-2 font-semibold text-slate-900">Estado de buses</p>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: BUS_MARKER_COLORS.green }} />
+                      <span>Normal</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: BUS_MARKER_COLORS.red }} />
+                      <span>Incidente</span>
+                    </div>
+                  </div>
                   <MapContainer center={mapCenter} zoom={12} className="h-full w-full">
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -397,16 +521,21 @@ export default function BusinessDashboardPage() {
                       <Marker
                         key={bus.busId}
                         position={[bus.lat, bus.lng]}
-                        icon={defaultMarkerIcon}
+                        icon={getBusMarkerIcon(bus.statusColor)}
                         eventHandlers={{ click: () => { setSelectedBus(bus); } }}
                       >
                         <Popup>
                           <div className="space-y-1 text-sm">
                             <p className="font-semibold">{bus.plate}</p>
                             <p>{bus.routeName ?? bus.routeCode ?? "Ruta desconocida"}</p>
+                            <p>{bus.statusColor === "red" ? "Estado: incidente activo" : "Estado: normal"}</p>
                             <p>{bus.nearestStop?.name ? `Próximo: ${bus.nearestStop.name}` : "Paradero cercano no disponible"}</p>
-                            <p>{bus.estimatedMinutesToNextStop != null ? `ETA: ${String(bus.estimatedMinutesToNextStop)} min` : "ETA no disponible"}</p>
+                            <p>{bus.estimatedMinutesToNextStop != null ? `ETA próximo: ${String(bus.estimatedMinutesToNextStop)} min` : "ETA no disponible"}</p>
+                            {bus.estimatedMinutesToWaitingStop != null && (
+                              <p className="font-semibold text-blue-700">ETA a tu paradero: {bus.estimatedMinutesToWaitingStop} min</p>
+                            )}
                             <p>{bus.delayAlert ? "Retrasado" : "A tiempo"}</p>
+                            <p>Pasajeros a bordo: {bus.activePassengers ?? 0}</p>
                           </div>
                         </Popup>
                       </Marker>
@@ -439,9 +568,15 @@ export default function BusinessDashboardPage() {
                           <p>{selectedBus.nearestStop?.name ?? "N/A"}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Tiempo estimado</p>
+                          <p className="text-slate-500">ETA próximo paradero</p>
                           <p>{selectedBus.estimatedMinutesToNextStop != null ? `${String(selectedBus.estimatedMinutesToNextStop)} min` : "N/A"}</p>
                         </div>
+                        {selectedBus.estimatedMinutesToWaitingStop != null && (
+                          <div>
+                            <p className="text-slate-500">ETA a tu paradero</p>
+                            <p className="font-semibold text-blue-700">{selectedBus.estimatedMinutesToWaitingStop} min</p>
+                          </div>
+                        )}
                         <div>
                           <p className="text-slate-500">Ocupación</p>
                           <p>{selectedBus.isFull ? "Máxima" : `${String(selectedBus.occupancyPercent ?? 0)}%`}</p>

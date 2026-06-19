@@ -3,6 +3,7 @@ import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from
 import type { BusinessCrudUseCases } from "@/core/applications/business/createBusinessCrudUseCases";
 import type { BusinessPage, BusinessPageableQuery } from "@/core/types/BusinessPage";
 import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 interface BusinessCrudStoreConfig {
   entityLabel: string;
@@ -37,8 +38,9 @@ export function createBusinessCrudStore<T extends { id: string }, CreateDto, Upd
         set({ loading: false });
         return item;
       } catch (error) {
-        set({ loading: false, error: (error as Error).message });
-        showErrorToast(`Error al cargar ${label}: ${(error as Error).message}`);
+        const msg = getApiErrorMessage(error, `Error al cargar ${label}`);
+        set({ loading: false, error: msg });
+        showErrorToast(msg);
         throw error;
       } finally {
         dismissToast(loadingToastId);
@@ -52,8 +54,9 @@ export function createBusinessCrudStore<T extends { id: string }, CreateDto, Upd
         set({ loading: false, items: page.items, page });
         return page;
       } catch (error) {
-        set({ loading: false, error: (error as Error).message });
-        showErrorToast(`Error al cargar ${label}: ${(error as Error).message}`);
+        const msg = getApiErrorMessage(error, `Error al cargar ${label}`);
+        set({ loading: false, error: msg });
+        showErrorToast(msg);
         throw error;
       } finally {
         dismissToast(loadingToastId);
@@ -68,8 +71,9 @@ export function createBusinessCrudStore<T extends { id: string }, CreateDto, Upd
         showSuccessToast(`${label} creado correctamente`);
         return item;
       } catch (error) {
-        set({ loading: false, error: (error as Error).message });
-        showErrorToast(`Error al crear ${label}: ${(error as Error).message}`);
+        const msg = getApiErrorMessage(error, `Error al crear ${label}`);
+        set({ loading: false, error: msg });
+        showErrorToast(msg);
         throw error;
       } finally {
         dismissToast(loadingToastId);
@@ -84,8 +88,9 @@ export function createBusinessCrudStore<T extends { id: string }, CreateDto, Upd
         showSuccessToast(`${label} actualizado correctamente`);
         return item;
       } catch (error) {
-        set({ loading: false, error: (error as Error).message });
-        showErrorToast(`Error al actualizar ${label}: ${(error as Error).message}`);
+        const msg = getApiErrorMessage(error, `Error al actualizar ${label}`);
+        set({ loading: false, error: msg });
+        showErrorToast(msg);
         throw error;
       } finally {
         dismissToast(loadingToastId);
@@ -99,8 +104,9 @@ export function createBusinessCrudStore<T extends { id: string }, CreateDto, Upd
         set({ loading: false });
         showSuccessToast(`${label} eliminado correctamente`);
       } catch (error) {
-        set({ loading: false, error: (error as Error).message });
-        showErrorToast(`Error al eliminar ${label}: ${(error as Error).message}`);
+        const msg = getApiErrorMessage(error, `Error al eliminar ${label}`);
+        set({ loading: false, error: msg });
+        showErrorToast(msg);
         throw error;
       } finally {
         dismissToast(loadingToastId);

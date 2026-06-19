@@ -209,12 +209,15 @@ import type { Bus as BusEntity } from './Bus';
 export type { Bus, BusStatus, CreateBusDTO, UpdateBusDTO } from './Bus';
 export { BUS_STATUS_LABELS, BUS_STATUS_OPTIONS } from './Bus';
 
+export type SchedulerStatus = "programado" | "en_curso" | "completado" | "cancelado";
+
 export interface Scheduler {
   id: string;
   bus?: BusEntity;
   route?: Route;
   date?: string;
   departureTime?: string;
+  status?: SchedulerStatus;
   /** Legacy: algunas respuestas aún pueden incluir ventana explícita. */
   startTime?: string;
   endTime?: string;
@@ -226,6 +229,7 @@ export interface CreateSchedulerDTO {
   routeId: string;
   date: string;
   departureTime: string;
+  status?: SchedulerStatus;
 }
 
 export interface UpdateSchedulerDTO {
@@ -233,6 +237,7 @@ export interface UpdateSchedulerDTO {
   routeId?: string;
   date?: string;
   departureTime?: string;
+  status?: SchedulerStatus;
 }
 
 export type TurnStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
@@ -277,6 +282,13 @@ export interface UpdateTurnDTO {
   driverId?: string;
 }
 
+export interface RealtimeDashboardSummary {
+  totalPassengersInTransit: number;
+  updatedAt?: string;
+  fullBusAlerts?: RealtimeBusLocation[];
+  incidents?: RealtimeIncident[];
+}
+
 export interface RealtimeBusLocation {
   busId: string;
   plate: string;
@@ -290,12 +302,16 @@ export interface RealtimeBusLocation {
   isFull?: boolean;
   occupancyPercent?: number;
   estimatedMinutesToNextStop?: number;
+  estimatedMinutesToWaitingStop?: number;
   nearestStop?: {
     id: string;
     name: string;
     distance?: number;
   };
   activePassengers?: number;
+  stopName?: string;
+  trackingPath?: string;
+  paymentActionPath?: string;
 }
 
 export interface RealtimeIncident {
@@ -311,16 +327,38 @@ export interface RealtimeIncident {
 }
 
 export interface CreateArrivalNotificationDTO {
-  email: string;
+  email?: string;
   routeId: string;
   stopId: string;
-  anticipationMinutes: number;
+  anticipationMinutes: 5 | 10 | 15;
   message?: string;
 }
 
 export interface ArrivalNotificationResponse {
-  success: boolean;
-  message: string;
+  success?: boolean;
+  message?: string;
+  subscribed?: boolean;
+  sent?: boolean;
+  scheduled?: boolean;
+  etaMinutes?: number;
+  stopName?: string;
+}
+
+export interface ArrivalNotificationPayload {
+  routeName?: string;
+  plate?: string;
+  etaMinutes?: number;
+  stopName?: string;
+  busId?: string;
+  trackingPath?: string;
+  paymentActionPath?: string;
+  status?: {
+    lat?: number;
+    lng?: number;
+    occupancyPercent?: number;
+    isFull?: boolean;
+    estimatedMinutesToWaitingStop?: number;
+  };
 }
 
 export interface PaymentMethodCitizen {

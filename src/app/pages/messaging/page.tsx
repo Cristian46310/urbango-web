@@ -8,6 +8,7 @@ import { ChatList } from "@/app/components/messaging/ChatList";
 import { ChatThread } from "@/app/components/messaging/ChatThread";
 import { CreateGroupDialog } from "@/app/components/messaging/CreateGroupDialog";
 import { DriverBroadcastDialog } from "@/app/components/messaging/DriverBroadcastDialog";
+import { PublicGroupsDialog } from "@/app/components/messaging/PublicGroupsDialog";
 import { GroupPanel } from "@/app/components/messaging/GroupPanel";
 import { MessageReadsDialog, useMessageReadsDialog } from "@/app/components/messaging/MessageReadsDialog";
 import { NewChatDialog } from "@/app/components/messaging/NewChatDialog";
@@ -24,7 +25,7 @@ import {
   isGroupMessage,
   mergeGroupChats,
 } from "@/lib/messaging/chatUtils";
-import { showInfoToast } from "@/lib/toast";
+import { showInfoToast, showWarningToast } from "@/lib/toast";
 import { useAuthStore } from "@/store/security/authStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,7 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { CreateGroupPayload, Message } from "@/core/types/messaging";
+import type { CreateGroupPayload, Message, MessageGroup } from "@/core/types/messaging";
 
 export default function MessagingPage() {
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -76,15 +77,28 @@ export default function MessagingPage() {
     groups,
     loading: groupsLoading,
     error: groupsError,
+    members,
+    membersLoading,
+    membershipLog,
+    membershipLogLoading,
     loadGroups,
+    fetchGroupById,
     createNewGroup,
     joinPublicGroup,
     leaveGroup,
+    removeGroupLocally,
     inviteMembers,
     changeGroupIcon,
+    loadGroupMembers,
+    promoteMember,
+    demoteMember,
+    removeMember,
+    loadMembershipLog,
+    upsertGroup,
     findGroupByConversationId,
     isGroupAdmin,
     isGroupMember,
+    getMyRole,
   } = useGroups();
 
   const {
@@ -110,6 +124,7 @@ export default function MessagingPage() {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [mobileShowThread, setMobileShowThread] = useState(false);
   const [groupInfoOpen, setGroupInfoOpen] = useState(false);
+  const [publicGroupsOpen, setPublicGroupsOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
 
@@ -223,6 +238,11 @@ export default function MessagingPage() {
     setGroupInfoOpen(false);
   }, [activeGroupId, loadGroupMessages]);
 
+  useEffect(() => {
+    if (!groupInfoOpen || !activeGroupId) return;
+    void fetchGroupById(activeGroupId, true);
+  }, [groupInfoOpen, activeGroupId, fetchGroupById]);
+
   const resyncAfterReconnect = useCallback(() => {
     refreshMessagingLists(true);
     void refreshUnreadCount();
@@ -288,7 +308,7 @@ export default function MessagingPage() {
     ],
   );
 
-  useMessagingSocket({
+  const { joinConversation } = useMessagingSocket({
     enabled: Boolean(currentUserId),
     activeConversationId,
     onNewMessage: handleSocketMessage,
@@ -303,7 +323,9 @@ export default function MessagingPage() {
       });
     },
     onGroupMemberAdded: (payload) => {
-      showInfoToast(`Fuiste agregado al grupo "${payload.groupName}"`);
+      const toastMessage =
+        payload.welcomeMessage ?? `Fuiste agregado al grupo "${payload.groupName}"`;
+      showInfoToast(toastMessage);
       rememberConversation({
         conversationId: payload.conversationId,
         type: "group",
@@ -312,6 +334,40 @@ export default function MessagingPage() {
       });
       void loadGroups(hasDriverProfile === true, true);
     },
+    onGroupMemberLeft: (payload) => {
+      if (payload.groupId === activeGroupId && groupInfoOpen) {
+        void loadGroupMembers(payload.groupId, undefined, true);
+        void loadMembershipLog(payload.groupId, true);
+      }
+    },
+    onGroupMemberRemoved: (payload) => {
+      if (payload.userId === currentUserId) {
+        showWarningToast("Fuiste removido del grupo");
+        removeGroupLocally(payload.groupId);
+        if (payload.conversationId === activeConversationId) {
+          setActiveConversationId(null);
+          setMobileShowThread(false);
+          setGroupInfoOpen(false);
+        }
+        return;
+      }
+      if (payload.groupId === activeGroupId && groupInfoOpen) {
+        void loadGroupMembers(payload.groupId, undefined, true);
+        void loadMembershipLog(payload.groupId, true);
+      }
+    },
+    onGroupMemberPromoted: (payload) => {
+      if (payload.userId === currentUserId) {
+        showInfoToast("Fuiste promovido a administrador del grupo");
+        if (activeGroupId) {
+          void fetchGroupById(activeGroupId, true);
+        }
+      }
+      if (payload.groupId === activeGroupId && groupInfoOpen) {
+        void loadGroupMembers(payload.groupId, undefined, true);
+        void loadMembershipLog(payload.groupId, true);
+      }
+    },
     onMessageDeleted: (payload) => {
       handleMessageDeleted(payload.messageId);
       deleteGroupMessageLocal(payload.messageId, payload.groupId);
@@ -319,6 +375,18 @@ export default function MessagingPage() {
     onReconnect: resyncAfterReconnect,
     onConnectionChange: setSocketConnected,
   });
+
+  const openGroupChat = useCallback(
+    async (group: MessageGroup) => {
+      upsertGroup(group);
+      rememberConversation(groupToConversationMeta(group));
+      joinConversation(group.conversationId);
+      await loadGroupMessages(group.id);
+      setActiveConversationId(group.conversationId);
+      setMobileShowThread(true);
+    },
+    [upsertGroup, rememberConversation, joinConversation, loadGroupMessages],
+  );
 
   const handleSelectChat = (conversationId: string) => {
     setActiveConversationId(conversationId);
@@ -427,7 +495,7 @@ export default function MessagingPage() {
   return (
     <PageShell
       title="Mensajería"
-      description="Chats directos, grupos (HU-3-006) y avisos del conductor (HU-3-005)."
+      description="Chats directos, grupos públicos (HU-009), administración de miembros (HU-010) y avisos del conductor (HU-3-005)."
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -484,6 +552,7 @@ export default function MessagingPage() {
               onSelect={handleSelectChat}
               onNewChat={() => { setNewChatOpen(true); }}
               onCreateGroup={() => { setCreateGroupOpen(true); }}
+              onExplorePublicGroups={() => { setPublicGroupsOpen(true); }}
               showDriverBroadcast={hasDriverProfile === true}
               onDriverBroadcast={() => { setBroadcastOpen(true); }}
             />
@@ -576,12 +645,15 @@ export default function MessagingPage() {
                 <div>
                   <p className="font-medium">Selecciona un chat</p>
                   <p className="text-sm text-muted-foreground">
-                    Inicia un chat directo, crea un grupo o envía un aviso como conductor.
+                    Inicia un chat directo, explora grupos públicos o crea un grupo.
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button type="button" onClick={() => { setNewChatOpen(true); }}>
                     Nuevo chat
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => { setPublicGroupsOpen(true); }}>
+                    Explorar grupos
                   </Button>
                   <Button type="button" variant="outline" onClick={() => { setCreateGroupOpen(true); }}>
                     Crear grupo
@@ -631,6 +703,15 @@ export default function MessagingPage() {
         onSend={handleBroadcast}
       />
 
+      <PublicGroupsDialog
+        open={publicGroupsOpen}
+        onOpenChange={setPublicGroupsOpen}
+        loading={loading}
+        hasCitizenProfile={hasCitizenProfile}
+        onJoin={(groupId) => joinPublicGroup(groupId)}
+        onOpenChat={(group) => { void openGroupChat(group); }}
+      />
+
       <MessageReadsDialog
         open={readsDialog.open}
         loading={readsDialog.loading}
@@ -652,24 +733,37 @@ export default function MessagingPage() {
               group={activeGroup}
               memberCount={activeGroupMemberCount}
               currentUserId={currentUserId}
+              myRole={getMyRole(activeGroup, currentUserId)}
               isAdmin={isGroupAdmin(activeGroup, currentUserId)}
               isMember={isGroupMember(activeGroup, currentUserId)}
               loading={loading}
               hasCitizenProfile={hasCitizenProfile}
               searchResults={searchResults}
+              members={members}
+              membersLoading={membersLoading}
+              membershipLog={membershipLog}
+              membershipLogLoading={membershipLogLoading}
               onJoin={async () => {
-                await joinPublicGroup(activeGroup.id);
-                await loadGroups(hasDriverProfile === true);
+                const group = await joinPublicGroup(activeGroup.id);
+                if (group) {
+                  await openGroupChat(group);
+                  setGroupInfoOpen(false);
+                }
               }}
               onInvite={async (memberIds) => {
                 await inviteMembers(activeGroup.id, memberIds);
-                await loadGroups(hasDriverProfile === true);
+                await fetchGroupById(activeGroup.id, true);
               }}
               onUpdateIcon={async (iconUrl) => {
                 await changeGroupIcon(activeGroup.id, iconUrl);
-                await loadGroups(hasDriverProfile === true);
+                await fetchGroupById(activeGroup.id, true);
               }}
               onSearch={searchPeople}
+              onLoadMembers={loadGroupMembers}
+              onPromoteMember={promoteMember}
+              onDemoteMember={demoteMember}
+              onRemoveMember={removeMember}
+              onLoadMembershipLog={loadMembershipLog}
             />
           </DialogContent>
         </Dialog>
