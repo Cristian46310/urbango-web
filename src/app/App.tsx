@@ -16,6 +16,7 @@ import {
   RolesPage,
   UsersPage,
   NearbyStopsPage,
+  BusAlertPage,
   IncidentReportPage,
   TicketAlightSearchPage,
   TicketAlightValidationPage,
@@ -170,6 +171,14 @@ function AppContent() {
             element={
               <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
                 <NearbyStopsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="bus-alert"
+            element={
+              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+                <BusAlertPage />
               </RoleGuard>
             }
           />

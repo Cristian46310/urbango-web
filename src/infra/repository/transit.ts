@@ -158,6 +158,10 @@ export const transitRepository = {
     await httpMsBussines.post(ENDPOINTS.GPS.BUS(busId), { latitude, longitude });
   },
 
+  async updateTurnGps(latitude: number, longitude: number): Promise<void> {
+    await httpMsBussines.post(ENDPOINTS.TURN.GPS, { latitude, longitude });
+  },
+
   async listBuses(page = 1, limit = 100): Promise<BusListItem[]> {
     const pageData = await httpMsBussines.get<BusinessPage<Bus>>(ENDPOINTS.BUS.BASE, {
       params: { page, limit },

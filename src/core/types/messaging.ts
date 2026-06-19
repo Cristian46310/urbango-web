@@ -122,8 +122,53 @@ export interface MessageGroup {
   iconUrl?: string;
   members?: GroupMember[];
   memberCount?: number;
+  isMember?: boolean;
+  myRole?: GroupMemberRole;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface GroupDetail extends MessageGroup {
+  isMember: boolean;
+  myRole?: GroupMemberRole;
+}
+
+export interface GroupMemberDetail extends GroupMember {
+  name?: string;
+  email?: string;
+  joinedAt?: string;
+}
+
+export type GroupMemberPage = BusinessPage<GroupMemberDetail>;
+
+export type MembershipLogAction =
+  | "joined"
+  | "left"
+  | "removed"
+  | "blocked"
+  | "promoted"
+  | "demoted"
+  | "invited";
+
+export interface MembershipLogEntry {
+  id: string;
+  action: MembershipLogAction | string;
+  actorUserId?: string;
+  targetUserId?: string;
+  actorName?: string;
+  targetName?: string;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+}
+
+export type MembershipLogPage = BusinessPage<MembershipLogEntry>;
+
+export interface JoinGroupResponse extends MessageGroup {
+  welcomeMessage?: string;
+}
+
+export interface UpdateGroupMemberRolePayload {
+  role: GroupMemberRole;
 }
 
 export interface CreateGroupPayload {
@@ -145,6 +190,27 @@ export interface GroupMemberAddedPayload {
   groupId: string;
   groupName: string;
   conversationId: string;
+  role: GroupMemberRole;
+  welcomeMessage?: string;
+}
+
+export interface GroupMemberLeftPayload {
+  groupId: string;
+  conversationId: string;
+  userId: string;
+}
+
+export interface GroupMemberRemovedPayload {
+  groupId: string;
+  conversationId: string;
+  userId: string;
+  blocked?: boolean;
+}
+
+export interface GroupMemberPromotedPayload {
+  groupId: string;
+  conversationId: string;
+  userId: string;
   role: GroupMemberRole;
 }
 

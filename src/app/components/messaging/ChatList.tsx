@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Megaphone, MessageSquarePlus, Users } from "lucide-react";
+import { Compass, Megaphone, MessageSquarePlus, Users } from "lucide-react";
 
 import type { ChatListItem } from "@/core/types/messaging";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ interface ChatListProps {
   onSelect: (conversationId: string) => void;
   onNewChat: () => void;
   onCreateGroup: () => void;
+  onExplorePublicGroups?: () => void;
   showDriverBroadcast?: boolean;
   onDriverBroadcast?: () => void;
 }
@@ -33,6 +34,7 @@ export function ChatList({
   onSelect,
   onNewChat,
   onCreateGroup,
+  onExplorePublicGroups,
   showDriverBroadcast = false,
   onDriverBroadcast,
 }: ChatListProps) {
@@ -41,6 +43,17 @@ export function ChatList({
       <div className="flex items-center justify-between border-b border-(--security-border) px-4 py-3">
         <h3 className="font-semibold">Chats</h3>
         <div className="flex gap-1">
+          {onExplorePublicGroups ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onExplorePublicGroups}
+              title="Explorar grupos públicos"
+            >
+              <Compass className="size-4" />
+            </Button>
+          ) : null}
           {showDriverBroadcast && onDriverBroadcast ? (
             <Button
               type="button"

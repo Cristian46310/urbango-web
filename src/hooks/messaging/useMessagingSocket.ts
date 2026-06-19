@@ -6,6 +6,9 @@ import type {
   MessageDeletedPayload,
   MessageReadPayload,
   GroupMemberAddedPayload,
+  GroupMemberLeftPayload,
+  GroupMemberPromotedPayload,
+  GroupMemberRemovedPayload,
 } from "@/core/types/messaging";
 import { normalizeIncomingMessage } from "@/lib/messaging/chatUtils";
 
@@ -17,6 +20,9 @@ interface UseMessagingSocketOptions {
   onNewMessage?: (message: Message) => void;
   onMessageRead?: (payload: MessageReadPayload) => void;
   onGroupMemberAdded?: (payload: GroupMemberAddedPayload) => void;
+  onGroupMemberLeft?: (payload: GroupMemberLeftPayload) => void;
+  onGroupMemberRemoved?: (payload: GroupMemberRemovedPayload) => void;
+  onGroupMemberPromoted?: (payload: GroupMemberPromotedPayload) => void;
   onMessageDeleted?: (payload: MessageDeletedPayload) => void;
   onReconnect?: () => void;
   onConnectionChange?: (connected: boolean) => void;
@@ -47,6 +53,9 @@ export function useMessagingSocket({
   onNewMessage,
   onMessageRead,
   onGroupMemberAdded,
+  onGroupMemberLeft,
+  onGroupMemberRemoved,
+  onGroupMemberPromoted,
   onMessageDeleted,
   onReconnect,
   onConnectionChange,
@@ -58,6 +67,9 @@ export function useMessagingSocket({
   const onNewMessageRef = useRef(onNewMessage);
   const onMessageReadRef = useRef(onMessageRead);
   const onGroupMemberAddedRef = useRef(onGroupMemberAdded);
+  const onGroupMemberLeftRef = useRef(onGroupMemberLeft);
+  const onGroupMemberRemovedRef = useRef(onGroupMemberRemoved);
+  const onGroupMemberPromotedRef = useRef(onGroupMemberPromoted);
   const onMessageDeletedRef = useRef(onMessageDeleted);
   const onReconnectRef = useRef(onReconnect);
   const onConnectionChangeRef = useRef(onConnectionChange);
@@ -73,6 +85,18 @@ export function useMessagingSocket({
   useEffect(() => {
     onGroupMemberAddedRef.current = onGroupMemberAdded;
   }, [onGroupMemberAdded]);
+
+  useEffect(() => {
+    onGroupMemberLeftRef.current = onGroupMemberLeft;
+  }, [onGroupMemberLeft]);
+
+  useEffect(() => {
+    onGroupMemberRemovedRef.current = onGroupMemberRemoved;
+  }, [onGroupMemberRemoved]);
+
+  useEffect(() => {
+    onGroupMemberPromotedRef.current = onGroupMemberPromoted;
+  }, [onGroupMemberPromoted]);
 
   useEffect(() => {
     onMessageDeletedRef.current = onMessageDeleted;
@@ -145,6 +169,18 @@ export function useMessagingSocket({
     socket.on("group:member_added", (payload: GroupMemberAddedPayload) => {
       emitConversationJoin(socket, payload.conversationId);
       onGroupMemberAddedRef.current?.(payload);
+    });
+
+    socket.on("group:member_left", (payload: GroupMemberLeftPayload) => {
+      onGroupMemberLeftRef.current?.(payload);
+    });
+
+    socket.on("group:member_removed", (payload: GroupMemberRemovedPayload) => {
+      onGroupMemberRemovedRef.current?.(payload);
+    });
+
+    socket.on("group:member_promoted", (payload: GroupMemberPromotedPayload) => {
+      onGroupMemberPromotedRef.current?.(payload);
     });
 
     socket.on("message:deleted", (payload: MessageDeletedPayload) => {

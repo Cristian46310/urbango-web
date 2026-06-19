@@ -3,7 +3,12 @@ import { ENDPOINTS } from "@/infra/api/endpoints";
 import type {
   AddGroupMembersPayload,
   CreateGroupPayload,
+  GroupDetail,
+  GroupMemberPage,
+  GroupMemberRole,
   GroupPage,
+  JoinGroupResponse,
+  MembershipLogPage,
   Message,
   MessagePage,
   MessageGroup,
@@ -11,6 +16,7 @@ import type {
   MessageReadsResponse,
   SendGroupMessagePayload,
   UpdateGroupIconPayload,
+  UpdateGroupMemberRolePayload,
 } from "@/core/types/messaging";
 
 export async function createGroup(payload: CreateGroupPayload): Promise<MessageGroup> {
@@ -66,8 +72,67 @@ export async function deleteGroupMessage(messageId: string): Promise<void> {
   await httpMsMessages.delete<void>(ENDPOINTS.MESSAGES.DELETE_MESSAGE(messageId));
 }
 
-export async function joinGroup(groupId: string): Promise<MessageGroup> {
-  return httpMsMessages.post<MessageGroup>(ENDPOINTS.MESSAGES.GROUPS.JOIN(groupId));
+export async function getPublicGroups(
+  q?: string,
+  page = 1,
+  limit = 20,
+): Promise<GroupPage> {
+  return httpMsMessages.get<GroupPage>(ENDPOINTS.MESSAGES.GROUPS.PUBLIC, {
+    params: { q: q?.trim() || undefined, page, limit },
+  });
+}
+
+export async function getGroupById(groupId: string): Promise<GroupDetail> {
+  return httpMsMessages.get<GroupDetail>(ENDPOINTS.MESSAGES.GROUPS.BY_ID(groupId));
+}
+
+export async function getGroupMembers(
+  groupId: string,
+  q?: string,
+  page = 1,
+  limit = 50,
+): Promise<GroupMemberPage> {
+  return httpMsMessages.get<GroupMemberPage>(ENDPOINTS.MESSAGES.GROUPS.MEMBERS(groupId), {
+    params: { q: q?.trim() || undefined, page, limit },
+  });
+}
+
+export async function updateGroupMemberRole(
+  groupId: string,
+  userId: string,
+  role: GroupMemberRole,
+): Promise<void> {
+  const payload: UpdateGroupMemberRolePayload = { role };
+  await httpMsMessages.patch<void>(
+    ENDPOINTS.MESSAGES.GROUPS.MEMBER_ROLE(groupId, userId),
+    payload,
+  );
+}
+
+export async function removeGroupMember(
+  groupId: string,
+  userId: string,
+  block = false,
+): Promise<void> {
+  await httpMsMessages.delete<void>(
+    ENDPOINTS.MESSAGES.GROUPS.MEMBER_BY_ID(groupId, userId),
+    { params: block ? { block: true } : undefined },
+  );
+}
+
+export async function getGroupMembershipLog(
+  groupId: string,
+  page = 1,
+  limit = 50,
+): Promise<MembershipLogPage> {
+  return httpMsMessages.get<MembershipLogPage>(
+    ENDPOINTS.MESSAGES.GROUPS.MEMBERSHIP_LOG(groupId),
+    { params: { page, limit } },
+  );
+}
+
+export async function joinGroup(groupId: string): Promise<JoinGroupResponse> {
+  return httpMsMessages.post<JoinGroupResponse>(ENDPOINTS.MESSAGES.GROUPS.JOIN(groupId));
 }
 
 export async function leaveGroup(groupId: string): Promise<void> {

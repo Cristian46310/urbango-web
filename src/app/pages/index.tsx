@@ -20,6 +20,7 @@ export const MicrosoftCallbackPage = lazy(() => import('./login/microsoft-callba
 export const TeamPage = lazy(() => import('./team/page'))
 export const CitizenBoardingPage = lazy(() => import('./citizen/boarding/page'))
 export const NearbyStopsPage = lazy(() => import('./nearby-stops/page'))
+export const BusAlertPage = lazy(() => import('./bus-alert/page'))
 export const IncidentReportPage = lazy(() => import('./incident-report/page'))
 export const TicketAlightSearchPage = lazy(() => import('./ticket/alight/page'))
 export const TicketAlightValidationPage = lazy(() => import('./ticket/alight/[ticketId]/page'))

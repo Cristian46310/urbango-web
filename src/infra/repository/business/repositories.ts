@@ -24,6 +24,7 @@ import type {
   PaymentMethodCitizen,
   Route,
   Scheduler,
+  SchedulerStatus,
   Stop,
   Turn,
   UpdateAddressDTO,
@@ -144,12 +145,14 @@ function mapScheduler(raw: unknown): Scheduler | null {
     return null;
   }
 
+  const statusRaw = toStringValue(record.status);
   return {
     id,
     bus: mapBusSummary(record.bus),
     route: mapRouteSummary(record.route),
     date: toStringValue(record.date) || undefined,
     departureTime: toStringValue(record.departureTime ?? record.departure_time) || undefined,
+    status: statusRaw ? (statusRaw as SchedulerStatus) : undefined,
     startTime: toStringValue(record.startTime) || undefined,
     endTime: toStringValue(record.endTime) || undefined,
     createdAt: toStringValue(record.createdAt) || undefined,

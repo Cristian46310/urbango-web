@@ -128,6 +128,7 @@ export const ENDPOINTS = {
   TURN: {
     BASE: "/turn",
     START: "/turn/start",
+    GPS: "/turn/gps",
     BY_ID: (id: string) => `/turn/${id}`,
   },
   INCIDENT_REPORTS: {
@@ -142,6 +143,13 @@ export const ENDPOINTS = {
     PAYMENT_METHOD_INCOME_EXPORT: "/dashboard/payment-method-income/export",
     INCIDENT_TREND: "/dashboard/incident-trend-by-type",
     INCIDENT_TREND_EXPORT: "/dashboard/incident-trend-by-type/export",
+    REALTIME: {
+      FLEET: "/dashboard/realtime/fleet",
+      SUMMARY: "/dashboard/realtime/summary",
+      BUS_BY_ID: (busId: string) => `/dashboard/realtime/bus/${busId}`,
+      INCIDENTS: "/dashboard/realtime/incidents",
+      ARRIVAL_NOTIFICATION: "/dashboard/realtime/arrival-notification",
+    },
   },
   CARD_RECHARGE: {
     CONFIG: '/card-recharge/config',
@@ -165,12 +173,18 @@ export const ENDPOINTS = {
     HEALTH: "/health",
     GROUPS: {
       BASE: "/groups",
+      PUBLIC: "/groups/public",
       ME: "/groups/me",
       BY_ID: (groupId: string) => `/groups/${groupId}`,
       MESSAGES: (groupId: string) => `/groups/${groupId}/messages`,
       JOIN: (groupId: string) => `/groups/${groupId}/join`,
       LEAVE: (groupId: string) => `/groups/${groupId}/leave`,
       MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
+      MEMBER_BY_ID: (groupId: string, userId: string) =>
+        `/groups/${groupId}/members/${userId}`,
+      MEMBER_ROLE: (groupId: string, userId: string) =>
+        `/groups/${groupId}/members/${userId}/role`,
+      MEMBERSHIP_LOG: (groupId: string) => `/groups/${groupId}/membership-log`,
       ICON: (groupId: string) => `/groups/${groupId}/icon`,
     },
     GROUP_MESSAGE: "/messages/group",
