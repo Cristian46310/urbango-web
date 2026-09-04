@@ -14,14 +14,24 @@ import type { RouteDetail } from '@/services/routePlanningService';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { showErrorToast } from '@/lib/toast';
 import { formatCop } from '@/lib/currency';
+import { isUuid } from '@/lib/uuid';
 
 export default function CitizenRouteDetailPage() {
   const { id = '' } = useParams();
   const [route, setRoute] = useState<RouteDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [invalidId, setInvalidId] = useState(false);
 
   useEffect(() => {
     if (!id) return;
+    if (!isUuid(id)) {
+      setInvalidId(true);
+      setLoading(false);
+      setRoute(null);
+      showErrorToast('El identificador de la ruta no es un UUID válido');
+      return;
+    }
+    setInvalidId(false);
     setLoading(true);
     void getRouteById(id)
       .then(setRoute)
@@ -59,6 +69,8 @@ export default function CitizenRouteDetailPage() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Cargando ruta...</p>
+      ) : invalidId ? (
+        <p className="text-sm text-muted-foreground">Identificador de ruta inválido.</p>
       ) : !route ? (
         <p className="text-sm text-muted-foreground">Ruta no encontrada.</p>
       ) : (

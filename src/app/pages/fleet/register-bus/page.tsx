@@ -5,7 +5,7 @@ export default function RegisterBusPage() {
   return (
     <PageShell
       title="Registro de bus en flota"
-      description="Registra un nuevo vehiculo en la flota de tu empresa para asignarlo a rutas y programaciones."
+      description="Registra un nuevo vehículo en la flota de tu empresa para asignarlo a rutas y programaciones."
     >
       <BusRegistrationForm />
     </PageShell>

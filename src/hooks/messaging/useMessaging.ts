@@ -135,7 +135,7 @@ export function useMessaging(currentUserId: string | undefined) {
         if (!silent) {
           const message = getApiErrorMessage(err, "No se pudo cargar la bandeja");
           setError(message);
-          showErrorToast(message);
+          // Inline error on page; toast would duplicate under StrictMode / parallel loads.
         }
         return [];
       } finally {
@@ -172,7 +172,6 @@ export function useMessaging(currentUserId: string | undefined) {
         if (!silent) {
           const message = getApiErrorMessage(err, "No se pudo cargar el hilo");
           setError(message);
-          showErrorToast(message);
         }
         return [];
       } finally {

@@ -1,4 +1,3 @@
-export * from "./ProfileRepository";
 export * from "./PermissionRepository";
 export * from "./RoleRepository";
 export * from "./RolePermissionRepository";

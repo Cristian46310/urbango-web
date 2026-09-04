@@ -3,16 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import {
   AdminAgeDistributionPage,
-  AdminRouteCreatePage,
   LoginPage,
   ForgotPasswordPage,
   ResetPasswordPage,
   GithubCallbackPage,
-  MicrosoftCallbackPage,
   TeamPage,
   DashboardPage,
   PermissionsPage,
-  ProfilesPage,
   RolesPage,
   UsersPage,
   NearbyStopsPage,
@@ -26,19 +23,17 @@ import {
   CardRechargePage,
   CardRechargeReturnPage,
   CardRechargeStatusPage,
+  CitizenPaymentMethodsPage,
   BusinessDashboardPage,
-  AddressesPage,
   EnterprisesPage,
   StopsAdminPage,
   PaymentMethodsPage,
   CitizensPage,
   DriversAdminPage,
-  RoutesPage,
   NodesPage,
   BusesPage,
   SchedulersPage,
   TurnsPage,
-  PaymentMethodCitizensPage,
   IncidentsPage,
   IncidentsByBusPage,
   IncidentDetailPage,
@@ -49,7 +44,6 @@ import {
   CitizenTripDetailPage,
   DriverTurnStartPage,
   MessagingPage,
-  AdminSchedulerCreatePage,
   AlertsPage,
   MassAlertsAdminPage,
   SupportAppointmentsPage,
@@ -65,9 +59,17 @@ import { Toaster } from '@/components/ui/sonner'
 import { oauthConfig } from '@/config/oauth'
 import { useHttpErrorHandler } from '@/hooks/security/useHttpErrorHandler'
 import { useAuthStore } from '@/store/security/authStore'
-import { ROLES } from '@/core/domain/entities/security/Roles'
+import { ROLES, ROLE_GROUPS } from '@/core/domain/entities/security/Roles'
 
-const BUSINESS_ADMIN_ROLES = ['ADMIN', 'ADMIN_BUS', 'SUPERVISER'] as const
+const BUSINESS_ADMIN_ROLES = [
+  ROLES.ADMIN,
+  ROLES.BUSINESS_ADMIN,
+  ROLES.SUPERVISOR,
+  ROLES.ADMIN_BUS,
+  ROLES.SUPERVISER,
+] as const
+
+const CITIZEN_AND_ADMIN_ROLES = [ROLES.CITIZEN, ...ROLE_GROUPS.ADMIN_ROLES] as const
 
 function AppContent() {
   useHttpErrorHandler();
@@ -86,7 +88,6 @@ function AppContent() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/github/callback" element={<GithubCallbackPage />} />
-        <Route path="/auth/microsoft/callback" element={<MicrosoftCallbackPage />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
 
         <Route
@@ -102,7 +103,7 @@ function AppContent() {
           <Route
             path="users"
             element={
-              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.ADMIN_ROLES]}>
                 <UsersPage />
               </RoleGuard>
             }
@@ -110,23 +111,15 @@ function AppContent() {
           <Route
             path="permissions"
             element={
-              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.ADMIN_ROLES]}>
                 <PermissionsPage />
-              </RoleGuard>
-            }
-          />
-          <Route
-            path="profiles"
-            element={
-              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
-                <ProfilesPage />
               </RoleGuard>
             }
           />
           <Route
             path="roles"
             element={
-              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.ADMIN_ROLES]}>
                 <RolesPage />
               </RoleGuard>
             }
@@ -137,7 +130,7 @@ function AppContent() {
           <Route
             path="admin/mass-alerts"
             element={
-              <RoleGuard requiredRoles={[ROLES.ADMIN]}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.MASS_ALERTS]}>
                 <MassAlertsAdminPage />
               </RoleGuard>
             }
@@ -145,7 +138,7 @@ function AppContent() {
           <Route
             path="fleet/register-bus"
             element={
-              <RoleGuard requiredRoles={['ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.FLEET_ACCESS]}>
                 <RegisterBusPage />
               </RoleGuard>
             }
@@ -153,7 +146,7 @@ function AppContent() {
           <Route
             path="planning/routes"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.PARADEROS_ACCESS]}>
                 <CitizenRoutesPage />
               </RoleGuard>
             }
@@ -161,7 +154,7 @@ function AppContent() {
           <Route
             path="planning/routes/:id"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.PARADEROS_ACCESS]}>
                 <CitizenRouteDetailPage />
               </RoleGuard>
             }
@@ -169,7 +162,7 @@ function AppContent() {
           <Route
             path="nearby-stops"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.PARADEROS_ACCESS]}>
                 <NearbyStopsPage />
               </RoleGuard>
             }
@@ -177,7 +170,7 @@ function AppContent() {
           <Route
             path="bus-alert"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.PARADEROS_ACCESS]}>
                 <BusAlertPage />
               </RoleGuard>
             }
@@ -185,7 +178,7 @@ function AppContent() {
           <Route
             path="boarding"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CitizenBoardingPage />
               </RoleGuard>
             }
@@ -193,7 +186,7 @@ function AppContent() {
           <Route
             path="trips"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CitizenTripsPage />
               </RoleGuard>
             }
@@ -201,7 +194,7 @@ function AppContent() {
           <Route
             path="trips/:historyId"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CitizenTripDetailPage />
               </RoleGuard>
             }
@@ -209,7 +202,7 @@ function AppContent() {
           <Route
             path="incident-report"
             element={
-              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.INCIDENT_REPORT_ACCESS]}>
                 <IncidentReportPage />
               </RoleGuard>
             }
@@ -217,7 +210,7 @@ function AppContent() {
           <Route
             path="ticket/alight"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.DESCENSO_ACCESS]}>
                 <TicketAlightSearchPage />
               </RoleGuard>
             }
@@ -225,7 +218,7 @@ function AppContent() {
           <Route
             path="ticket/:ticketId/alight"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.DESCENSO_ACCESS]}>
                 <TicketAlightValidationPage />
               </RoleGuard>
             }
@@ -233,15 +226,23 @@ function AppContent() {
           <Route
             path="card-recharge"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CardRechargePage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="payment-methods"
+            element={
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
+                <CitizenPaymentMethodsPage />
               </RoleGuard>
             }
           />
           <Route
             path="card-recharge/return"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CardRechargeReturnPage />
               </RoleGuard>
             }
@@ -249,7 +250,7 @@ function AppContent() {
           <Route
             path="card-recharge/status/:reference?"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <CardRechargeStatusPage />
               </RoleGuard>
             }
@@ -257,30 +258,28 @@ function AppContent() {
           <Route
             path="business/dashboard"
             element={
-              <RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.DASHBOARD_OPS]}>
                 <BusinessDashboardPage />
               </RoleGuard>
             }
           />
-          <Route path="business/addresses" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><AddressesPage /></RoleGuard>} />
           <Route path="business/enterprises" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><EnterprisesPage /></RoleGuard>} />
           <Route path="business/stops" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><StopsAdminPage /></RoleGuard>} />
           <Route path="business/payment-methods" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><PaymentMethodsPage /></RoleGuard>} />
           <Route path="business/citizens" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><CitizensPage /></RoleGuard>} />
           <Route path="business/drivers" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><DriversAdminPage /></RoleGuard>} />
-          <Route path="business/routes" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><RoutesPage /></RoleGuard>} />
+          <Route path="business/routes" element={<Navigate to="/app/planning/routes" replace />} />
           <Route path="business/nodes" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><NodesPage /></RoleGuard>} />
           <Route path="business/buses" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><BusesPage /></RoleGuard>} />
           <Route path="business/schedulers" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><SchedulersPage /></RoleGuard>} />
           <Route path="business/turns" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><TurnsPage /></RoleGuard>} />
-          <Route path="business/payment-method-citizens" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><PaymentMethodCitizensPage /></RoleGuard>} />
           <Route path="business/incidents" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsPage /></RoleGuard>} />
           <Route path="business/incidents/bus/:busId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentsByBusPage /></RoleGuard>} />
           <Route path="business/incidents/:incidentId" element={<RoleGuard requiredRoles={[...BUSINESS_ADMIN_ROLES]}><IncidentDetailPage /></RoleGuard>} />
           <Route
             path="support/appointments"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <SupportAppointmentsPage />
               </RoleGuard>
             }
@@ -288,7 +287,7 @@ function AppContent() {
           <Route
             path="support/pqrs"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <SupportPqrsPage />
               </RoleGuard>
             }
@@ -296,7 +295,7 @@ function AppContent() {
           <Route
             path="profile/preferences"
             element={
-              <RoleGuard requiredRoles={['CITIZEN', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...CITIZEN_AND_ADMIN_ROLES]}>
                 <ProfilePreferencesPage />
               </RoleGuard>
             }
@@ -304,7 +303,7 @@ function AppContent() {
           <Route
             path="driver/turn-start"
             element={
-              <RoleGuard requiredRoles={['DRIVER', 'ADMIN', 'ADMIN_BUS', 'SUPERVISER']}>
+              <RoleGuard requiredRoles={[...ROLE_GROUPS.INCIDENT_REPORT_ACCESS]}>
                 <DriverTurnStartPage />
               </RoleGuard>
             }
@@ -319,25 +318,17 @@ function AppContent() {
           />
           <Route
             path="routes/create"
-            element={
-              <JwtProtectedRoute roles={["admin"]}>
-                <AdminRouteCreatePage />
-              </JwtProtectedRoute>
-            }
+            element={<Navigate to="/app/planning/routes?mode=create" replace />}
           />
           <Route
             path="schedulers/create"
-            element={
-              <JwtProtectedRoute roles={["admin"]}>
-                <AdminSchedulerCreatePage />
-              </JwtProtectedRoute>
-            }
+            element={<Navigate to="/app/business/schedulers?mode=create" replace />}
           />
         </Route>
 
         <Route path="/admin/reports/age-distribution" element={<Navigate to="/app/reports/age-distribution" replace />} />
-        <Route path="/admin/routes/create" element={<Navigate to="/app/routes/create" replace />} />
-        <Route path="/admin/schedulers/create" element={<Navigate to="/app/schedulers/create" replace />} />
+        <Route path="/admin/routes/create" element={<Navigate to="/app/planning/routes?mode=create" replace />} />
+        <Route path="/admin/schedulers/create" element={<Navigate to="/app/business/schedulers?mode=create" replace />} />
         <Route path="/driver/turn-start" element={<Navigate to="/app/driver/turn-start" replace />} />
         <Route path="/boarding" element={<Navigate to="/app/boarding" replace />} />
 

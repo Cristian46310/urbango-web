@@ -17,7 +17,7 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Inbox, RefreshCw } from "lucide-react";
 
 import {
   Card,
@@ -37,12 +37,18 @@ interface DataTableProps<TData> {
   title: string;
   description: string;
   emptyMessage?: string;
+  /** Semantic empty-state icon; defaults to Inbox. */
+  emptyIcon?: ReactNode;
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  /** When false, hides the built-in refresh control (use an external one). */
+  showRefresh?: boolean;
+  refreshLabel?: string;
   filterPlaceholder?: string;
   filterField?: string;
   toolbarAction?: ReactNode;
+  headerExtra?: ReactNode;
   pageIndex?: number;
   pageSize?: number;
   pageCount?: number;
@@ -56,12 +62,16 @@ export function DataTable<TData>({
   title,
   description,
   emptyMessage = "No hay registros para mostrar",
+  emptyIcon,
   loading = false,
   error = null,
   onRefresh,
+  showRefresh = true,
+  refreshLabel,
   filterPlaceholder = "Filtrar...",
   filterField,
   toolbarAction,
+  headerExtra,
   pageIndex,
   pageSize = 10,
   pageCount,
@@ -112,8 +122,8 @@ export function DataTable<TData>({
   });
 
   return (
-    <Card className="overflow-hidden border-(--security-border) bg-card shadow-sm">
-      <CardHeader className="space-y-4 bg-card">
+    <Card className="overflow-hidden border-(--security-border) bg-white shadow-sm">
+      <CardHeader className="space-y-4 bg-white pb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-1">
             <CardTitle className="text-xl text-black">{title}</CardTitle>
@@ -124,18 +134,24 @@ export function DataTable<TData>({
 
           <div className="flex shrink-0 items-center gap-2">
             {toolbarAction}
-            {onRefresh ? (
+            {onRefresh && showRefresh ? (
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size={refreshLabel ? "sm" : "icon"}
+                className={refreshLabel ? undefined : "size-8"}
                 onClick={onRefresh}
+                aria-label="Refrescar"
+                title="Refrescar"
               >
-                Refrescar
+                <RefreshCw className="size-3.5" />
+                {refreshLabel ? <span>{refreshLabel}</span> : null}
               </Button>
             ) : null}
           </div>
         </div>
+
+        {headerExtra}
 
         {filterField ? (
           <Input
@@ -151,9 +167,9 @@ export function DataTable<TData>({
         ) : null}
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent className="border-t border-(--security-border) bg-white p-0">
         {error ? (
-          <div className="border-t border-(--security-border) px-6 py-4">
+          <div className="px-6 py-5">
             <div className="rounded-lg border border-red-300 bg-red-50/90 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
@@ -161,12 +177,19 @@ export function DataTable<TData>({
         ) : null}
 
         {loading ? (
-          <div className="border-t border-(--security-border) px-6 py-8 text-center text-sm text-(--security-muted-foreground)">
+          <div className="flex min-h-[160px] items-center justify-center px-6 py-8 text-center text-sm text-slate-400">
             Cargando registros...
           </div>
         ) : table.getRowModel().rows.length === 0 ? (
-          <div className="border-t border-(--security-border) px-6 py-8 text-center text-sm text-(--security-muted-foreground)">
-            {emptyMessage}
+          <div className="flex min-h-[160px] flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+            {emptyIcon ?? (
+              <Inbox
+                className="size-11 text-slate-300"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            )}
+            <p className="text-base text-slate-400">{emptyMessage}</p>
           </div>
         ) : (
           <>
@@ -213,7 +236,7 @@ export function DataTable<TData>({
                     </tr>
                   ))}
                 </thead>
-                <tbody className="divide-y divide-(--security-border) bg-card">
+                <tbody className="divide-y divide-(--security-border) bg-white">
                   {table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}

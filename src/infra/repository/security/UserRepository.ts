@@ -35,14 +35,6 @@ export class UserRepository implements IUserRepository {
   async deleteUserSession(userId: string, sessionId: string): Promise<void> {
     await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.SESSION.BASE(userId, sessionId));
   }
-
-  async postUserProfile(userId: string, profileId: string): Promise<MessageResponse> {
-    return await httpMsSecurity.post<MessageResponse>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
-  }
-
-  async deleteUserProfile(userId: string, profileId: string): Promise<void> {
-    await httpMsSecurity.delete<Record<string, never>>(ENDPOINTS.USER.PROFILE.BASE(userId, profileId));
-  }
 }
 
 export const userRepository = new UserRepository();

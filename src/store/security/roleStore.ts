@@ -28,12 +28,11 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
   loading: false,
   error: null,
   fetchRole: async (roleId: string) => {
-    const loadingToastId = showLoadingToast("Cargando rol...");
+    const loadingToastId = showLoadingToast("Cargando rol...", "roles:load-one");
     set({ loading: true, error: null });
     try {
       if (!roleId || roleId.trim() === "") {
         set({ loading: false, error: "Role ID is required" });
-        showErrorToast("Role ID is required");
         throw new Error("Role ID is required");
       }
       const role = await getRoleUseCase.execute(roleId);
@@ -41,14 +40,13 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       return role;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Error fetching role: ${(error as Error).message}`);
       throw error;
     } finally {
       dismissToast(loadingToastId);
     }
   },
-  fetchAllRoles: async (pageable = { page: 0, size: 10 }) => {
-    const loadingToastId = showLoadingToast("Cargando roles...");
+  fetchAllRoles: async (pageable = { page: 0, limit: 10 }) => {
+    const loadingToastId = showLoadingToast("Cargando roles...", "roles:load-all");
     set({ loading: true, error: null });
     try {
       const rolesPage = await getAllRolesUseCase.execute(pageable);
@@ -56,19 +54,18 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       return rolesPage;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Error fetching roles: ${(error as Error).message}`);
       throw error;
     } finally {
       dismissToast(loadingToastId);
     }
   },
   createRole: async (roleData: CreateRoleDTO) => {
-    const loadingToastId = showLoadingToast("Creando rol...");
+    const loadingToastId = showLoadingToast("Creando rol...", "roles:create");
     set({ loading: true, error: null });
     try {
       if (!roleData.name.trim() || !roleData.description.trim()) {
-        set({ loading: false, error: "Name and description are required" });
-        showErrorToast("Nombre y descripcion son obligatorios");
+        set({ loading: false, error: null });
+        showErrorToast("Nombre y descripcion son obligatorios", "roles:create-err");
         throw new Error("Name and description are required");
       }
 
@@ -78,11 +75,11 @@ export const useRoleStore = create<RoleStoreState>((set) => ({
       });
 
       set({ loading: false });
-      showSuccessToast("Role created successfully");
+      showSuccessToast("Role created successfully", "roles:create-ok");
       return role;
     } catch (error) {
-      set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Error creating role: ${(error as Error).message}`);
+      set({ loading: false, error: null });
+      showErrorToast(`Error creating role: ${(error as Error).message}`, "roles:create-err");
       throw error;
     } finally {
       dismissToast(loadingToastId);

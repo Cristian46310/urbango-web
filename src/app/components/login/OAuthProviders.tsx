@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import { useLogin } from "@/hooks/security";
+import { resolvePostLoginPath } from "@/lib/postLoginRedirect";
 
 function GithubMark(props: SVGProps<SVGSVGElement>) {
   return (
@@ -20,26 +21,9 @@ function GithubMark(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function MicrosoftMark(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-      fill="currentColor"
-      {...props}
-    >
-      <path d="M2 2h9v9H2z" />
-      <path d="M13 2h9v9h-9z" />
-      <path d="M2 13h9v9H2z" />
-      <path d="M13 13h9v9h-9z" />
-    </svg>
-  );
-}
-
 export function OAuthProviders() {
   const navigate = useNavigate();
-  const { error, authorizeGithubLogin, authorizeMicrosoftLogin, loginWithGoogle } = useLogin();
+  const { error, authorizeGithubLogin, loginWithGoogle } = useLogin();
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,7 +48,9 @@ export function OAuthProviders() {
       });
 
       toast.success("Inicio de sesión con Google completado");
-      void navigate("/app");
+      toast.info("Comprobando perfil…");
+      const nextPath = await resolvePostLoginPath();
+      void navigate(nextPath);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Error en login con Google";
@@ -87,19 +73,6 @@ export function OAuthProviders() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Error en login con GitHub";
-      setLocalError(message);
-      toast.error(message);
-    }
-  };
-
-  const handleMicrosoftLogin = async () => {
-    try {
-      setLocalError(null);
-      const response = await authorizeMicrosoftLogin();
-      window.location.href = response.authorizationUrl;
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error en login con Microsoft";
       setLocalError(message);
       toast.error(message);
     }
@@ -138,18 +111,6 @@ export function OAuthProviders() {
         >
           <GithubMark className="mr-2 size-4" />
           Continuar con GitHub
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-          onClick={() => {
-            void handleMicrosoftLogin();
-          }}
-        >
-          <MicrosoftMark className="mr-2 size-4" />
-          Continuar con Microsoft
         </Button>
       </div>
     </div>

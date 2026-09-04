@@ -1,68 +1,76 @@
-## Inicio rápido
+# urbanGO Web
 
-Clona el repositorio:
+Frontend SPA del ecosistema **urbanGO**: movilidad urbana y transporte público. Permite a ciudadanos, conductores y administradores gestionar rutas, flota, turnos, incidentes, recargas, PQRS, mensajería y seguridad (RBAC), consumiendo microservicios vía REST y WebSocket.
+
+Repositorio: [https://github.com/Cristian46310/urbango-web](https://github.com/Cristian46310/urbango-web)
+
+## Stack
+
+| Capa | Librerías |
+|------|-----------|
+| Build | Vite, TypeScript, Tailwind CSS |
+| UI | React 19, React Router, Radix UI / shadcn, Lucide |
+| Estado | Zustand |
+| HTTP / tiempo real | Axios, Socket.IO |
+| Mapas | Leaflet, react-leaflet |
+| Tablas y gráficos | TanStack Table, Chart.js, Recharts |
+| Auth | Google OAuth (`@react-oauth/google`) |
+| Utilidades | date-fns, Sonner, class-variance-authority, clsx, tailwind-merge |
+
+Arquitectura hexagonal: `app` (UI) → `hooks` / `store` → `core` (dominio y casos de uso) → `infra` (API y repositorios).
+
+## Requisitos
+
+- Node.js 20+
+- npm
+- Backends locales con CORS para `http://localhost:5173`
+
+## Instalación
 
 ```bash
-git clone https://github.com/JuManoel/dev-backendUI-uc.git
-cd dev-backendUI-uc
-```
+git clone https://github.com/Cristian46310/urbango-web.git
+cd urbango-web
 
-Instala dependencias (si no están instaladas):
-
-```bash
 npm install
-```
-
-Comandos útiles:
-
-- Ejecutar lint y aplicar fixes automáticos:
-
-```bash
-npm run lint -- --fix
-```
-
-- Compilar la aplicación (build):
-
-```bash
-npm run build
-```
-
-- Levantar entorno de desarrollo (HMR):
-
-```bash
+cp .env.example .env
 npm run dev
 ```
 
-> Nota: algunos `package.json` definen `dev` como script; si tu proyecto usa otro nombre, sustituye `dev` por el script correspondiente.
+La app queda en `http://localhost:5173`.
 
-## Estándares de código
+### Scripts
 
-- **Idioma:** Todo el código fuente en inglés; los comentarios pueden estar en español.
-- **Responsabilidad única:** Cada clase o módulo debe tener una única responsabilidad clara.
-- **Arquitectura:** Aplicar Hexagonal/Clean Architecture cuando sea posible. Si es demasiado complejo, aplicar MVC u otra arquitectura indicada por el profesor.
-- **Convenciones de nombres:**
-  - Clases: PascalCase (ej.: `UserService`).
-  - Variables y métodos: camelCase en JavaScript/TypeScript/Java/C# (ej.: `getUser`, `userName`).
-  - Python: snake_case (ej.: `get_user`).
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run lint` | ESLint |
+| `npm run preview` | Vista previa del build |
 
-## Estándares de GitHub / flujo de ramas
+## Variables de entorno
 
-- Ramas para nuevas features o historias de usuario (HU):
-  - Formato: `feat/XXX/yyy` donde `XXX` es la feature principal (ej.: `auth`) y `yyy` el submódulo (ej.: `google`).
-  - Ejemplo: `feat/auth/google`.
-- Ramas para arreglos (fix):
-  - Formato: `fix/XXX/yyy`.
-  - Ejemplo: `fix/ui/button-alignment`.
-- Ramas principales:
-  - `main`: código estable, funcional y probado.
-  - `dev`: rama de integración para trabajo en curso y pruebas.
-- Reglas de colaboración:
-  - Nunca hacer merge directamente a `main` desde tu rama. Crear un Pull Request (PR) y apuntarlo a `dev` para revisión por el equipo.
-  - Antes de pushear tus cambios, siempre hacer `git pull origin main` (o `git pull --rebase origin main`) y resolver conflictos localmente.
+Copia `.env.example` a `.env`. Principales:
 
-## Buenas prácticas adicionales
+| Variable | Uso |
+|----------|-----|
+| `VITE_URL_MS_SECURITY` | Auth, usuarios, RBAC |
+| `VITE_URL_MS_BUSSINES` | Tránsito, flota, ciudadanos |
+| `VITE_URL_MS_MESSAGES` | Chat / grupos |
+| `VITE_URL_MS_AI` / `VITE_MS_AI_URL` | PQRS / IA |
+| `VITE_GOOGLE_CLIENT_ID` | OAuth Google |
+| `VITE_RECAPTCHA_SITE_KEY` | reCAPTCHA en login |
+| `VITE_EPAYCO_TEST` | Modo prueba ePayco |
+| `VITE_OSRM_URL` | Motor de rutas (opcional) |
 
-- Documenta las decisions importantes en `docs/` o en el PR.
-- Escribe tests para casos de uso críticos.
-- Centraliza las reglas de estilo (ESLint, Prettier) y haz que todos las respeten.
-- Mantén commits pequeños y atómicos con mensajes claros (imperativo, en inglés preferiblemente, ej.: "Add Google auth flow").
+## Microservicios
+
+| Servicio | Puerto típico | Rol |
+|----------|---------------|-----|
+| ms-security | 8080 | Login, JWT, usuarios, roles |
+| ms-business | 3000 | Paradas, rutas, flota, turnos, incidentes |
+| ms-messages | 3001 | Mensajería en tiempo real |
+| ms-ai | 8001 | PQRS e IA |
+
+## Licencia
+
+MIT — ver [`LICENSE`](LICENSE).

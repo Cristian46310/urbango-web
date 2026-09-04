@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import { buildRealtimeSocketConfig } from "@/infra/api/realtimeSocket";
+import {
+  buildRealtimeSocketConfig,
+  getRealtimeSocketAuthOptions,
+} from "@/infra/api/realtimeSocket";
 import { dashboardRepository } from "@/infra/repository/business/DashboardRepository";
 import { getApiErrorMessage } from "@/lib/api-error";
 import type {
@@ -42,7 +45,6 @@ const INITIAL_ALERT_STATE: AlertActivationState = {
 };
 
 export function useBusAlert({
-  userEmail,
   onArrival,
 }: {
   userEmail?: string;
@@ -53,30 +55,22 @@ export function useBusAlert({
   const [alertState, setAlertState] = useState<AlertActivationState>(INITIAL_ALERT_STATE);
   const [trackedBus, setTrackedBus] = useState<BusPosition | null>(null);
 
-  const emailRef = useRef(userEmail);
-  useEffect(() => { emailRef.current = userEmail; }, [userEmail]);
-
   const onArrivalRef = useRef(onArrival);
   useEffect(() => { onArrivalRef.current = onArrival; }, [onArrival]);
 
   const emitSubscribeNotifications = useCallback((socket: Socket) => {
-    if (emailRef.current) {
-      socket.emit("dashboard:subscribe-notifications", { email: emailRef.current });
-    } else {
-      socket.emit("dashboard:subscribe-notifications");
-    }
+    // Email comes from JWT on the server; do not send it in the body.
+    socket.emit("dashboard:subscribe-notifications");
   }, []);
 
   useEffect(() => {
     const config = buildRealtimeSocketConfig();
     if (!config) return;
 
-    const socket = io(config.url, {
-      path: config.wsPath,
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 3000,
-    });
+    const authOptions = getRealtimeSocketAuthOptions(config);
+    if (!authOptions) return;
+
+    const socket = io(config.url, authOptions);
     socketRef.current = socket;
 
     socket.on("connect", () => {

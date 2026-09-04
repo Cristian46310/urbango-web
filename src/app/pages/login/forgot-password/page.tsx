@@ -40,13 +40,21 @@ export default function ForgotPasswordPage() {
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8"
       style={{
         backgroundImage:
-          "linear-gradient(145deg, color-mix(in oklab, var(--accent) 52%, black 6%) 0%, color-mix(in oklab, var(--accent) 34%, white 12%) 50%, #f6ece2 100%)",
+          "linear-gradient(145deg, color-mix(in oklab, var(--primary) 28%, white 72%) 0%, color-mix(in oklab, var(--background) 80%, var(--primary) 20%) 45%, var(--background) 100%)",
       }}
     >
-      <Card className="w-full max-w-lg rounded-3xl border-0 bg-white/95 shadow-[0_24px_80px_rgba(88,48,124,0.18)] backdrop-blur">
+      <Card
+        className="w-full max-w-lg rounded-3xl border border-(--security-border) bg-white/95 backdrop-blur"
+        style={{
+          boxShadow: "0 24px 80px color-mix(in oklab, var(--primary) 18%, transparent)",
+        }}
+      >
         <CardHeader className="space-y-2 pb-2">
+          <p className="text-sm font-semibold tracking-[0.08em] text-teal-800 uppercase">
+            urbanGO
+          </p>
           <CardTitle className="text-3xl font-semibold tracking-tight text-slate-900">
-            Recuperar contrasena
+            Recuperar contraseña
           </CardTitle>
           <p className="text-sm text-slate-600">
             Te enviaremos instrucciones al correo registrado para restablecer tu acceso.
@@ -68,7 +76,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(event) => { setEmail(event.target.value); }}
-                placeholder="correo@ucaldas.edu.co"
+                placeholder="correo@ejemplo.com"
                 className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
               />
             </div>
@@ -76,7 +84,7 @@ export default function ForgotPasswordPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="h-12 w-full rounded-xl bg-accent text-base font-medium text-white hover:bg-accent-foreground"
+              className="h-12 w-full rounded-xl text-base font-medium"
             >
               {loading ? "Enviando..." : "Enviar instrucciones"}
             </Button>

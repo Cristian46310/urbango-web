@@ -101,7 +101,7 @@ function GroupDetailView({
             </Button>
             {hasCitizenProfile === false ? (
               <p className="text-sm text-amber-600">
-                Regístrate como ciudadano para unirte a grupos públicos.
+                Necesitas un perfil de ciudadano para esta acción.
               </p>
             ) : null}
           </>

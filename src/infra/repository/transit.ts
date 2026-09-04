@@ -8,6 +8,9 @@ import type {
   BoardingRouteStops,
   BoardingStopOption,
   BusListItem,
+  CurrentTurn,
+  EndTurnPayload,
+  EndTurnResponse,
   RouteDetail,
   RouteListItem,
   StartTurnPayload,
@@ -19,6 +22,39 @@ import type { BusinessPage } from '@/core/types/BusinessPage';
 import type { Bus, Node, Scheduler } from '@/core/domain/entities/business';
 
 export const ACTIVE_TICKET_STORAGE_KEY = 'activeTicketId';
+export const ACTIVE_TICKET_SNAPSHOT_KEY = 'activeTicketSnapshot';
+
+export interface ActiveTicketSnapshot {
+  id: string;
+  boardedAt?: string;
+  busId?: string;
+  busPlate?: string;
+  routeName?: string;
+  boardingStopName?: string;
+}
+
+function readActiveTicketSnapshot(): ActiveTicketSnapshot | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_TICKET_SNAPSHOT_KEY);
+    if (!raw) {
+      const legacyId = localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+      return legacyId ? { id: legacyId } : null;
+    }
+    const parsed = JSON.parse(raw) as ActiveTicketSnapshot;
+    if (!parsed?.id) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    const legacyId = localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+    return legacyId ? { id: legacyId } : null;
+  }
+}
+
+function writeActiveTicketSnapshot(snapshot: ActiveTicketSnapshot) {
+  localStorage.setItem(ACTIVE_TICKET_STORAGE_KEY, snapshot.id);
+  localStorage.setItem(ACTIVE_TICKET_SNAPSHOT_KEY, JSON.stringify(snapshot));
+}
 
 function getSchedulerWindow(scheduler: Scheduler): { start: number; end: number } | null {
   if (scheduler.startTime && scheduler.endTime) {
@@ -115,7 +151,10 @@ export const transitRepository = {
       payload,
     );
     if (response.ticketId) {
-      localStorage.setItem(ACTIVE_TICKET_STORAGE_KEY, response.ticketId);
+      writeActiveTicketSnapshot({
+        id: response.ticketId,
+        boardedAt: response.boardedAt,
+      });
     }
     return response;
   },
@@ -139,9 +178,9 @@ export const transitRepository = {
       ENDPOINTS.TICKET.ALIGHT(ticketId),
       payload,
     );
-    const stored = localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+    const stored = this.getActiveTicketId();
     if (stored === ticketId) {
-      localStorage.removeItem(ACTIVE_TICKET_STORAGE_KEY);
+      this.clearActiveTicket();
     }
     return response;
   },
@@ -152,6 +191,15 @@ export const transitRepository = {
 
   async startTurn(payload: StartTurnPayload): Promise<StartTurnResponse> {
     return httpMsBussines.post<StartTurnResponse>(ENDPOINTS.TURN.START, payload);
+  },
+
+  async endTurn(payload: EndTurnPayload): Promise<EndTurnResponse> {
+    return httpMsBussines.post<EndTurnResponse>(ENDPOINTS.TURN.END, payload);
+  },
+
+  async getCurrentTurn(): Promise<CurrentTurn> {
+    const raw = await httpMsBussines.get<unknown>(ENDPOINTS.TURN.CURRENT);
+    return mapCurrentTurn(raw);
   },
 
   async updateBusGps(busId: string, latitude: number, longitude: number): Promise<void> {
@@ -175,11 +223,20 @@ export const transitRepository = {
   },
 
   getActiveTicketId(): string | null {
-    return localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+    return readActiveTicketSnapshot()?.id ?? localStorage.getItem(ACTIVE_TICKET_STORAGE_KEY);
+  },
+
+  getActiveTicketSnapshot(): ActiveTicketSnapshot | null {
+    return readActiveTicketSnapshot();
+  },
+
+  setActiveTicketSnapshot(snapshot: ActiveTicketSnapshot): void {
+    writeActiveTicketSnapshot(snapshot);
   },
 
   clearActiveTicket(): void {
     localStorage.removeItem(ACTIVE_TICKET_STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_TICKET_SNAPSHOT_KEY);
   },
 };
 
@@ -202,6 +259,83 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function toStringValue(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function isActiveTurnStatus(status: string): boolean {
+  return status === 'in_progress' || status === 'active' || status === 'en_curso';
+}
+
+/** Normalize GET /turn/current payloads (nested turn, active flag, or status-only). */
+export function mapCurrentTurn(raw: unknown): CurrentTurn {
+  const root = asRecord(raw) ?? {};
+  const nested = asRecord(root.turn) ?? asRecord(root.data);
+  const record = nested ?? root;
+
+  const id =
+    toStringValue(record.id) ||
+    toStringValue(record.turnId) ||
+    toStringValue(root.id) ||
+    toStringValue(root.turnId);
+
+  const status =
+    toStringValue(record.status) || toStringValue(root.status) || '';
+
+  const explicitActive = record.active ?? root.active;
+  const active =
+    typeof explicitActive === 'boolean'
+      ? explicitActive
+      : Boolean(id) && isActiveTurnStatus(status);
+
+  const busRecord = asRecord(record.bus) ?? asRecord(root.bus);
+  const busPlate =
+    toStringValue(record.busPlate) ||
+    toStringValue(root.busPlate) ||
+    toStringValue(busRecord?.plate) ||
+    toStringValue(busRecord?.placa) ||
+    undefined;
+
+  const busId =
+    toStringValue(record.busId) ||
+    toStringValue(root.busId) ||
+    toStringValue(busRecord?.id) ||
+    undefined;
+
+  const driverId =
+    toStringValue(record.driverId) ||
+    toStringValue(record.conductorId) ||
+    toStringValue(root.driverId) ||
+    toStringValue(root.conductorId) ||
+    undefined;
+
+  return {
+    id,
+    turnId: id,
+    busId: busId || undefined,
+    driverId: driverId || undefined,
+    status,
+    active,
+    startTime:
+      toStringValue(record.startTime) ||
+      toStringValue(root.startTime) ||
+      undefined,
+    endTime:
+      toStringValue(record.endTime) || toStringValue(root.endTime) || undefined,
+    scheduledStartTime:
+      toStringValue(record.scheduledStartTime) ||
+      toStringValue(root.scheduledStartTime) ||
+      undefined,
+    busPlate,
+    bus: busRecord
+      ? {
+          id: toStringValue(busRecord.id) || undefined,
+          plate: toStringValue(busRecord.plate) || undefined,
+          placa: toStringValue(busRecord.placa) || undefined,
+          model: toStringValue(busRecord.model) || undefined,
+          modelo: toStringValue(busRecord.modelo) || undefined,
+        }
+      : undefined,
+    message: toStringValue(record.message) || toStringValue(root.message) || undefined,
+  };
 }
 
 async function fetchRouteNodes(routeId: string): Promise<Node[]> {

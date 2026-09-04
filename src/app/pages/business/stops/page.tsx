@@ -104,8 +104,10 @@ export default function StopsAdminPage() {
       tableTitle="Listado de paradas"
       tableDescription="Paradas registradas."
       entityLabel="parada"
+      emptyMessage="No hay paradas registradas."
       filterField="name"
       filterPlaceholder="Buscar por nombre"
+      dialogContentClassName="sm:max-w-4xl"
       items={crud.items}
       page={crud.page}
       loading={crud.loading}
@@ -144,9 +146,9 @@ export default function StopsAdminPage() {
         const lng = Number(form.longitude) || -75.5174;
 
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full min-w-[320px] md:min-w-[700px]">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
             {/* Lado izquierdo: Formulario de datos */}
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <TextField
                 id="name"
                 label="Nombre del Paradero"
@@ -212,23 +214,21 @@ export default function StopsAdminPage() {
                 />
               </div>
               {mode !== "view" && (
-                <p className="text-xs text-muted-foreground italic mt-1">
+                <p className="mt-1 text-xs text-muted-foreground italic">
                   Tip: Puedes hacer clic directamente en el mapa de la derecha para capturar las coordenadas exactas.
                 </p>
               )}
             </div>
 
-            {/* Lado derecho: Mapa interactivo - AHORA BIEN CONTENIDO */}
-            <div
-              className="w-full rounded-lg border shadow-sm overflow-hidden"
-              style={{ height: "320px" }} /* Altura fija y predecible */
-            >
+            {/* Lado derecho: Mapa — width 100% del grid, overflow en el padre */}
+            <div className="relative h-[280px] w-full min-w-0 overflow-hidden rounded-lg border shadow-sm sm:h-[320px]">
               <MapContainer
                 center={[lat, lng]}
                 zoom={14}
                 style={mapContainerStyle}
                 zoomControl={true}
                 attributionControl={true}
+                className="h-full w-full"
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -1,6 +1,7 @@
 export interface PageableQuery {
   page: number;
   size: number;
+  q?: string;
 }
 
 export interface Page<T> {

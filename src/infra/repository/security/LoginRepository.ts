@@ -12,12 +12,9 @@ import type {
     LoginGithubCallback,
     LoginGithubCompleteRegistration,
     LoginGithubResponse,
-    LoginMicrosoftAuthorizeResponse,
-    LoginMicrosoftCallback,
-    LoginMicrosoftCompleteRegistration,
-    LoginMicrosoftResponse,
     LoginGoogle,
     LoginResponse,
+    SecurityMe,
     Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 import type { ILoginRepository } from "@/core/domain/interfaces/security/ILoginRepository";
@@ -54,28 +51,6 @@ export class LoginRepository implements ILoginRepository {
         );
     }
 
-    async authorizeMicrosoftLogin(): Promise<LoginMicrosoftAuthorizeResponse> {
-        return httpMsSecurity.post<LoginMicrosoftAuthorizeResponse>(
-            ENDPOINTS.SECURITY.LOGIN_MICROSOFT_AUTHORIZE,
-        );
-    }
-
-    async loginWithMicrosoft(payload: LoginMicrosoftCallback): Promise<LoginMicrosoftResponse> {
-        return httpMsSecurity.post<LoginMicrosoftResponse>(
-            ENDPOINTS.SECURITY.LOGIN_MICROSOFT,
-            payload,
-        );
-    }
-
-    async completeMicrosoftRegistration(
-        payload: LoginMicrosoftCompleteRegistration,
-    ): Promise<LoginMicrosoftResponse> {
-        return httpMsSecurity.post<LoginMicrosoftResponse>(
-            ENDPOINTS.SECURITY.LOGIN_MICROSOFT_COMPLETE,
-            payload,
-        );
-    }
-
     async loginWithGoogle(payload: LoginGoogle): Promise<LoginResponse> {
         return httpMsSecurity.post<LoginResponse>(ENDPOINTS.SECURITY.LOGIN_GOOGLE, payload);
     }
@@ -84,6 +59,19 @@ export class LoginRepository implements ILoginRepository {
     }
 
     async verifyTwoFactor(payload: Verify2FADTO): Promise<LoginResponse> {
-        return await httpMsSecurity.post<LoginResponse>(ENDPOINTS.SECURITY.VERIFY_2FA, payload);
+        // Contract: exact camelCase body keys only
+        const body: Verify2FADTO = {
+            challengeToken: payload.challengeToken,
+            code: payload.code,
+        };
+        return await httpMsSecurity.post<LoginResponse>(ENDPOINTS.SECURITY.VERIFY_2FA, body);
+    }
+
+    async refreshToken(): Promise<LoginResponse> {
+        return await httpMsSecurity.post<LoginResponse>(ENDPOINTS.SECURITY.REFRESH_TOKEN);
+    }
+
+    async getMe(): Promise<SecurityMe> {
+        return await httpMsSecurity.get<SecurityMe>(ENDPOINTS.SECURITY.ME);
     }
 }

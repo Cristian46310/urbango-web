@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Bus, Check, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,16 +14,19 @@ import { PageShell } from "@/app/components/security/page-shell";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { formatCop } from "@/lib/currency";
+import { cn } from "@/lib/utils";
 import { board } from "@/services/boardingService";
 import type { BoardingResponse } from "@/services/boardingService";
 import { getBuses } from "@/services/busService";
 import type { BusItem } from "@/services/busService";
 import { getMyPaymentMethods } from "@/services/paymentService";
 import type { PaymentMethodItem } from "@/services/paymentService";
-import { getActiveTicketId } from "@/services/ticketService";
+import { getActiveTicketId, setActiveTicketSnapshot } from "@/services/ticketService";
 import { getBoardingStopsForBus } from "@/services/routePlanningService";
 import type { BoardingStopOption } from "@/core/domain/entities/business/Transit";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useCitizenProfile } from "@/hooks/useCitizenProfile";
+import { useGeolocationStore } from "@/store/geolocationStore";
 
 function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const toRad = (v: number) => (v * Math.PI) / 180;
@@ -59,6 +62,8 @@ function pickNearestStop(
   return nearest.nodeId;
 }
 
+type FocusField = "bus" | "payment" | "stop" | null;
+
 export default function CitizenBoardingPage() {
   const [buses, setBuses] = useState<BusItem[]>([]);
   const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
@@ -71,10 +76,17 @@ export default function CitizenBoardingPage() {
   const [loadingMethods, setLoadingMethods] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BoardingResponse | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [gpsJustUpdated, setGpsJustUpdated] = useState(false);
   const geolocation = useGeolocation();
+  const { hasCitizenProfile, loading: loadingCitizenProfile } = useCitizenProfile();
   const activeTicketId = getActiveTicketId();
 
   useEffect(() => {
+    if (hasCitizenProfile !== true) {
+      setLoadingMethods(false);
+      return;
+    }
     void getBuses()
       .then(setBuses)
       .catch((error) => {
@@ -93,7 +105,7 @@ export default function CitizenBoardingPage() {
       .finally(() => {
         setLoadingMethods(false);
       });
-  }, []);
+  }, [hasCitizenProfile]);
 
   const loadStopsForBus = useCallback(async (selectedBusId: string) => {
     if (!selectedBusId) {
@@ -145,6 +157,31 @@ export default function CitizenBoardingPage() {
     return `${selectedStop.order}. ${selectedStop.name}${location}`;
   }, [selectedStop]);
 
+  const focusField: FocusField = useMemo(() => {
+    if (!busId) return "bus";
+    if (!loadingMethods && methods.length > 0 && !paymentMethodCitizenId) return "payment";
+    if (busId && !loadingStops && stopOptions.length > 0 && !nodeId) return "stop";
+    return null;
+  }, [
+    busId,
+    loadingMethods,
+    methods.length,
+    paymentMethodCitizenId,
+    loadingStops,
+    stopOptions.length,
+    nodeId,
+  ]);
+
+  const hasLocation = geolocation.latitude != null && geolocation.longitude != null;
+
+  const mapEmbedUrl = useMemo(() => {
+    if (!hasLocation) return null;
+    const lat = geolocation.latitude!;
+    const lon = geolocation.longitude!;
+    const delta = 0.008;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${lon - delta}%2C${lat - delta}%2C${lon + delta}%2C${lat + delta}&layer=mapnik&marker=${lat}%2C${lon}`;
+  }, [hasLocation, geolocation.latitude, geolocation.longitude]);
+
   const handleBoard = async () => {
     if (!busId || !paymentMethodCitizenId || !nodeId) {
       showErrorToast("Selecciona bus, método de pago y paradero.");
@@ -154,6 +191,15 @@ export default function CitizenBoardingPage() {
     try {
       setLoading(true);
       const response = await board({ busId, paymentMethodCitizenId, nodeId });
+      const bus = buses.find((b) => b.id === busId);
+      setActiveTicketSnapshot({
+        id: response.ticketId,
+        boardedAt: response.boardedAt,
+        busId,
+        busPlate: bus?.plate,
+        routeName: routeName || undefined,
+        boardingStopName: selectedStop?.name,
+      });
       setResult(response);
       showSuccessToast(response.message ?? "Abordaje registrado con éxito.");
     } catch (error) {
@@ -179,11 +225,49 @@ export default function CitizenBoardingPage() {
     }
   };
 
+  const handleRefreshGps = async () => {
+    setGpsJustUpdated(false);
+    await geolocation.requestPermission();
+    const { error, coordinates } = useGeolocationStore.getState();
+    if (!error && coordinates) {
+      setGpsJustUpdated(true);
+      window.setTimeout(() => setGpsJustUpdated(false), 2500);
+    }
+  };
+
+  const selectFocusClass = (field: FocusField) =>
+    cn(
+      "w-full",
+      focusField === field &&
+        "border-teal-600 ring-2 ring-teal-600/25 data-[placeholder]:text-foreground",
+    );
+
   return (
     <PageShell
       title="Abordar bus"
       description="Selecciona el bus, tu tarjeta y el paradero donde abordas."
+      titleSize="lg"
+      titleIcon={<Bus className="size-8 shrink-0 text-teal-700" aria-hidden />}
     >
+      {loadingCitizenProfile ? (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="size-4 animate-spin" />
+          Verificando perfil de ciudadano…
+        </div>
+      ) : null}
+
+      {hasCitizenProfile === false ? (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">Debes registrar tu perfil de ciudadano</p>
+          <p className="mt-1">
+            Los pagos y el abordaje dependen del perfil en ms-business, no solo del rol.
+          </p>
+          <Button asChild className="mt-3" size="sm">
+            <Link to="/app/register-profile">Completar perfil ciudadano</Link>
+          </Button>
+        </div>
+      ) : null}
+
       {activeTicketId && !result ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Tienes un boleto activo ({activeTicketId.slice(0, 8)}…).{" "}
@@ -198,7 +282,7 @@ export default function CitizenBoardingPage() {
           <div className="space-y-2">
             <Label>Bus</Label>
             <Select value={busId} onValueChange={handleBusChange}>
-              <SelectTrigger>
+              <SelectTrigger className={selectFocusClass("bus")}>
                 <SelectValue placeholder="Selecciona un bus" />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +303,7 @@ export default function CitizenBoardingPage() {
               onValueChange={setPaymentMethodCitizenId}
               disabled={loadingMethods || methods.length === 0}
             >
-              <SelectTrigger>
+              <SelectTrigger className={selectFocusClass("payment")}>
                 <SelectValue
                   placeholder={
                     loadingMethods
@@ -233,16 +317,27 @@ export default function CitizenBoardingPage() {
               <SelectContent>
                 {methods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
-                    {method.type} — Saldo {formatCop(method.balance)}
+                    {method.type}
+                    {method.isRechargeable || method.code === "SYSTEM_CARD"
+                      ? ` — Saldo ${formatCop(method.balance)}`
+                      : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {!loadingMethods && methods.length === 0 ? (
-              <p className="text-xs text-amber-800">
-                No tienes métodos de pago vinculados. Un administrador debe asignarlos en{" "}
-                <strong>Business → Pagos ciudadano</strong>, o regístralos en recarga de tarjeta.
-              </p>
+              <div
+                className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                role="status"
+              >
+                <div className="flex items-start gap-2 text-sm text-amber-950">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+                  <p className="font-medium">Necesitas una tarjeta para abordar</p>
+                </div>
+                <Button asChild size="sm" className="shrink-0 bg-teal-700 hover:bg-teal-600 text-white">
+                  <Link to="/app/payment-methods">Vincular método de pago</Link>
+                </Button>
+              </div>
             ) : null}
             {selectedMethod ? (
               <p className="text-xs text-muted-foreground">
@@ -258,7 +353,7 @@ export default function CitizenBoardingPage() {
               onValueChange={setNodeId}
               disabled={!busId || loadingStops || stopOptions.length === 0}
             >
-              <SelectTrigger>
+              <SelectTrigger className={selectFocusClass("stop")}>
                 <SelectValue
                   placeholder={
                     !busId
@@ -297,35 +392,102 @@ export default function CitizenBoardingPage() {
             type="button"
             onClick={() => void handleBoard()}
             disabled={loading || loadingStops || !nodeId || !paymentMethodCitizenId}
+            className="h-11 w-full text-base font-semibold bg-teal-700 text-white shadow-sm hover:bg-teal-600 disabled:bg-teal-700/40"
           >
-            {loading ? "Procesando..." : "Confirmar abordaje"}
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Procesando…
+              </>
+            ) : (
+              "Confirmar abordaje"
+            )}
           </Button>
+          {!loading && (!busId || !paymentMethodCitizenId || !nodeId) ? (
+            <p className="text-sm text-muted-foreground">
+              {!busId
+                ? "Selecciona un bus para continuar"
+                : methods.length === 0
+                  ? "Necesitas una tarjeta para abordar"
+                  : !paymentMethodCitizenId
+                    ? "Selecciona un método de pago para continuar"
+                    : "Selecciona bus y paradero para continuar"}
+            </p>
+          ) : null}
         </div>
 
         <div className="rounded-lg border p-4 space-y-3 text-sm">
           <p className="font-medium">Ubicación</p>
-          <p className="text-muted-foreground">
-            Lat: {geolocation.latitude ?? "n/a"} · Lon: {geolocation.longitude ?? "n/a"}
-          </p>
-          {geolocation.error ? (
-            <p className="text-destructive">{geolocation.error}</p>
+          {hasLocation ? (
+            <div className="flex items-center gap-2 text-teal-800">
+              <span className="flex size-6 items-center justify-center rounded-full bg-teal-100">
+                <Check className="size-3.5" aria-hidden />
+              </span>
+              <p className="font-medium">Ubicación detectada</p>
+            </div>
+          ) : geolocation.loading ? (
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Obteniendo ubicación…
+            </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="size-4" aria-hidden />
+              Aún no tenemos tu ubicación
+            </p>
+          )}
+          {geolocation.error ? (
+            <p className="text-destructive text-xs">{geolocation.error}</p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={geolocation.loading}
+              onClick={() => void handleRefreshGps()}
+            >
+              {geolocation.loading ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Actualizando…
+                </>
+              ) : gpsJustUpdated ? (
+                <>
+                  <Check className="size-3.5 text-teal-700" />
+                  Ubicación actualizada
+                </>
+              ) : (
+                "Actualizar GPS"
+              )}
+            </Button>
+            {hasLocation && mapEmbedUrl ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 size="sm"
-                onClick={() => void geolocation.requestPermission()}
+                onClick={() => setShowMap((v) => !v)}
               >
-                Actualizar GPS
+                {showMap ? "Ocultar mapa" : "Ver mapa"}
               </Button>
-              {stopOptions.length > 0 ? (
-                <Button type="button" variant="secondary" size="sm" onClick={suggestNearestStop}>
-                  Paradero más cercano
-                </Button>
-              ) : null}
+            ) : null}
+            {stopOptions.length > 0 ? (
+              <Button type="button" variant="secondary" size="sm" onClick={suggestNearestStop}>
+                Paradero más cercano
+              </Button>
+            ) : null}
+          </div>
+          {showMap && mapEmbedUrl ? (
+            <div className="overflow-hidden rounded-md border">
+              <iframe
+                title="Tu ubicación"
+                src={mapEmbedUrl}
+                className="h-48 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
-          )}
+          ) : null}
           <p className="text-xs text-muted-foreground">
             Al elegir el bus se cargan los paraderos de su ruta programada. Puedes usar GPS para
             sugerir el más cercano.

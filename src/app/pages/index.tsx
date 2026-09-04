@@ -14,7 +14,6 @@ export const LoginPage = lazy(() => import('./login/page'))
 export const ForgotPasswordPage = lazy(() => import('./login/forgot-password/page'))
 export const ResetPasswordPage = lazy(() => import('./login/reset-password/page'))
 export const GithubCallbackPage = lazy(() => import('./login/github-callback/page'))
-export const MicrosoftCallbackPage = lazy(() => import('./login/microsoft-callback/page'))
 
 // Citizen & Passenger pages
 export const TeamPage = lazy(() => import('./team/page'))
@@ -31,7 +30,6 @@ export const DriverTurnStartPage = lazy(() => import('./driver/turn-start/page')
 // Admin pages - Security
 export const DashboardPage = lazy(() => import('./security/dashboard/page'))
 export const PermissionsPage = lazy(() => import('./security/permissions/page'))
-export const ProfilesPage = lazy(() => import('./security/profiles/page'))
 export const RolesPage = lazy(() => import('./security/roles/page'))
 export const UsersPage = lazy(() => import('./security/users/page'))
 
@@ -47,6 +45,7 @@ export const RegisterBusPage = lazy(() => import('./fleet/register-bus/page'))
 export const CardRechargePage = lazy(() => import('./card-recharge/page'))
 export const CardRechargeStatusPage = lazy(() => import('./card-recharge/status/page'))
 export const CardRechargeReturnPage = lazy(() => import('./card-recharge/return/page'))
+export const CitizenPaymentMethodsPage = lazy(() => import('./citizen/payment-methods/page'))
 
 export const BusinessDashboardPage = lazy(() => import('./business/dashboard/page'))
 export const AddressesPage = lazy(() => import('./business/addresses/page'))

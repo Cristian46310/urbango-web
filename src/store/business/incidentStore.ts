@@ -11,24 +11,37 @@ import type { BusinessPage, BusinessPageableQuery } from "@/core/types/BusinessP
 import { incidentRepository, type BusIncidentQuery } from "@/infra/repository/business/IncidentRepository";
 import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
 
+function sortCommentsDesc(comments: IncidentComment[]): IncidentComment[] {
+  return [...comments].sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+    return bTime - aTime;
+  });
+}
+
 export const useIncidentStore = create<{
   incidents: Incident[];
   incidentsPage: BusinessPage<Incident> | null;
   busIncidents: BusIncidentList | null;
+  currentIncident: Incident | null;
   comments: IncidentComment[];
   loading: boolean;
+  detailLoading: boolean;
   error: string | null;
   fetchAll: (pageable?: BusinessPageableQuery) => Promise<BusinessPage<Incident>>;
+  fetchById: (incidentId: string) => Promise<Incident>;
   fetchByBus: (busId: string, query?: Partial<BusIncidentQuery>) => Promise<BusIncidentList>;
   fetchComments: (incidentId: string) => Promise<IncidentComment[]>;
   addComment: (incidentId: string, data: CreateIncidentCommentDTO) => Promise<IncidentComment>;
   updateStatus: (incidentId: string, status: IncidentStatus) => Promise<Incident>;
-}>((set) => ({
+}>((set, get) => ({
   incidents: [],
   incidentsPage: null,
   busIncidents: null,
+  currentIncident: null,
   comments: [],
   loading: false,
+  detailLoading: false,
   error: null,
   fetchAll: async (pageable = { page: 1, limit: BUSINESS_PAGE_SIZE }) => {
     const loadingToastId = showLoadingToast("Cargando incidentes...");
@@ -43,6 +56,40 @@ export const useIncidentStore = create<{
       throw error;
     } finally {
       dismissToast(loadingToastId);
+    }
+  },
+  fetchById: async (incidentId) => {
+    set({ detailLoading: true, error: null });
+    try {
+      const cached = get().incidents.find((item) => item.id === incidentId)
+        ?? (get().currentIncident?.id === incidentId ? get().currentIncident : null);
+
+      if (cached) {
+        set({ detailLoading: false, currentIncident: cached, error: null });
+        return cached;
+      }
+
+      const incident = await incidentRepository.findById(incidentId);
+      if (!incident) {
+        const message = "Incidente no encontrado";
+        set({ detailLoading: false, currentIncident: null, error: message });
+        throw new Error(message);
+      }
+
+      set((state) => ({
+        detailLoading: false,
+        currentIncident: incident,
+        incidents: state.incidents.some((item) => item.id === incident.id)
+          ? state.incidents
+          : [incident, ...state.incidents],
+        error: null,
+      }));
+      return incident;
+    } catch (error) {
+      const message = (error as Error).message;
+      set({ detailLoading: false, error: message });
+      showErrorToast(`Error al cargar el incidente: ${message}`);
+      throw error;
     }
   },
   fetchByBus: async (busId, query = {}) => {
@@ -66,18 +113,15 @@ export const useIncidentStore = create<{
     }
   },
   fetchComments: async (incidentId) => {
-    const loadingToastId = showLoadingToast("Cargando comentarios...");
     set({ loading: true, error: null });
     try {
-      const comments = await incidentRepository.listComments(incidentId);
+      const comments = sortCommentsDesc(await incidentRepository.listComments(incidentId));
       set({ loading: false, comments });
       return comments;
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`Error al cargar comentarios: ${(error as Error).message}`);
       throw error;
-    } finally {
-      dismissToast(loadingToastId);
     }
   },
   addComment: async (incidentId, data) => {
@@ -85,7 +129,10 @@ export const useIncidentStore = create<{
     set({ loading: true, error: null });
     try {
       const comment = await incidentRepository.addComment(incidentId, data);
-      set((state) => ({ loading: false, comments: [...state.comments, comment] }));
+      set((state) => ({
+        loading: false,
+        comments: sortCommentsDesc([comment, ...state.comments]),
+      }));
       showSuccessToast("Comentario agregado");
       return comment;
     } catch (error) {
@@ -101,7 +148,15 @@ export const useIncidentStore = create<{
     set({ loading: true, error: null });
     try {
       const incident = await incidentRepository.updateStatus(incidentId, status);
-      set({ loading: false });
+      set((state) => ({
+        loading: false,
+        currentIncident: state.currentIncident?.id === incidentId
+          ? { ...state.currentIncident, ...incident, status }
+          : state.currentIncident,
+        incidents: state.incidents.map((item) =>
+          item.id === incidentId ? { ...item, ...incident, status } : item,
+        ),
+      }));
       showSuccessToast("Estado actualizado");
       return incident;
     } catch (error) {

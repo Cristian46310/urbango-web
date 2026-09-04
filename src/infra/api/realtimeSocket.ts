@@ -1,7 +1,34 @@
 const DEFAULT_REALTIME_NAMESPACE = "/dashboard/realtime";
+const AUTH_TOKEN_STORAGE_KEY = "authToken";
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(/\/+$/, "");
+}
+
+/** Socket.IO options for ms-business dashboard realtime (JWT required). */
+export function getRealtimeSocketAuthOptions(config: RealtimeSocketConfig): {
+  path: string;
+  auth: { token: string };
+  transports: ["websocket"];
+  reconnection: boolean;
+  reconnectionDelay: number;
+} | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  if (!token) {
+    return null;
+  }
+
+  return {
+    path: config.wsPath,
+    auth: { token },
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionDelay: 3000,
+  };
 }
 
 function toHttpScheme(baseUrl: string): string {

@@ -10,6 +10,4 @@ export interface IUserRepository {
   postUser(userData: CreateUserDTO): Promise<User>;
   postUserSession(userId: string, sessionId: string): Promise<MessageResponse>;
   deleteUserSession(userId: string, sessionId: string): Promise<void>;
-  postUserProfile(userId: string, profileId: string): Promise<MessageResponse>;
-  deleteUserProfile(userId: string, profileId: string): Promise<void>;
 }

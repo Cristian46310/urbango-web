@@ -6,7 +6,7 @@ export default function LoginPage() {
       className="relative min-h-screen overflow-hidden"
       style={{
         backgroundImage:
-          "linear-gradient(135deg, color-mix(in oklab, var(--accent) 58%, black 4%) 0%, color-mix(in oklab, var(--accent) 42%, white 8%) 38%, color-mix(in oklab, var(--accent) 24%, white 20%) 72%, #f6ece2 100%)",
+          "linear-gradient(145deg, color-mix(in oklab, var(--primary) 28%, white 72%) 0%, color-mix(in oklab, var(--background) 80%, var(--primary) 20%) 45%, var(--background) 100%)",
       }}
     >
       <LoginSplitCard />

@@ -13,8 +13,6 @@ export function useUser() {
     createUser,
     updateUser,
     deleteUser,
-    assignProfileToUser,
-    removeProfileFromUser,
     assignSessionToUser,
     removeSessionFromUser,
   } = useUserStore();
@@ -29,8 +27,6 @@ export function useUser() {
     addUser: (userData: CreateUserDTO) => createUser(userData),
     editUser: (userId: string, userData: UpdateUserDTO) => updateUser(userId, userData),
     removeUser: (userId: string) => deleteUser(userId),
-    assignProfile: (userId: string, profileId: string) => assignProfileToUser(userId, profileId),
-    unassignProfile: (userId: string, profileId: string) => removeProfileFromUser(userId, profileId),
     assignSession: (userId: string, sessionId: string) => assignSessionToUser(userId, sessionId),
     unassignSession: (userId: string, sessionId: string) => removeSessionFromUser(userId, sessionId),
   };

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  Compass,
+  MessageCircle,
+  MessageSquarePlus,
+  Users,
+} from "lucide-react";
 
 import { PageShell } from "@/app/components/security/page-shell";
 import { ChatComposer } from "@/app/components/messaging/ChatComposer";
@@ -48,11 +54,9 @@ export default function MessagingPage() {
   const {
     chats: messageChats,
     searchResults,
-    healthStatus,
     loading: messagingLoading,
     error: messagingError,
     maxBodyLength,
-    totalUnreadCount,
     loadChats,
     loadConversationThread,
     searchPeople,
@@ -126,7 +130,7 @@ export default function MessagingPage() {
   const [groupInfoOpen, setGroupInfoOpen] = useState(false);
   const [publicGroupsOpen, setPublicGroupsOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [, setSocketConnected] = useState(false);
 
   const loading = messagingLoading || groupsLoading || groupMessagesLoading;
   const error = messagingError ?? groupsError;
@@ -218,14 +222,19 @@ export default function MessagingPage() {
     (silent = false) => {
       void checkHealth();
       void loadChats(silent);
-      void loadGroups(hasDriverProfile === true, silent);
+      // Groups require a citizen profile; skip to avoid 403 toasts duplicating the amber banner.
+      if (hasCitizenProfile === true) {
+        void loadGroups(hasDriverProfile === true, silent);
+      }
     },
-    [checkHealth, loadChats, loadGroups, hasDriverProfile],
+    [checkHealth, loadChats, loadGroups, hasCitizenProfile, hasDriverProfile],
   );
 
   useEffect(() => {
+    // Wait until profile status is known so we don't fire group APIs that 403.
+    if (hasCitizenProfile === null) return;
     refreshMessagingLists(false);
-  }, [refreshMessagingLists]);
+  }, [refreshMessagingLists, hasCitizenProfile]);
 
   useEffect(() => {
     if (!activeConversationId || activeChat?.type === "group") return;
@@ -495,44 +504,41 @@ export default function MessagingPage() {
   return (
     <PageShell
       title="Mensajería"
-      description="Chats directos, grupos públicos (HU-009), administración de miembros (HU-010) y avisos del conductor (HU-3-005)."
+      description="Chats directos, grupos públicos y avisos del conductor."
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <MessageCircle className="size-4" />
-          <span>
-            ms-messages:{" "}
-            <span className={healthStatus === "ok" ? "text-emerald-600" : "text-amber-600"}>
-              {healthStatus === "ok" ? "conectado" : healthStatus ?? "verificando..."}
-            </span>
-            {" · "}
-            websocket:{" "}
-            <span className={socketConnected ? "text-emerald-600" : "text-amber-600"}>
-              {socketConnected ? "en vivo" : "desconectado"}
-            </span>
-          </span>
-          {totalUnreadCount > 0 ? (
-            <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-              {totalUnreadCount} sin leer
-            </span>
-          ) : null}
-          {hasCitizenProfile === false ? (
-            <span className="text-amber-600">
-              Sin perfil ciudadano ·{" "}
-              <Link to="/app/register-profile" className="underline">
-                registrarse
-              </Link>
-            </span>
-          ) : null}
-          {hasDriverProfile === false ? (
-            <span className="text-amber-600">
-              Sin perfil conductor ·{" "}
-              <Link to="/app/register-profile" className="underline">
-                registrarse
-              </Link>
-            </span>
-          ) : null}
-        </div>
+      <div className="space-y-3">
+        {hasCitizenProfile === false ? (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+            role="status"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+              <p>Necesitas un perfil de ciudadano para crear o unirte a grupos.</p>
+            </div>
+            <Button asChild size="sm" variant="outline" className="border-amber-300 bg-white">
+              <Link to="/app/register-profile">Crear perfil de ciudadano</Link>
+            </Button>
+          </div>
+        ) : null}
+
+        {hasDriverProfile === false ? (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+            role="status"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+              <p>
+                Para enviar avisos a grupos necesitas el rol de conductor. Si
+                crees que debería estar habilitado, contacta al soporte técnico.
+              </p>
+            </div>
+            <Button asChild size="sm" variant="outline" className="border-amber-300 bg-white">
+              <Link to="/app/support/pqrs">Contactar soporte</Link>
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -551,7 +557,9 @@ export default function MessagingPage() {
               loading={loading}
               onSelect={handleSelectChat}
               onNewChat={() => { setNewChatOpen(true); }}
+              showCreateGroup={hasCitizenProfile === true}
               onCreateGroup={() => { setCreateGroupOpen(true); }}
+              showExplorePublicGroups={hasCitizenProfile === true}
               onExplorePublicGroups={() => { setPublicGroupsOpen(true); }}
               showDriverBroadcast={hasDriverProfile === true}
               onDriverBroadcast={() => { setBroadcastOpen(true); }}
@@ -579,6 +587,11 @@ export default function MessagingPage() {
                       currentUserId={currentUserId!}
                       loading={loading}
                       isGroupThread
+                      bannerNotice={
+                        activeGroup.isMember === false
+                          ? "Solo ves mensajes hasta que saliste del grupo."
+                          : null
+                      }
                       showBackButton
                       onBack={() => { setMobileShowThread(false); }}
                       headerAction={
@@ -617,7 +630,22 @@ export default function MessagingPage() {
                       maxBodyLength={maxBodyLength}
                       onSend={handleSendInChat}
                     />
-                  ) : null}
+                  ) : (
+                    <div className="border-t border-(--security-border) bg-(--security-surface) px-4 py-3 text-sm text-amber-700">
+                      {hasDriverProfile === false ? (
+                        <>
+                          Solo conductores con rol habilitado pueden enviar
+                          mensajes al grupo.{" "}
+                          <Link to="/app/support/pqrs" className="underline">
+                            Contacta al soporte técnico
+                          </Link>
+                          .
+                        </>
+                      ) : (
+                        "Solo los miembros del grupo pueden enviar mensajes."
+                      )}
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -640,25 +668,36 @@ export default function MessagingPage() {
                 </>
               )
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-3 bg-(--security-surface) p-8 text-center">
-                <MessageCircle className="size-10 text-muted-foreground" />
+              <div className="flex h-full flex-col items-center justify-center gap-4 bg-(--security-surface) p-8 text-center">
+                <div className="flex size-16 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+                  <MessageCircle className="size-8" aria-hidden />
+                </div>
                 <div>
                   <p className="font-medium">Selecciona un chat</p>
                   <p className="text-sm text-muted-foreground">
-                    Inicia un chat directo, explora grupos públicos o crea un grupo.
+                    {hasCitizenProfile === true
+                      ? "Inicia un chat directo, explora grupos públicos o crea un grupo."
+                      : "Inicia un chat directo. Para crear o unirte a grupos necesitas un perfil de ciudadano."}
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button type="button" onClick={() => { setNewChatOpen(true); }}>
+                    <MessageSquarePlus className="size-4" />
                     Nuevo chat
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => { setPublicGroupsOpen(true); }}>
-                    Explorar grupos
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => { setCreateGroupOpen(true); }}>
-                    Crear grupo
-                  </Button>
-                  {hasDriverProfile ? (
+                  {hasCitizenProfile === true ? (
+                    <>
+                      <Button type="button" variant="outline" onClick={() => { setPublicGroupsOpen(true); }}>
+                        <Compass className="size-4" />
+                        Explorar grupos
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => { setCreateGroupOpen(true); }}>
+                        <Users className="size-4" />
+                        Crear grupo
+                      </Button>
+                    </>
+                  ) : null}
+                  {hasDriverProfile === true ? (
                     <Button type="button" variant="outline" onClick={() => { setBroadcastOpen(true); }}>
                       Aviso a grupos
                     </Button>

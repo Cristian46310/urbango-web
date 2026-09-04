@@ -36,11 +36,11 @@ export default function TeamPage() {
 
         <Card className="border-(--security-border) bg-(--security-surface) shadow-sm">
           <CardHeader className="text-xl font-semibold text-(--security-foreground)">
-            Universidad de Caldas
+            urbanGO
           </CardHeader>
           <CardContent className="text-sm leading-relaxed text-(--security-muted-foreground)">
-            Este equipo desarrolla soluciones tecnicas para fortalecer procesos academicos y administrativos,
-            con enfoque en calidad de software, buenas practicas y experiencia de usuario.
+            Equipo que construye la plataforma de movilidad urbana urbanGO,
+            con enfoque en calidad de software, buenas prácticas y experiencia de usuario.
           </CardContent>
         </Card>
       </div>

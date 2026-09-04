@@ -1,7 +1,7 @@
 import { httpMsBussines } from "@/infra/api/builderHttp";
 
 export interface AgeDistributionParams {
-  routeId: string;
+  routeId?: string;
   startDate: string;
   endDate: string;
 }
@@ -10,7 +10,7 @@ export interface AgeDistributionSegment {
   range: string;
   count: number;
   percentage: number;
-  variation: string;
+  variation?: string;
 }
 
 export interface AgeDistributionResponse {
@@ -19,17 +19,25 @@ export interface AgeDistributionResponse {
   dominantSegment: string;
 }
 
+function buildAgeDistributionParams(params: AgeDistributionParams): AgeDistributionParams {
+  return {
+    ...(params.routeId?.trim() ? { routeId: params.routeId } : {}),
+    startDate: params.startDate,
+    endDate: params.endDate,
+  };
+}
+
 export async function getAgeDistribution(params: AgeDistributionParams): Promise<AgeDistributionResponse> {
-  return httpMsBussines.get<AgeDistributionResponse>("/analytics/passengers/age-distribution", {
-    params,
+  return httpMsBussines.get<AgeDistributionResponse>("/dashboard/passengers/age-distribution", {
+    params: buildAgeDistributionParams(params),
   });
 }
 
 export async function exportAgeDistributionExcel(params: AgeDistributionParams): Promise<Blob> {
   return httpMsBussines.get<Blob>(
-    "/analytics/passengers/age-distribution/export/excel",
+    "/dashboard/passengers/age-distribution/export/excel",
     {
-      params,
+      params: buildAgeDistributionParams(params),
       responseType: "blob",
     }
   );

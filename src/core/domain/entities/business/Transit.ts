@@ -123,6 +123,37 @@ export interface StartTurnResponse {
   status: string;
 }
 
+/** POST /turn/end — mirrors startTurn field names (observations); turnId when known locally. */
+export interface EndTurnPayload {
+  turnId?: string;
+  observations?: string;
+}
+
+export interface EndTurnResponse {
+  success?: boolean;
+  message?: string;
+  turnId?: string;
+  endTime?: string;
+  status?: string;
+}
+
+/** GET /turn/current — source of truth for driver active turn. */
+export interface CurrentTurn {
+  id: string;
+  /** Same as id; kept for callers that already use turnId. */
+  turnId: string;
+  busId?: string;
+  driverId?: string;
+  status: string;
+  active: boolean;
+  startTime?: string;
+  endTime?: string;
+  scheduledStartTime?: string;
+  busPlate?: string;
+  bus?: { id?: string; plate?: string; placa?: string; model?: string; modelo?: string };
+  message?: string;
+}
+
 export interface BusListItem {
   id: string;
   plate: string;

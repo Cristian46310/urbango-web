@@ -9,20 +9,15 @@ export const ENDPOINTS = {
     LOGIN_GITHUB_AUTHORIZE: "/api/public/security/login/github/authorize",
     LOGIN_GITHUB: "/api/public/security/login/github",
     LOGIN_GITHUB_COMPLETE: "/api/public/security/login/github/complete",
-    LOGIN_MICROSOFT_AUTHORIZE: "/api/public/security/login/microsoft/authorize",
-    LOGIN_MICROSOFT: "/api/public/security/login/microsoft",
-    LOGIN_MICROSOFT_COMPLETE: "/api/public/security/login/microsoft/complete",
+    REFRESH_TOKEN: "/api/public/security/refresh-token",
+    ME: "/api/public/security/me",
   },
   USER: {
-    BASE: "/api/public/users",
-    BY_ID: (id: string) => `/api/public/users/${id}`,
+    BASE: "/api/users",
+    BY_ID: (id: string) => `/api/users/${id}`,
     SESSION: {
       BASE: (userId: string, sessionId: string) =>
-        `/api/public/users/${userId}/sessions/${sessionId}`,
-    },
-    PROFILE: {
-      BASE: (userId: string, profileId: string) =>
-        `/api/public/users/${userId}/profile/${profileId}`,
+        `/api/users/${userId}/sessions/${sessionId}`,
     },
   },
   SESSION: {
@@ -33,19 +28,17 @@ export const ENDPOINTS = {
     BASE: "/api/roles",
     BY_ID: (roleId: string) => `/api/roles/${roleId}`,
   },
-  PROFILE: {
-    BASE: "/api/profiles",
-    BY_ID: (profileId: string) => `/api/profiles/${profileId}`,
-  },
   PERMISSION: {
     BASE: "/api/permissions",
     BY_ID: (permissionId: string) => `/api/permissions/${permissionId}`,
   },
   USER_ROLE: {
-    BY_ID: (userRoleId: string) => `/api/public/user-role/${userRoleId}`,
+    BY_ID: (userRoleId: string) => `/api/user-role/${userRoleId}`,
     BASE: (userId: string, roleId: string) =>
-      `/api/public/user-role/user/${userId}/role/${roleId}`,
-    ASSIGN_MULTIPLE: "/api/public/user-role/assign-multiple",
+      `/api/user-role/user/${userId}/role/${roleId}`,
+    ASSIGN_MULTIPLE: "/api/user-role/assign-multiple",
+    BY_ROLE_NAME: (userId: string, roleName: string) =>
+      `/api/user-role/user/${userId}/role-name/${roleName}`,
   },
   ROLE_PERMISSION: {
     BASE: (roleId: string, permissionId: string) =>
@@ -76,6 +69,7 @@ export const ENDPOINTS = {
   CITIZEN: {
     BASE: "/citizen",
     ME: "/citizen/me",
+    ME_PHOTO: "/citizen/me/photo",
     BY_ID: (id: string) => `/citizen/${id}`,
   },
   TICKET: {
@@ -96,7 +90,8 @@ export const ENDPOINTS = {
     BASE: "/bus",
     FLEET: "/bus/fleet",
     BY_ID: (id: string) => `/bus/${id}`,
-    PHOTO: (id: string) => `/bus/${id}/photo`,
+    PHOTO: (busId: string) => `/bus-photo/bus/${busId}`,
+    PHOTO_BY_ID: (id: string) => `/bus-photo/${id}`,
   },
   SCHEDULER: {
     BASE: "/scheduler",
@@ -117,7 +112,9 @@ export const ENDPOINTS = {
   },
   DRIVER: {
     BASE: "/driver",
+    ADMIN: "/driver/admin",
     ME: "/driver/me",
+    ME_PHOTO: "/driver/me/photo",
     BY_ID: (id: string) => `/driver/${id}`,
   },
   SUPERVISOR: {
@@ -128,6 +125,8 @@ export const ENDPOINTS = {
   TURN: {
     BASE: "/turn",
     START: "/turn/start",
+    END: "/turn/end",
+    CURRENT: "/turn/current",
     GPS: "/turn/gps",
     BY_ID: (id: string) => `/turn/${id}`,
   },
@@ -154,6 +153,7 @@ export const ENDPOINTS = {
   CARD_RECHARGE: {
     CONFIG: '/card-recharge/config',
     CARDS: '/card-recharge/cards',
+    CARDS_REGISTER: '/card-recharge/cards/register',
     PREVIEW: '/card-recharge/preview',
     CHECKOUT: '/card-recharge/checkout',
     TRANSACTION_STATUS: (reference: string) =>
@@ -221,5 +221,6 @@ export const ENDPOINTS = {
     ALERTS_BY_USER: (userId: string) => `/api/weather/alerts/user/${userId}`,
     ALERT_BY_ID: (alertId: string) => `/api/weather/alerts/${alertId}`,
     FORECAST_HOURS: "/api/weather/forecast/available-hours",
+    ASSESS: "/api/weather/assess",
   },
 };
