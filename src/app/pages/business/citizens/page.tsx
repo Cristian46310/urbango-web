@@ -12,7 +12,8 @@ interface CitizenForm {
   email: string;
   phone: string;
   extraInfo: string;
-  addressId: string;
+  address: string;
+  city: string;
 }
 
 const initialForm: CitizenForm = {
@@ -22,18 +23,23 @@ const initialForm: CitizenForm = {
   email: "",
   phone: "",
   extraInfo: "",
-  addressId: "",
+  address: "",
+  city: "",
 };
 const columnHelper = createColumnHelper<Citizen>();
 
 function buildPayload(form: CitizenForm) {
+  const addressText = form.address.trim();
+  const city = form.city.trim();
   return {
     name: form.name.trim(),
     document: form.document.trim(),
     email: form.email.trim() || undefined,
     phone: form.phone.trim() || undefined,
     extraInfo: form.extraInfo.trim() || undefined,
-    addressId: form.addressId.trim() || undefined,
+    ...(addressText && city
+      ? { address: { address: addressText, city } }
+      : {}),
   };
 }
 
@@ -64,7 +70,8 @@ export default function CitizensPage() {
         email: e.email ?? "",
         phone: e.phone ?? "",
         extraInfo: e.extraInfo ?? "",
-        addressId: e.addressId ?? "",
+        address: e.address?.address ?? "",
+        city: e.address?.city ?? "",
       })}
       getId={(f) => f.id}
       buildCreatePayload={buildPayload}
@@ -76,6 +83,11 @@ export default function CitizensPage() {
           header: "Email",
           cell: (i) => formatOptionalText(i.getValue() as string | undefined),
         }),
+        columnHelper.accessor((row) => row.address?.city, {
+          id: "city",
+          header: "Ciudad",
+          cell: (i) => formatOptionalText(i.getValue() as string | undefined),
+        }),
       ]}
       renderForm={(form, setForm, mode) => (
         <>
@@ -84,7 +96,8 @@ export default function CitizensPage() {
           <TextField id="email" label="Email" value={form.email} onChange={(v) => { setForm((c) => ({ ...c, email: v })); }} disabled={mode === "view"} type="email" />
           <TextField id="phone" label="Teléfono" value={form.phone} onChange={(v) => { setForm((c) => ({ ...c, phone: v })); }} disabled={mode === "view"} />
           <TextField id="extraInfo" label="Info adicional" value={form.extraInfo} onChange={(v) => { setForm((c) => ({ ...c, extraInfo: v })); }} disabled={mode === "view"} />
-          <TextField id="addressId" label="ID dirección" value={form.addressId} onChange={(v) => { setForm((c) => ({ ...c, addressId: v })); }} disabled={mode === "view"} />
+          <TextField id="address" label="Dirección" value={form.address} onChange={(v) => { setForm((c) => ({ ...c, address: v })); }} disabled={mode === "view"} placeholder="Calle 10 #20-30" />
+          <TextField id="city" label="Ciudad" value={form.city} onChange={(v) => { setForm((c) => ({ ...c, city: v })); }} disabled={mode === "view"} placeholder="Manizales" />
         </>
       )}
     />

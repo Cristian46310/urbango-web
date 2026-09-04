@@ -1,5 +1,9 @@
+import { useMemo } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
+
+import { useRoadPolyline } from '@/hooks/useRoadPolyline';
+import type { LatLngTuple } from '@/services/osrmRouteService';
 
 export interface MapStop {
   id: string;
@@ -29,6 +33,26 @@ export function RouteMap({
   className = '',
   heightClassName = 'h-80',
 }: RouteMapProps) {
+  const sorted = useMemo(
+    () => [...stops].sort((a, b) => a.order - b.order),
+    [stops],
+  );
+
+  const waypoints = useMemo<LatLngTuple[]>(
+    () =>
+      sorted
+        .map((s) => {
+          const lat = Number(s.latitude);
+          const lng = Number(s.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          return [lat, lng] as LatLngTuple;
+        })
+        .filter((point): point is LatLngTuple => point != null),
+    [sorted],
+  );
+
+  const { positions, usedRoads } = useRoadPolyline(waypoints);
+
   if (stops.length === 0) {
     return (
       <div className={`flex items-center justify-center rounded-lg border bg-muted/30 ${heightClassName} ${className}`}>
@@ -37,9 +61,7 @@ export function RouteMap({
     );
   }
 
-  const sorted = [...stops].sort((a, b) => a.order - b.order);
   const center: [number, number] = [sorted[0].latitude, sorted[0].longitude];
-  const positions: [number, number][] = sorted.map((s) => [s.latitude, s.longitude]);
 
   return (
     <div className={`overflow-hidden rounded-lg border ${heightClassName} ${className}`}>
@@ -49,7 +71,13 @@ export function RouteMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {positions.length > 1 ? (
-          <Polyline positions={positions} color="#2563eb" weight={4} opacity={0.7} />
+          <Polyline
+            positions={positions}
+            color="#2563eb"
+            weight={4}
+            opacity={usedRoads ? 0.85 : 0.55}
+            dashArray={usedRoads ? undefined : '8 10'}
+          />
         ) : null}
         {sorted.map((stop) => (
           <Marker

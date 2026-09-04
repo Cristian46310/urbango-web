@@ -77,11 +77,14 @@ export function useIncident() {
       incidents: store.incidents,
       incidentsPage: store.incidentsPage,
       busIncidents: store.busIncidents,
+      currentIncident: store.currentIncident,
       comments: store.comments,
       loading: store.loading,
+      detailLoading: store.detailLoading,
       error: store.error,
-      loadIncidents: (pageIndex = 0) =>
-        store.fetchAll(toBusinessPageableQuery(pageIndex, BUSINESS_PAGE_SIZE)),
+      loadIncidents: (pageIndex = 0, pageSize = BUSINESS_PAGE_SIZE) =>
+        store.fetchAll(toBusinessPageableQuery(pageIndex, pageSize)),
+      loadById: store.fetchById,
       loadByBus: store.fetchByBus,
       loadComments: store.fetchComments,
       addComment: store.addComment,

@@ -14,10 +14,17 @@ export async function getStops(): Promise<StopItem[]> {
   const page = await httpMsBussines.get<BusinessPage<Stop>>(ENDPOINTS.STOPS.BASE, {
     params: { page: 1, limit: 100 },
   });
-  return page.items.map((stop) => ({
-    id: stop.id,
-    name: stop.name,
-    lat: stop.latitude,
-    lng: stop.longitude,
-  }));
+  return page.items
+    .map((stop) => {
+      const lat = Number(stop.latitude);
+      const lng = Number(stop.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return {
+        id: stop.id,
+        name: stop.name,
+        lat,
+        lng,
+      };
+    })
+    .filter((stop): stop is StopItem => stop != null);
 }

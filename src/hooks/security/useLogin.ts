@@ -11,41 +11,47 @@ import type {
     LoginGithubCallback,
     LoginGithubCompleteRegistration,
     LoginGithubResponse,
-    LoginMicrosoftAuthorizeResponse,
-    LoginMicrosoftCallback,
-    LoginMicrosoftCompleteRegistration,
-    LoginMicrosoftResponse,
     LoginGoogle,
     LoginResponse,
-    Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 
 export function useLogin() {
     const {
         loading,
         error,
+        challengeToken,
+        challengeExpiration,
+        clearChallenge,
         register,
         forgotPassword,
         resetPassword,
         login,
         verifyTwoFactor,
+        refreshToken,
+        getMe,
         loginWithGoogle,
         authorizeGithubLogin,
         loginWithGithub,
         completeGithubRegistration,
-        authorizeMicrosoftLogin,
-        loginWithMicrosoft,
-        completeMicrosoftRegistration,
     } = useLoginStore();
 
     return {
         loading,
         error,
+        challengeToken,
+        challengeExpiration,
+        clearChallenge,
         register: (payload: RegisterUser): Promise<RegisterUserResponse> => register(payload),
         forgotPassword: (payload: ForgotPasswordDTO): Promise<MessageResponse> => forgotPassword(payload),
         resetPassword: (payload: ResetPasswordDTO): Promise<MessageResponse> => resetPassword(payload),
         login: (credentials: login): Promise<LoginChallengeResponse> => login(credentials),
-        verify2FA: (payload: Verify2FADTO): Promise<LoginResponse> => verifyTwoFactor(payload),
+        verify2FA: (code: string): Promise<LoginResponse> => verifyTwoFactor(code),
+        refreshToken: (options?: {
+            expectedRole?: string;
+            maxAttempts?: number;
+            intervalMs?: number;
+        }): Promise<LoginResponse> => refreshToken(options),
+        getMe,
         loginWithGoogle: (payload: LoginGoogle): Promise<LoginResponse> => loginWithGoogle(payload),
         authorizeGithubLogin: (): Promise<LoginGithubAuthorizeResponse> => authorizeGithubLogin(),
         loginWithGithub: (payload: LoginGithubCallback): Promise<LoginGithubResponse> =>
@@ -53,11 +59,5 @@ export function useLogin() {
         completeGithubRegistration: (
             payload: LoginGithubCompleteRegistration,
         ): Promise<LoginGithubResponse> => completeGithubRegistration(payload),
-        authorizeMicrosoftLogin: (): Promise<LoginMicrosoftAuthorizeResponse> => authorizeMicrosoftLogin(),
-        loginWithMicrosoft: (payload: LoginMicrosoftCallback): Promise<LoginMicrosoftResponse> =>
-            loginWithMicrosoft(payload),
-        completeMicrosoftRegistration: (
-            payload: LoginMicrosoftCompleteRegistration,
-        ): Promise<LoginMicrosoftResponse> => completeMicrosoftRegistration(payload),
     };
 }

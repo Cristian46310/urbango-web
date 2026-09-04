@@ -10,12 +10,9 @@ import type {
     LoginGithubCallback,
     LoginGithubCompleteRegistration,
     LoginGithubResponse,
-    LoginMicrosoftAuthorizeResponse,
-    LoginMicrosoftCallback,
-    LoginMicrosoftCompleteRegistration,
-    LoginMicrosoftResponse,
     LoginGoogle,
     LoginResponse,
+    SecurityMe,
     Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 
@@ -25,15 +22,12 @@ export interface ILoginRepository {
     resetPassword(payload: ResetPasswordDTO): Promise<MessageResponse>;
     login(credentials: login): Promise<LoginChallengeResponse>;
     verifyTwoFactor(payload: Verify2FADTO): Promise<LoginResponse>;
+    refreshToken(): Promise<LoginResponse>;
+    getMe(): Promise<SecurityMe>;
     loginWithGoogle(payload: LoginGoogle): Promise<LoginResponse>;
     authorizeGithubLogin(): Promise<LoginGithubAuthorizeResponse>;
     loginWithGithub(payload: LoginGithubCallback): Promise<LoginGithubResponse>;
     completeGithubRegistration(
         payload: LoginGithubCompleteRegistration,
     ): Promise<LoginGithubResponse>;
-    authorizeMicrosoftLogin(): Promise<LoginMicrosoftAuthorizeResponse>;
-    loginWithMicrosoft(payload: LoginMicrosoftCallback): Promise<LoginMicrosoftResponse>;
-    completeMicrosoftRegistration(
-        payload: LoginMicrosoftCompleteRegistration,
-    ): Promise<LoginMicrosoftResponse>;
 }

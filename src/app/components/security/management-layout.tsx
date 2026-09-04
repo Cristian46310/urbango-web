@@ -15,7 +15,6 @@ import {
   BusFront,
   UserPlus,
   ShieldCheck,
-  ShieldUser,
   Users,
   BarChart3,
   Building2,
@@ -25,7 +24,6 @@ import {
   CalendarClock,
   Link2,
   AlertCircle,
-  Home,
   Wrench,
   MessageCircle,
   Bell,
@@ -37,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { GlobalAlertsListener } from "@/app/components/alerts/GlobalAlertsListener";
+import { WeatherTicker } from "@/app/components/weather/WeatherTicker";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +44,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -62,7 +62,7 @@ import { useCardRechargePaymentReturn } from "@/hooks/business/useCardRechargePa
 import { useInboxUnreadCount } from "@/hooks/messaging/useInboxUnreadCount";
 import { useAlertsUnreadCount } from "@/hooks/alerts/useAlertsUnreadCount";
 import { useAuthStore } from "@/store/security/authStore";
-import { ROLES } from "@/core/domain/entities/security/Roles";
+import { ROLES, ROLE_GROUPS } from "@/core/domain/entities/security/Roles";
 
 interface MenuItem {
   title: string;
@@ -72,23 +72,22 @@ interface MenuItem {
   requiredRoles?: string[]; // Roles required to see this menu item
 }
 
+const CITIZEN_AND_ADMIN_ROLES = [ROLES.CITIZEN, ...ROLE_GROUPS.ADMIN_ROLES];
+
 const securityMenuItems: MenuItem[] = [
-  { title: "Usuarios", to: "/app/users", description: "Gestion de usuarios", icon: Users, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Perfiles", to: "/app/profiles", description: "Gestion de perfiles", icon: ShieldUser, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound, requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Alertas masivas", to: "/app/admin/mass-alerts", description: "Envío de alertas masivas", icon: Megaphone, requiredRoles: [ROLES.ADMIN] },
+  { title: "Usuarios", to: "/app/users", description: "Gestion de usuarios", icon: Users, requiredRoles: [...ROLE_GROUPS.ADMIN_ROLES] },
+  { title: "Roles", to: "/app/roles", description: "Gestion de roles", icon: BadgeCheck, requiredRoles: [...ROLE_GROUPS.ADMIN_ROLES] },
+  { title: "Permisos", to: "/app/permissions", description: "Gestion de permisos", icon: KeyRound, requiredRoles: [...ROLE_GROUPS.ADMIN_ROLES] },
+  { title: "Alertas masivas", to: "/app/admin/mass-alerts", description: "Envío de alertas masivas", icon: Megaphone, requiredRoles: [...ROLE_GROUPS.MASS_ALERTS] },
 ];
 
 
 const globalAdminMenuItems: MenuItem[] = [
-  { title: "Crear Ruta", to: "/app/routes/create", description: "Diseño y trazado de rutas", icon: Route, requiredRoles: ["admin", "ADMIN"] },
-  { title: "Crear Programación", to: "/app/schedulers/create", description: "Asignación de horarios maestros", icon: CalendarClock, requiredRoles: ["admin", "ADMIN"] },
   { title: "Distribución Edades", to: "/app/reports/age-distribution", description: "Reporte demográfico de usuarios", icon: BarChart3, requiredRoles: ["admin", "ADMIN"] },
 ];
 
 const homeMenuItem: MenuItem = {
-  title: "Home",
+  title: "Inicio",
   to: "/app",
   description: "Resumen general",
   icon: LayoutDashboard,
@@ -97,12 +96,12 @@ const homeMenuItem: MenuItem = {
 const registerProfileMenuItem: MenuItem = {
   title: "Mi perfil",
   to: "/app/register-profile",
-  description: "Registrarse como conductor o ciudadano",
+  description: "Perfil ciudadano o conductor (ms-business)",
   icon: UserPlus,
 };
 
 const teamMenuItem: MenuItem = {
-  title: "Team",
+  title: "Equipo",
   to: "/app/team",
   description: "Equipo del proyecto",
   icon: BookUser,
@@ -127,7 +126,7 @@ const preferencesMenuItem: MenuItem = {
   to: "/app/profile/preferences",
   description: "Alertas de clima para tu viaje",
   icon: SlidersHorizontal,
-  requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+  requiredRoles: CITIZEN_AND_ADMIN_ROLES,
 };
 
 const supportMenuItems: MenuItem[] = [
@@ -136,39 +135,45 @@ const supportMenuItems: MenuItem[] = [
     to: "/app/support/appointments",
     description: "Agenda y gestiona citas de atención",
     icon: CalendarCheck,
-    requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+    requiredRoles: CITIZEN_AND_ADMIN_ROLES,
   },
   {
     title: "PQRS",
     to: "/app/support/pqrs",
     description: "Peticiones, quejas, reclamos y sugerencias",
     icon: FileText,
-    requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"],
+    requiredRoles: CITIZEN_AND_ADMIN_ROLES,
   },
 ];
 
-const businessAdminRoles = ["ADMIN", "ADMIN_BUS", "SUPERVISER"] as const;
+const businessAdminRoles = [
+  ROLES.ADMIN,
+  ROLES.BUSINESS_ADMIN,
+  ROLES.SUPERVISOR,
+  ROLES.ADMIN_BUS,
+  ROLES.SUPERVISER,
+] as const;
 const fleetMenuItems: MenuItem[] = [
   {
     title: "Registrar bus",
     to: "/app/fleet/register-bus",
     description: "Alta de vehículo en la flota",
     icon: BusFront,
-    requiredRoles: ["ADMIN", "ADMIN_BUS", "SUPERVISER"],
+    requiredRoles: [...ROLE_GROUPS.FLEET_ACCESS],
   },
 ];
 
 const businessMenuItems: MenuItem[] = [
-  { title: "Rutas", to: "/app/planning/routes", description: "Consultar rutas y tarifas", icon: Route, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Paraderos cercanos", to: "/app/nearby-stops", description: "Top 5 paraderos con GPS", icon: MapPin, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Abordar", to: "/app/boarding", description: "Registrar abordaje y boleto", icon: BusFront, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje activo", icon: ArrowDownToLine, requiredRoles: ["CITIZEN", "DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Mis viajes", to: "/app/trips", description: "Historial y mapa de viajes", icon: MapPinned, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Recargar tarjeta", to: "/app/card-recharge", description: "Recarga prepagada con ePayco", icon: CreditCard, requiredRoles: ["CITIZEN", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Iniciar turno", to: "/app/driver/turn-start", description: "Turno y GPS del bus", icon: Bus, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Reportar incidente", to: "/app/incident-report", description: "Formulario conductor", icon: AlertTriangle, requiredRoles: ["DRIVER", "ADMIN", "ADMIN_BUS", "SUPERVISER"] },
-  { title: "Dashboard", to: "/app/business/dashboard", description: "Analítica business", icon: BarChart3, requiredRoles: [...businessAdminRoles] },
-  { title: "Rutas", to: "/app/business/routes", description: "Gestión de rutas", icon: Route, requiredRoles: [...businessAdminRoles] },
+  { title: "Rutas", to: "/app/planning/routes", description: "Consultar rutas; crear/editar si eres admin", icon: Route, requiredRoles: [...ROLE_GROUPS.PARADEROS_ACCESS] },
+  { title: "Paraderos cercanos", to: "/app/nearby-stops", description: "Top 5 paraderos con GPS", icon: MapPin, requiredRoles: [...ROLE_GROUPS.PARADEROS_ACCESS] },
+  { title: "Abordar", to: "/app/boarding", description: "Registrar abordaje y boleto", icon: BusFront, requiredRoles: CITIZEN_AND_ADMIN_ROLES },
+  { title: "Descenso", to: "/app/ticket/alight", description: "Cerrar viaje activo", icon: ArrowDownToLine, requiredRoles: [...ROLE_GROUPS.DESCENSO_ACCESS] },
+  { title: "Mis viajes", to: "/app/trips", description: "Historial y mapa de viajes", icon: MapPinned, requiredRoles: CITIZEN_AND_ADMIN_ROLES },
+  { title: "Métodos de pago", to: "/app/payment-methods", description: "Vincular métodos y ver saldo", icon: CreditCard, requiredRoles: CITIZEN_AND_ADMIN_ROLES },
+  { title: "Recargar tarjeta", to: "/app/card-recharge", description: "Recarga prepagada con ePayco", icon: CreditCard, requiredRoles: CITIZEN_AND_ADMIN_ROLES },
+  { title: "Iniciar turno", to: "/app/driver/turn-start", description: "Turno y GPS del bus", icon: Bus, requiredRoles: [...ROLE_GROUPS.INCIDENT_REPORT_ACCESS] },
+  { title: "Reportar incidente", to: "/app/incident-report", description: "Formulario conductor", icon: AlertTriangle, requiredRoles: [...ROLE_GROUPS.INCIDENT_REPORT_ACCESS] },
+  { title: "Dashboard", to: "/app/business/dashboard", description: "Analítica business", icon: BarChart3, requiredRoles: [...ROLE_GROUPS.DASHBOARD_OPS] },
   { title: "Paradas admin", to: "/app/business/stops", description: "CRUD de paradas", icon: MapPinned, requiredRoles: [...businessAdminRoles] },
   { title: "Nodos", to: "/app/business/nodes", description: "Nodos ruta-parada", icon: Link2, requiredRoles: [...businessAdminRoles] },
   { title: "Empresas", to: "/app/business/enterprises", description: "Empresas de transporte", icon: Building2, requiredRoles: [...businessAdminRoles] },
@@ -177,9 +182,7 @@ const businessMenuItems: MenuItem[] = [
   { title: "Turnos", to: "/app/business/turns", description: "Turnos conductores", icon: CalendarClock, requiredRoles: [...businessAdminRoles] },
   { title: "Ciudadanos", to: "/app/business/citizens", description: "Admin ciudadanos", icon: Users, requiredRoles: [...businessAdminRoles] },
   { title: "Conductores", to: "/app/business/drivers", description: "Admin conductores", icon: Users, requiredRoles: [...businessAdminRoles] },
-  { title: "Direcciones", to: "/app/business/addresses", description: "Direcciones", icon: Home, requiredRoles: [...businessAdminRoles] },
-  { title: "Métodos de pago", to: "/app/business/payment-methods", description: "Catálogo pagos", icon: CreditCard, requiredRoles: [...businessAdminRoles] },
-  { title: "Pagos ciudadano", to: "/app/business/payment-method-citizens", description: "Vínculos de pago", icon: CreditCard, requiredRoles: [...businessAdminRoles] },
+  { title: "Catálogo de pagos", to: "/app/business/payment-methods", description: "Catálogo admin", icon: CreditCard, requiredRoles: [...businessAdminRoles] },
   { title: "Incidentes", to: "/app/business/incidents", description: "Supervisión incidentes", icon: AlertCircle, requiredRoles: [...businessAdminRoles] },
 ];
 
@@ -188,6 +191,46 @@ function isActivePath(pathname: string, target: string) {
     return pathname === "/app";
   }
   return pathname === target || pathname.startsWith(`${target}/`);
+}
+
+const parentMenuButtonClass = (open: boolean) =>
+  [
+    "h-9 justify-between rounded-lg border px-2.5 transition-colors",
+    "[&_svg]:size-4 [&_svg]:stroke-[1.75]",
+    "data-[active=true]:border-teal-200 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-800",
+    "dark:data-[active=true]:border-teal-800 dark:data-[active=true]:bg-teal-950/60 dark:data-[active=true]:text-teal-200",
+    open
+      ? "border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 hover:text-teal-900 dark:border-teal-800 dark:bg-teal-950/60 dark:text-teal-200"
+      : "border-transparent hover:bg-teal-50/70 hover:text-teal-800 dark:hover:bg-teal-950/40 dark:hover:text-teal-200",
+  ].join(" ");
+
+const directMenuButtonClass =
+  "h-9 rounded-lg px-2.5 [&_svg]:size-4 [&_svg]:stroke-[1.75] hover:bg-teal-50/70 hover:text-teal-800 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-800 dark:hover:bg-teal-950/40 dark:hover:text-teal-200 dark:data-[active=true]:bg-teal-950/60 dark:data-[active=true]:text-teal-200";
+
+const submenuClass =
+  "mx-0 ml-4 translate-x-0 gap-1 border-l-2 border-teal-200 px-0 py-1.5 pl-3 dark:border-teal-800";
+
+const submenuButtonClass =
+  "h-8 rounded-lg px-2.5 [&_svg]:size-4 [&_svg]:stroke-[1.75] hover:bg-teal-50 hover:text-teal-800 data-[active=true]:bg-teal-100 data-[active=true]:font-medium data-[active=true]:text-teal-900 dark:hover:bg-teal-950/50 dark:hover:text-teal-200 dark:data-[active=true]:bg-teal-900/60 dark:data-[active=true]:text-teal-100";
+
+const sectionLabelClass =
+  "h-7 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400";
+
+function roleBadgeClass(role: string) {
+  const normalized = role.toUpperCase();
+  if (normalized.includes("ADMIN")) {
+    return "border-teal-200 bg-teal-50 text-teal-800";
+  }
+  if (normalized.includes("DRIVER")) {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  if (normalized.includes("SUPERVIS")) {
+    return "border-violet-200 bg-violet-50 text-violet-800";
+  }
+  if (normalized.includes("CITIZEN")) {
+    return "border-blue-200 bg-blue-50 text-blue-800";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
 export function ManagementLayout() {
@@ -276,26 +319,32 @@ export function ManagementLayout() {
             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
               <img
                 src={busLogo}
-                alt="Bus UCaldas"
+                alt="urbanGO"
                 className="size-10 rounded-md bg-white p-1 group-data-[collapsible=icon]:size-8"
               />
               <div className="group-data-[collapsible=icon]:hidden">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/70">UCaldas</p>
-                <h1 className="text-lg font-semibold text-white">Backend UI</h1>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/70">urbanGO</p>
+                <h1 className="text-lg font-semibold text-white">Movilidad urbana</h1>
               </div>
             </div>
-            <p className="mt-2 text-sm text-white/85 group-data-[collapsible=icon]:hidden">security/ panel de administracion</p>
+            <p className="mt-2 text-sm text-white/85 group-data-[collapsible=icon]:hidden">Panel de administración</p>
           </div>
         </SidebarHeader>
 
-        <SidebarContent>
-          <SidebarGroup>
+        <SidebarContent className="gap-1">
+          <SidebarGroup className="pb-1">
+            <SidebarGroupLabel className={sectionLabelClass}>General</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={homeActive} title={homeMenuItem.title} size="sm">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={homeActive}
+                    title={homeMenuItem.title}
+                    className={directMenuButtonClass}
+                  >
                     <NavLink to={homeMenuItem.to} end>
-                      <LayoutDashboard className="size-4" />
+                      <LayoutDashboard />
                       <span className="font-medium">{homeMenuItem.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -306,10 +355,10 @@ export function ManagementLayout() {
                     asChild
                     isActive={registerProfileActive}
                     title={registerProfileMenuItem.title}
-                    size="sm"
+                    className={directMenuButtonClass}
                   >
                     <NavLink to={registerProfileMenuItem.to}>
-                      <UserPlus className="size-4" />
+                      <UserPlus />
                       <span className="font-medium">{registerProfileMenuItem.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -321,44 +370,51 @@ export function ManagementLayout() {
                       asChild
                       isActive={preferencesActive}
                       title={preferencesMenuItem.title}
-                      size="sm"
+                      className={directMenuButtonClass}
                     >
                       <NavLink to={preferencesMenuItem.to}>
-                        <SlidersHorizontal className="size-4" />
+                        <SlidersHorizontal />
                         <span className="font-medium">{preferencesMenuItem.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-                {/* Security menu */}
+          <SidebarGroup className="py-2">
+            <SidebarGroupLabel className={sectionLabelClass}>Administración</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {visibleSecurityItems.length > 0 && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={securityActive}
-                      title="Security"
-                      size="sm"
-                      className="justify-between"
+                      title="Seguridad"
+                      className={parentMenuButtonClass(securityOpen)}
                       onClick={() => { setIsSecurityOpen(!securityOpen); }}
                     >
                       <span className="flex items-center gap-2">
                         <ShieldCheck />
-                        <span className="font-medium">Security</span>
+                        <span className="font-medium">Seguridad</span>
                       </span>
-                      <ChevronDown className={`size-4 transition-transform ${securityOpen ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`transition-transform ${securityOpen ? "rotate-180" : ""}`} />
                     </SidebarMenuButton>
-
                     {securityOpen ? (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className={submenuClass}>
                         {visibleSecurityItems.map((item) => {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
-
                           return (
                             <SidebarMenuSubItem key={item.to}>
-                              <SidebarMenuSubButton asChild isActive={active}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={active}
+                                className={submenuButtonClass}
+                              >
                                 <NavLink to={item.to} end={item.to === "/app"}>
-                                  <Icon className="size-4" />
+                                  <Icon />
                                   <span>{item.title}</span>
                                 </NavLink>
                               </SidebarMenuSubButton>
@@ -374,29 +430,26 @@ export function ManagementLayout() {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={globalAdminActive}
-                      title="Administración"
-                      size="sm"
-                      className="justify-between"
+                      title="Configuración del sistema"
+                      className={parentMenuButtonClass(globalAdminOpen)}
                       onClick={() => { setIsGlobalAdminOpen(!globalAdminOpen); }}
                     >
                       <span className="flex items-center gap-2">
-                        <Wrench className="size-4 text-amber-500" />
-                        <span className="font-medium">Config Sistema</span>
+                        <Wrench />
+                        <span className="font-medium">Configuración</span>
                       </span>
-                      <ChevronDown className={`size-4 transition-transform ${globalAdminOpen ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`transition-transform ${globalAdminOpen ? "rotate-180" : ""}`} />
                     </SidebarMenuButton>
-
                     {globalAdminOpen ? (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className={submenuClass}>
                         {visibleGlobalAdminItems.map((item) => {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
-
                           return (
                             <SidebarMenuSubItem key={item.to}>
-                              <SidebarMenuSubButton asChild isActive={active}>
+                              <SidebarMenuSubButton asChild isActive={active} className={submenuButtonClass}>
                                 <NavLink to={item.to}>
-                                  <Icon className="size-4" />
+                                  <Icon />
                                   <span>{item.title}</span>
                                 </NavLink>
                               </SidebarMenuSubButton>
@@ -408,32 +461,134 @@ export function ManagementLayout() {
                   </SidebarMenuItem>
                 )}
 
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={teamActive}
+                    title="Equipo"
+                    className={parentMenuButtonClass(teamOpen)}
+                    onClick={() => { setIsTeamOpen(!teamOpen); }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookUser />
+                      <span className="font-medium">Equipo</span>
+                    </span>
+                    <ChevronDown className={`transition-transform ${teamOpen ? "rotate-180" : ""}`} />
+                  </SidebarMenuButton>
+                  {teamOpen ? (
+                    <SidebarMenuSub className={submenuClass}>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild isActive={teamActive} className={submenuButtonClass}>
+                          <NavLink to={teamMenuItem.to}>
+                            <BookUser />
+                            <span>{teamMenuItem.title}</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarMenuItem>
+
+                {visibleFleetItems.length > 0 && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={fleetActive}
+                      title="Flota"
+                      className={parentMenuButtonClass(fleetOpen)}
+                      onClick={() => { setIsFleetOpen(!fleetOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <BusFront />
+                        <span className="font-medium">Flota</span>
+                      </span>
+                      <ChevronDown className={`transition-transform ${fleetOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+                    {fleetOpen ? (
+                      <SidebarMenuSub className={submenuClass}>
+                        {visibleFleetItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActivePath(location.pathname, item.to);
+                          return (
+                            <SidebarMenuSubItem key={item.to}>
+                              <SidebarMenuSubButton asChild isActive={active} className={submenuButtonClass}>
+                                <NavLink to={item.to}>
+                                  <Icon />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                )}
+
+                {visibleBusinessItems.length > 0 && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={businessActive}
+                      title="Operación"
+                      className={parentMenuButtonClass(businessOpen)}
+                      onClick={() => { setIsBusinessOpen(!businessOpen); }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Briefcase />
+                        <span className="font-medium">Operación</span>
+                      </span>
+                      <ChevronDown className={`transition-transform ${businessOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+                    {businessOpen ? (
+                      <SidebarMenuSub className={submenuClass}>
+                        {visibleBusinessItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActivePath(location.pathname, item.to);
+                          return (
+                            <SidebarMenuSubItem key={item.to}>
+                              <SidebarMenuSubButton asChild isActive={active} className={submenuButtonClass}>
+                                <NavLink to={item.to} end={item.to === "/app"}>
+                                  <Icon />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    ) : null}
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="pt-2">
+            <SidebarGroupLabel className={sectionLabelClass}>Soporte y operación</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {visibleSupportItems.length > 0 && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={supportActive}
                       title="Atención al cliente"
-                      size="sm"
-                      className="justify-between"
+                      className={parentMenuButtonClass(supportOpen)}
                       onClick={() => { setIsSupportOpen(!supportOpen); }}
                     >
                       <span className="flex items-center gap-2">
-                        <Headset className="size-4" />
+                        <Headset />
                         <span className="font-medium">Atención al cliente</span>
                       </span>
-                      <ChevronDown className={`size-4 transition-transform ${supportOpen ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`transition-transform ${supportOpen ? "rotate-180" : ""}`} />
                     </SidebarMenuButton>
-
                     {supportOpen ? (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className={submenuClass}>
                         {visibleSupportItems.map((item) => {
                           const Icon = item.icon;
                           const active = isActivePath(location.pathname, item.to);
                           return (
                             <SidebarMenuSubItem key={item.to}>
-                              <SidebarMenuSubButton asChild isActive={active}>
+                              <SidebarMenuSubButton asChild isActive={active} className={submenuButtonClass}>
                                 <NavLink to={item.to}>
-                                  <Icon className="size-4" />
+                                  <Icon />
                                   <span>{item.title}</span>
                                 </NavLink>
                               </SidebarMenuSubButton>
@@ -450,10 +605,10 @@ export function ManagementLayout() {
                     asChild
                     isActive={messagingActive}
                     title={messagingMenuItem.title}
-                    size="sm"
+                    className={directMenuButtonClass}
                   >
                     <NavLink to={messagingMenuItem.to} className="relative">
-                      <MessageCircle className="size-4" />
+                      <MessageCircle />
                       <span className="font-medium">{messagingMenuItem.title}</span>
                       {inboxUnreadCount > 0 ? (
                         <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -469,10 +624,10 @@ export function ManagementLayout() {
                     asChild
                     isActive={alertsActive}
                     title={alertsMenuItem.title}
-                    size="sm"
+                    className={directMenuButtonClass}
                   >
                     <NavLink to={alertsMenuItem.to} className="relative">
-                      <Bell className="size-4" />
+                      <Bell />
                       <span className="font-medium">{alertsMenuItem.title}</span>
                       {alertsUnreadCount > 0 ? (
                         <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-semibold text-destructive-foreground">
@@ -482,112 +637,6 @@ export function ManagementLayout() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={teamActive}
-                    title="Team"
-                    size="sm"
-                    className="justify-between"
-                    onClick={() => { setIsTeamOpen(!teamOpen); }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <BookUser />
-                      <span className="font-medium">Team</span>
-                    </span>
-                    <ChevronDown className={`size-4 transition-transform ${teamOpen ? "rotate-180" : ""}`} />
-                  </SidebarMenuButton>
-
-                  {teamOpen ? (
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild isActive={teamActive}>
-                          <NavLink to={teamMenuItem.to}>
-                            <BookUser className="size-4" />
-                            <span>{teamMenuItem.title}</span>
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  ) : null}
-                </SidebarMenuItem>
-
-                {visibleFleetItems.length > 0 && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={fleetActive}
-                      title="Flota"
-                      size="sm"
-                      className="justify-between"
-                      onClick={() => { setIsFleetOpen(!fleetOpen); }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <BusFront />
-                        <span className="font-medium">Flota</span>
-                      </span>
-                      <ChevronDown className={`size-4 transition-transform ${fleetOpen ? "rotate-180" : ""}`} />
-                    </SidebarMenuButton>
-
-                    {fleetOpen ? (
-                      <SidebarMenuSub>
-                        {visibleFleetItems.map((item) => {
-                          const Icon = item.icon;
-                          const active = isActivePath(location.pathname, item.to);
-
-                          return (
-                            <SidebarMenuSubItem key={item.to}>
-                              <SidebarMenuSubButton asChild isActive={active}>
-                                <NavLink to={item.to}>
-                                  <Icon className="size-4" />
-                                  <span>{item.title}</span>
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          );
-                        })}
-                      </SidebarMenuSub>
-                    ) : null}
-                  </SidebarMenuItem>
-                )}
-
-                {/* Business menu */}
-                {visibleBusinessItems.length > 0 && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={businessActive}
-                      title="Business"
-                      size="sm"
-                      className="justify-between"
-                      onClick={() => { setIsBusinessOpen(!businessOpen); }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Briefcase />
-                        <span className="font-medium">Business</span>
-                      </span>
-                      <ChevronDown className={`size-4 transition-transform ${businessOpen ? "rotate-180" : ""}`} />
-                    </SidebarMenuButton>
-
-                    {businessOpen ? (
-                      <SidebarMenuSub>
-                        {visibleBusinessItems.map((item) => {
-                          const Icon = item.icon;
-                          const active = isActivePath(location.pathname, item.to);
-
-                          return (
-                            <SidebarMenuSubItem key={item.to}>
-                              <SidebarMenuSubButton asChild isActive={active}>
-                                <NavLink to={item.to} end={item.to === "/app"}>
-                                  <Icon className="size-4" />
-                                  <span>{item.title}</span>
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          );
-                        })}
-                      </SidebarMenuSub>
-                    ) : null}
-                  </SidebarMenuItem>
-                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -598,9 +647,18 @@ export function ManagementLayout() {
         <SidebarFooter>
           <div className="space-y-2">
             {currentUser && (
-              <div className="px-2 py-2 text-xs text-muted-foreground rounded-md bg-accent/50">
+              <div className="space-y-2 rounded-md bg-accent/50 px-2 py-2 text-xs text-muted-foreground">
                 <p className="font-medium truncate">{currentUser.email}</p>
-                <p className="text-xs">{currentUser.roles.join(", ")}</p>
+                <div className="flex flex-wrap gap-1">
+                  {currentUser.roles.map((role, index) => (
+                    <span
+                      key={`${role}-${String(index)}`}
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleBadgeClass(role)}`}
+                    >
+                      {role.replaceAll("_", " ")}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
             <Button
@@ -629,12 +687,16 @@ export function ManagementLayout() {
             <div className="flex items-center gap-3">
               <div className="hidden rounded-full border border-(--security-border) bg-(--security-surface) px-4 py-2 text-sm text-(--security-muted-foreground) md:block">
                 <span className="flex items-center gap-2">
-                  <img src={busLogo} alt="Bus UCaldas" className="size-5" />
-                  Bus UCaldas
+                  <img src={busLogo} alt="urbanGO" className="size-5" />
+                  urbanGO
                 </span>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="relative z-0">
+          <WeatherTicker />
         </div>
 
         <Outlet />

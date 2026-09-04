@@ -5,7 +5,8 @@ export default function IncidentReportPage() {
   return (
     <PageShell
       title="Reportar incidente"
-      description="Formulario independiente para registrar novedades de la operación."
+      description="Registra cualquier novedad ocurrida durante tu turno"
+      titleSize="lg"
     >
       <IncidentReportButton />
     </PageShell>

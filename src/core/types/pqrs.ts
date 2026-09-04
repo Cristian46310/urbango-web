@@ -1,6 +1,12 @@
 export type PqrsType = "petition" | "complaint" | "claim" | "suggestion";
 
-export type PqrsCategory = "driver" | "bus" | "route" | "card" | "other";
+export type PqrsCategory =
+  | "driver"
+  | "bus"
+  | "route"
+  | "card"
+  | "technical_support"
+  | "other";
 
 export type PqrsStatus = "received" | "in_review" | "in_progress" | "resolved";
 
@@ -48,13 +54,23 @@ export interface CreatePqrsImageRequest {
   content_base64: string;
 }
 
+/** Payload listo para el API (snake_case). Preferir createPqrs() con Files. */
 export interface CreatePqrsRequest {
   type: PqrsType;
-  category: PqrsCategory;
-  description?: string;
+  description: string;
   user_id: string;
   user_email: string;
+  category?: PqrsCategory;
   images?: CreatePqrsImageRequest[];
+}
+
+export interface CreatePqrsInput {
+  type: PqrsType;
+  description: string;
+  userId: string;
+  userEmail: string;
+  category?: PqrsCategory;
+  images?: File[];
 }
 
 export interface UpdatePqrsRequest {

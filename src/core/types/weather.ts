@@ -37,3 +37,31 @@ export interface ForecastHour {
   description: string;
   icon: string;
 }
+
+export type WeatherRiskLevel = "low" | "medium" | "high";
+
+export interface WeatherAssessRequest {
+  lat: number;
+  lon: number;
+  travel_hour: number;
+}
+
+export interface WeatherAssessMetrics {
+  rain_probability?: number;
+  [key: string]: unknown;
+}
+
+export interface WeatherAssessResponse {
+  metrics?: WeatherAssessMetrics;
+  risk_level?: string;
+  recommendation?: string;
+  explanation?: string;
+  [key: string]: unknown;
+}
+
+export interface WeatherTickerData {
+  rainProbability: number;
+  riskLevel: WeatherRiskLevel;
+  recommendation: string;
+  explanation?: string;
+}

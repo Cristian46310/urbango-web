@@ -17,6 +17,7 @@ interface ChatThreadProps {
   onBack?: () => void;
   headerAction?: ReactNode;
   isGroupThread?: boolean;
+  bannerNotice?: string | null;
   canDeleteMessage?: (message: Message) => boolean;
   canViewReads?: (message: Message) => boolean;
   onDeleteMessage?: (message: Message) => void;
@@ -41,6 +42,7 @@ export function ChatThread({
   onBack,
   headerAction,
   isGroupThread = false,
+  bannerNotice = null,
   canDeleteMessage,
   canViewReads,
   onDeleteMessage,
@@ -68,6 +70,12 @@ export function ChatThread({
         </div>
         {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </div>
+
+      {bannerNotice ? (
+        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+          {bannerNotice}
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {loading && messages.length === 0 ? (

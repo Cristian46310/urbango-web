@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CreditCard, Loader2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCardRecharge } from '@/hooks/business/useCardRecharge';
+import { useCitizenProfile } from '@/hooks/useCitizenProfile';
+import { cardRechargeRepository } from '@/infra/repository/cardRecharge';
 import { formatCop } from '@/lib/currency';
+import { getApiErrorMessage } from '@/lib/api-error';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
 import {
   buildEpaycoResponseUrl,
   clearCardRechargeReturnTo,
@@ -43,9 +47,44 @@ interface PaymentReturnState {
   paymentHandled?: boolean;
 }
 
+function RegisterSystemCardButton({ onRegistered }: { onRegistered: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <Button
+      type="button"
+      disabled={loading}
+      onClick={() => {
+        void (async () => {
+          setLoading(true);
+          try {
+            await cardRechargeRepository.registerCard({});
+            showSuccessToast('Tarjeta del sistema registrada');
+            onRegistered();
+          } catch (error) {
+            showErrorToast(getApiErrorMessage(error, 'No se pudo registrar la tarjeta'));
+          } finally {
+            setLoading(false);
+          }
+        })();
+      }}
+    >
+      {loading ? (
+        <>
+          <Loader2 className="size-4 animate-spin" />
+          Registrando…
+        </>
+      ) : (
+        'Registrar tarjeta del sistema'
+      )}
+    </Button>
+  );
+}
+
 export function CardRechargeForm() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasCitizenProfile, loading: loadingCitizenProfile } = useCitizenProfile();
   const {
     config,
     cards,
@@ -83,8 +122,11 @@ export function CardRechargeForm() {
   }, [customAmountInput, selectedPreset]);
 
   useEffect(() => {
+    if (hasCitizenProfile !== true) {
+      return;
+    }
     void loadInitialData();
-  }, [loadInitialData]);
+  }, [hasCitizenProfile, loadInitialData]);
 
   useEffect(() => {
     if (!selectedCardId && cards.length > 0) {
@@ -208,6 +250,38 @@ export function CardRechargeForm() {
     !loadingCheckout &&
     !loadingPreview;
 
+  if (loadingCitizenProfile) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="size-5 animate-spin" />
+        Verificando perfil de ciudadano...
+      </div>
+    );
+  }
+
+  if (hasCitizenProfile === false) {
+    return (
+      <div className="mx-auto w-full max-w-2xl space-y-6">
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Recargar tarjeta</h1>
+        </div>
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-lg text-amber-950">Perfil ciudadano requerido</CardTitle>
+            <CardDescription className="text-amber-900">
+              Debe registrar su perfil de ciudadano antes de usar pagos o recargas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/app/register-profile">Completar perfil ciudadano</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (loadingInitial && cards.length === 0) {
     return (
       <div className="flex min-h-[320px] items-center justify-center gap-2 text-muted-foreground">
@@ -241,10 +315,16 @@ export function CardRechargeForm() {
               Sin tarjetas recargables
             </CardTitle>
             <CardDescription>
-              No encontramos tarjetas asociadas a tu perfil de ciudadano. Registra tu
-              perfil o solicita una tarjeta prepagada para poder recargar.
+              Vincula la tarjeta del sistema en Métodos de pago o regístrala aquí
+              para poder recargar con ePayco.
             </CardDescription>
           </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/payment-methods">Ir a métodos de pago</Link>
+            </Button>
+            <RegisterSystemCardButton onRegistered={() => void loadInitialData()} />
+          </CardContent>
         </Card>
       ) : (
         <>

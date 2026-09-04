@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { alight } from "@/services/ticketService";
+import { alight, getActiveTicketSnapshot } from "@/services/ticketService";
 import type { AlightResponse } from "@/services/ticketService";
 import { getBuses } from "@/services/busService";
 import type { BusItem } from "@/services/busService";
@@ -34,12 +34,19 @@ export function TicketAlightValidation() {
   const [result, setResult] = useState<AlightResponse | null>(null);
 
   useEffect(() => {
+    const snapshot = getActiveTicketSnapshot();
+    if (snapshot?.busId && snapshot.id === ticketId) {
+      setBusId(snapshot.busId);
+      if (snapshot.routeName) {
+        setRouteName(snapshot.routeName);
+      }
+    }
     void getBuses()
       .then(setBuses)
       .catch(() => {
         /* optional list */
       });
-  }, []);
+  }, [ticketId]);
 
   const loadStopsForBus = useCallback(async (selectedBusId: string) => {
     if (!selectedBusId) {
@@ -88,7 +95,7 @@ export function TicketAlightValidation() {
   if (result) {
     return (
       <PageShell title="Viaje completado" description="Tu boleto fue cerrado correctamente.">
-        <Card className="max-w-md border-green-200">
+        <Card className="mx-auto max-w-md border-green-200">
           <CardHeader className="text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-600" />
             <CardTitle className="text-green-800">{result.message}</CardTitle>
@@ -113,85 +120,87 @@ export function TicketAlightValidation() {
       title="Confirmar descenso"
       description={`Boleto ${ticketId?.slice(0, 8) ?? ""}…`}
     >
-      <Button asChild variant="ghost" className="mb-4 -ml-2">
-        <Link to="/app/ticket/alight">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Link>
-      </Button>
+      <div className="mx-auto w-full max-w-lg space-y-4">
+        <Button asChild variant="ghost" className="-ml-2">
+          <Link to="/app/ticket/alight">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Link>
+        </Button>
 
-      <Card className="max-w-lg">
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label>Bus (mismo del viaje)</Label>
-            <Select value={busId} onValueChange={setBusId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona el bus" />
-              </SelectTrigger>
-              <SelectContent>
-                {buses.map((bus) => (
-                  <SelectItem key={bus.id} value={bus.id}>
-                    {bus.plate}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-2">
+              <Label>Bus (mismo del viaje)</Label>
+              <Select value={busId} onValueChange={setBusId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona el bus" />
+                </SelectTrigger>
+                <SelectContent>
+                  {buses.map((bus) => (
+                    <SelectItem key={bus.id} value={bus.id}>
+                      {bus.plate}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Paradero actual</Label>
-            <Select
-              value={nodeId}
-              onValueChange={setNodeId}
-              disabled={!busId || loadingStops || stopOptions.length === 0}
+            <div className="space-y-2">
+              <Label>Paradero actual</Label>
+              <Select
+                value={nodeId}
+                onValueChange={setNodeId}
+                disabled={!busId || loadingStops || stopOptions.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      !busId
+                        ? "Primero selecciona el bus"
+                        : loadingStops
+                          ? "Cargando paraderos..."
+                          : "Selecciona paradero"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {stopOptions.map((stop) => (
+                    <SelectItem key={stop.nodeId} value={stop.nodeId}>
+                      {stop.order}. {stop.name}
+                      {stop.location ? ` — ${stop.location}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {loadingStops ? (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Cargando paraderos…
+                </p>
+              ) : routeName ? (
+                <p className="text-xs text-muted-foreground">Ruta: {routeName}</p>
+              ) : null}
+            </div>
+
+            <Button
+              type="button"
+              className="h-11 w-full text-base font-semibold bg-teal-600 text-white hover:bg-teal-500"
+              disabled={loading || loadingStops || !nodeId}
+              onClick={() => void handleValidateAlight()}
             >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    !busId
-                      ? "Primero selecciona el bus"
-                      : loadingStops
-                        ? "Cargando paraderos..."
-                        : "Selecciona paradero"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {stopOptions.map((stop) => (
-                  <SelectItem key={stop.nodeId} value={stop.nodeId}>
-                    {stop.order}. {stop.name}
-                    {stop.location ? ` — ${stop.location}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {loadingStops ? (
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Cargando paraderos…
-              </p>
-            ) : routeName ? (
-              <p className="text-xs text-muted-foreground">Ruta: {routeName}</p>
-            ) : null}
-          </div>
-
-          <Button
-            type="button"
-            className="w-full"
-            disabled={loading || loadingStops || !nodeId}
-            onClick={() => void handleValidateAlight()}
-          >
-            {loading ? (
-              <>
-                <Loader className="mr-2 h-4 w-4 animate-spin" />
-                Validando...
-              </>
-            ) : (
-              "Completar viaje"
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+              {loading ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                "Confirmar descenso"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </PageShell>
   );
 }

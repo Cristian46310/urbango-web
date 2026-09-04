@@ -25,3 +25,20 @@ dist-ssr
 
 # Environment variables
 .env
+
+# Cursor / agent (local only)
+.cursor/
+
+# GitHub agent skills (local only)
+.github/skills/
+
+# Internal docs (local only)
+docs/
+.docs/
+
+# Graphify (local code analysis)
+graphify-out/
+.graphify/
+**/graphify-out/
+**/.graphify/
+*.graphify*

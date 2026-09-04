@@ -54,6 +54,12 @@ export interface CardRechargeTransactionStatus {
   balanceAfter?: number;
 }
 
+export interface RegisterRechargeableCardPayload {
+  /** Optional; backend defaults to SYSTEM_CARD when omitted. */
+  paymentMethodId?: string;
+  label?: string;
+}
+
 export interface PreviewCardRechargePayload {
   paymentMethodCitizenId: string;
   amount: number;

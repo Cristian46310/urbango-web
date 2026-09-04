@@ -34,7 +34,6 @@ export function useGroupMessages() {
       if (!silent) {
         const message = getApiErrorMessage(err, "No se pudo cargar el historial del grupo");
         setError(message);
-        showErrorToast(message);
       }
       return [];
     } finally {

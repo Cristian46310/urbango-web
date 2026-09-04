@@ -100,7 +100,6 @@ export function useGroups() {
       if (!silent) {
         const message = getApiErrorMessage(err, "No se pudieron cargar los grupos");
         setError(message);
-        showErrorToast(message);
       }
       return [];
     } finally {
@@ -123,7 +122,6 @@ export function useGroups() {
       if (!silent) {
         const message = getApiErrorMessage(err, "No se pudo cargar el grupo");
         setError(message);
-        showErrorToast(message);
       }
       return null;
     } finally {

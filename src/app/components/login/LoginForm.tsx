@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { useLogin } from "@/hooks/security";
 import { recaptchaConfig } from "@/config/recaptcha";
 import { executeRecaptcha } from "@/lib/recaptcha";
+import { resolvePostLoginPath } from "@/lib/postLoginRedirect";
 import { OAuthProviders } from "./OAuthProviders";
 
 type PasswordStrength = "debil" | "media" | "fuerte";
@@ -58,9 +59,6 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [challengeToken, setChallengeToken] = useState("");
-  const [, setChallengeMessage] = useState("");
-  const [expiration, setExpiration] = useState("");
   const [code, setCode] = useState("");
   const [phase, setPhase] = useState<"credentials" | "challenge">(
     "credentials",
@@ -73,7 +71,16 @@ export function LoginForm() {
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
 
   const navigate = useNavigate();
-  const { loading, error, register, login, verify2FA } = useLogin();
+  const {
+    loading,
+    error,
+    challengeToken,
+    challengeExpiration,
+    clearChallenge,
+    register,
+    login,
+    verify2FA,
+  } = useLogin();
 
   useEffect(() => {
     if (error) {
@@ -85,15 +92,13 @@ export function LoginForm() {
     try {
       const recaptchaToken = await executeRecaptcha(recaptchaConfig.actions.login);
 
-      const response = await login({
+      await login({
         email: email.trim(),
         password,
         recaptchaToken,
       });
 
-      setChallengeToken(response.challengeToken);
-      setChallengeMessage(response.message);
-      setExpiration(response.expiration);
+      setCode("");
       setPhase("challenge");
       toast.success("Credenciales validadas, falta el segundo factor");
     } catch (submitError) {
@@ -103,13 +108,18 @@ export function LoginForm() {
 
   const handle2FASubmit = async () => {
     try {
-      await verify2FA({
-        challengeToken,
-        code,
-      });
+      if (!challengeToken) {
+        toast.error("No hay challengeToken. Vuelve a iniciar sesion.");
+        setPhase("credentials");
+        return;
+      }
+
+      await verify2FA(code);
 
       toast.success("Inicio de sesión completado");
-      void navigate("/app");
+      toast.info("Comprobando perfil…");
+      const nextPath = await resolvePostLoginPath();
+      void navigate(nextPath);
     } catch (submitError) {
       toast.error((submitError as Error).message);
     }
@@ -167,15 +177,14 @@ export function LoginForm() {
     <div className="flex items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-3">
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-            Iniciar sesion
+          <p className="text-sm font-semibold tracking-[0.08em] text-teal-800 uppercase">
+            urbanGO
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Iniciar sesión
           </h1>
           <p className="max-w-sm text-lg leading-6 text-slate-500 sm:text-base">
-            Accede con tus credenciales para administrar rutas, flotas y
-            monitoreo en tiempo real.
-          </p>
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-400">
-            Sistema de buses inteligentes
+            Accede para gestionar rutas, flotas y tu perfil de movilidad urbana.
           </p>
         </div>
 
@@ -223,7 +232,7 @@ export function LoginForm() {
                   <Input
                     id="register-email"
                     type="email"
-                    placeholder="correo@ucaldas.edu.co"
+                    placeholder="correo@ejemplo.com"
                     value={registerEmail}
                     onChange={(event) => { setRegisterEmail(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
@@ -318,7 +327,7 @@ export function LoginForm() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="cristian.marin1234@ucaldas.edu.co"
+                    placeholder="tu.correo@ejemplo.com"
                     value={email}
                     onChange={(event) => { setEmail(event.target.value); }}
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4"
@@ -401,17 +410,23 @@ export function LoginForm() {
                   <p className="mt-1 text-xs text-slate-500">
                     Debio llegar el codigo para confirmar el ingreso.
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Expira: {new Date(expiration).toLocaleString()}
-                  </p>
+                  {challengeExpiration ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Expira: {new Date(challengeExpiration).toLocaleString()}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="code">Codigo 2FA</Label>
                   <Input
                     id="code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
                     value={code}
-                    onChange={(event) => { setCode(event.target.value); }}
+                    onChange={(event) => {
+                      setCode(event.target.value.replace(/\D/g, ""));
+                    }}
                     placeholder="000000"
                     className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4 tracking-[0.35em]"
                   />
@@ -421,7 +436,7 @@ export function LoginForm() {
                   <Button
                     type="submit"
                     className="h-12 w-full rounded-xl bg-accent text-base font-medium text-white hover:bg-accent-foreground"
-                    disabled={loading}
+                    disabled={loading || !challengeToken || !code}
                   >
                     {loading ? "Verificando..." : "Validar codigo"}
                   </Button>
@@ -429,7 +444,11 @@ export function LoginForm() {
                     type="button"
                     variant="outline"
                     className="h-12 w-full rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    onClick={() => { setPhase("credentials"); }}
+                    onClick={() => {
+                      clearChallenge();
+                      setCode("");
+                      setPhase("credentials");
+                    }}
                   >
                     Volver
                   </Button>

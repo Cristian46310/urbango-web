@@ -7,7 +7,12 @@ import { FileQuestion, Search } from "lucide-react";
 import { PageShell } from "@/app/components/security/page-shell";
 import { DataTable } from "@/app/components/security/data-table";
 import { PqrsForm } from "@/app/components/support/PqrsForm";
-import { PqrsStatusBadge, typeLabels, categoryLabels, statusLabels } from "@/app/components/support/PqrsStatusBadge";
+import {
+  PqrsStatusBadge,
+  typeLabels,
+  categoryLabels,
+  statusLabels,
+} from "@/app/components/support/PqrsStatusBadge";
 import { PqrsDetailDialog } from "@/app/components/support/PqrsDetailDialog";
 import type { Pqrs, PqrsCategory, PqrsStatus } from "@/core/types/pqrs";
 import { usePqrs } from "@/hooks/pqrs/usePqrs";
@@ -50,15 +55,18 @@ export default function SupportPqrsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
-  const handleOpenDetail = (pqrs: Pqrs) => {
-    setDetailPqrs(pqrs);
+  const handleOpenDetail = async (pqrs: Pqrs) => {
+    // Preferir detalle fresco por id (incluye imágenes)
+    const full = await citizenHook.loadById(pqrs.id);
+    setDetailPqrs(full ?? pqrs);
     setDetailOpen(true);
   };
 
   const handleApplyFilters = () => {
     adminHook.applyFilters({
       status: filterStatus !== "all" ? (filterStatus as PqrsStatus) : undefined,
-      category: filterCategory !== "all" ? (filterCategory as PqrsCategory) : undefined,
+      category:
+        filterCategory !== "all" ? (filterCategory as PqrsCategory) : undefined,
     });
   };
 
@@ -75,11 +83,14 @@ export default function SupportPqrsPage() {
     }),
     columnHelper.accessor("type", {
       header: "Tipo",
-      cell: (info) => typeLabels[info.getValue()],
+      cell: (info) => typeLabels[info.getValue()] ?? info.getValue(),
     }),
     columnHelper.accessor("category", {
       header: "Categoría",
-      cell: (info) => categoryLabels[info.getValue()],
+      cell: (info) => {
+        const value = info.getValue();
+        return value ? (categoryLabels[value] ?? value) : "—";
+      },
     }),
     columnHelper.accessor("status", {
       header: "Estado",
@@ -98,7 +109,9 @@ export default function SupportPqrsPage() {
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => { handleOpenDetail(row.original); }}
+            onClick={() => {
+              void handleOpenDetail(row.original);
+            }}
           >
             Ver / Seguimiento
           </Button>
@@ -106,7 +119,9 @@ export default function SupportPqrsPage() {
             type="button"
             size="sm"
             variant="destructive"
-            onClick={() => { void adminHook.remove(row.original.id); }}
+            onClick={() => {
+              void adminHook.remove(row.original.id);
+            }}
           >
             Eliminar
           </Button>
@@ -131,9 +146,13 @@ export default function SupportPqrsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {(Object.entries(statusLabels) as [PqrsStatus, string][]).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
+                  {(Object.entries(statusLabels) as [PqrsStatus, string][]).map(
+                    ([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -145,8 +164,12 @@ export default function SupportPqrsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  {(Object.entries(categoryLabels) as [PqrsCategory, string][]).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {(
+                    Object.entries(categoryLabels) as [PqrsCategory, string][]
+                  ).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -174,7 +197,9 @@ export default function SupportPqrsPage() {
             title="Todas las PQRS"
             description="Gestión y seguimiento de PQRS del sistema."
             loading={adminHook.loading}
-            onRefresh={() => { void adminHook.load(); }}
+            onRefresh={() => {
+              void adminHook.load();
+            }}
             emptyMessage="No hay PQRS que mostrar."
             filterField="user_email"
             filterPlaceholder="Filtrar por correo..."
@@ -182,7 +207,7 @@ export default function SupportPqrsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold">Mis PQRS</h3>
               <p className="text-sm text-muted-foreground">
@@ -194,6 +219,9 @@ export default function SupportPqrsPage() {
               userId={currentUser?.id ?? ""}
               userEmail={currentUser?.email ?? ""}
               onSubmit={citizenHook.create}
+              onCreated={() => {
+                void citizenHook.loadMyPqrs();
+              }}
             />
           </div>
 
@@ -203,22 +231,34 @@ export default function SupportPqrsPage() {
               <CardTitle className="text-sm">Consultar por número de ticket</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Input
                   value={ticketInput}
-                  onChange={(e) => { setTicketInput(e.target.value); }}
+                  onChange={(e) => {
+                    setTicketInput(e.target.value);
+                  }}
                   placeholder="Ej. PQRS-20240001"
                   className="max-w-xs"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => { void citizenHook.searchByTicket(ticketInput.trim()); }}
+                  onClick={() => {
+                    void (async () => {
+                      const pqrs = await citizenHook.searchByTicket(
+                        ticketInput.trim(),
+                      );
+                      if (pqrs) {
+                        setDetailPqrs(pqrs);
+                        setDetailOpen(true);
+                      }
+                    })();
+                  }}
                   disabled={!ticketInput.trim() || citizenHook.ticketLoading}
                 >
                   {citizenHook.ticketLoading ? "Buscando..." : "Buscar"}
                 </Button>
-                {citizenHook.ticketResult && (
+                {citizenHook.ticketResult ? (
                   <Button
                     type="button"
                     size="sm"
@@ -227,22 +267,8 @@ export default function SupportPqrsPage() {
                   >
                     Limpiar
                   </Button>
-                )}
+                ) : null}
               </div>
-              {citizenHook.ticketResult && (
-                <div className="mt-3 rounded-lg border bg-muted/40 p-3 text-sm">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-mono font-semibold">
-                      {citizenHook.ticketResult.ticket_number}
-                    </span>
-                    <PqrsStatusBadge status={citizenHook.ticketResult.status} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {typeLabels[citizenHook.ticketResult.type]} · {categoryLabels[citizenHook.ticketResult.category]}
-                  </p>
-                  <p className="mt-1">{citizenHook.ticketResult.description || "—"}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -264,20 +290,33 @@ export default function SupportPqrsPage() {
                 <ScrollArea className="max-h-96">
                   <div className="divide-y">
                     {citizenHook.myPqrs.map((p) => (
-                      <div key={p.id} className="px-6 py-4">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="w-full px-6 py-4 text-left transition-colors hover:bg-muted/50"
+                        onClick={() => {
+                          void handleOpenDetail(p);
+                        }}
+                      >
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs font-semibold">
                             {p.ticket_number}
                           </span>
                           <PqrsStatusBadge status={p.status} />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {typeLabels[p.type]} · {categoryLabels[p.category]} · {formatDate(p.created_at)}
+                          {typeLabels[p.type] ?? p.type}
+                          {" · "}
+                          {p.category
+                            ? (categoryLabels[p.category] ?? p.category)
+                            : "Sin clasificar"}
+                          {" · "}
+                          {formatDate(p.created_at)}
                         </p>
-                        {p.description && (
-                          <p className="mt-1 text-sm">{p.description}</p>
-                        )}
-                      </div>
+                        {p.description ? (
+                          <p className="mt-1 line-clamp-2 text-sm">{p.description}</p>
+                        ) : null}
+                      </button>
                     ))}
                   </div>
                 </ScrollArea>
@@ -289,13 +328,21 @@ export default function SupportPqrsPage() {
 
       <PqrsDetailDialog
         pqrs={detailPqrs}
-        updates={detailPqrs ? (adminHook.updatesMap[detailPqrs.id] ?? []) : []}
-        updatesLoading={adminHook.updatesLoading}
-        savingUpdate={adminHook.savingUpdate}
+        updates={
+          isAdmin && detailPqrs
+            ? (adminHook.updatesMap[detailPqrs.id] ?? [])
+            : detailPqrs?.updates ?? []
+        }
+        updatesLoading={isAdmin ? adminHook.updatesLoading : false}
+        savingUpdate={isAdmin ? adminHook.savingUpdate : false}
         open={detailOpen}
-        onClose={() => { setDetailOpen(false); setDetailPqrs(null); }}
-        onLoadUpdates={adminHook.loadUpdates}
-        onAddUpdate={adminHook.addUpdate}
+        mode={isAdmin ? "admin" : "citizen"}
+        onClose={() => {
+          setDetailOpen(false);
+          setDetailPqrs(null);
+        }}
+        onLoadUpdates={isAdmin ? adminHook.loadUpdates : undefined}
+        onAddUpdate={isAdmin ? adminHook.addUpdate : undefined}
       />
     </PageShell>
   );

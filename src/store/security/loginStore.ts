@@ -1,18 +1,18 @@
 import { create } from "zustand";
 import { dismissToast, showErrorToast, showLoadingToast, showSuccessToast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { LoginRepository } from "@/infra/repository/security/LoginRepository";
 import { useAuthStore } from "@/store/security/authStore";
 import { AuthorizeGithubLoginUseCase } from "@/core/applications/security/login/authorizeGithubLoginUseCase";
-import { AuthorizeMicrosoftLoginUseCase } from "@/core/applications/security/login/authorizeMicrosoftLoginUseCase";
 import { CompleteGithubRegistrationUseCase } from "@/core/applications/security/login/completeGithubRegistrationUseCase";
-import { CompleteMicrosoftRegistrationUseCase } from "@/core/applications/security/login/completeMicrosoftRegistrationUseCase";
 import { LoginUseCase } from "@/core/applications/security/login/loginUseCase";
 import { LoginWithGithubUseCase } from "@/core/applications/security/login/loginWithGithubUseCase";
-import { LoginWithMicrosoftUseCase } from "@/core/applications/security/login/loginWithMicrosoftUseCase";
 import { LoginWithGoogleUseCase } from "@/core/applications/security/login/loginWithGoogleUseCase";
 import { RegisterUseCase } from "@/core/applications/security/login/registerUseCase";
 import { ForgotPasswordUseCase } from "@/core/applications/security/login/forgotPasswordUseCase";
 import { ResetPasswordUseCase } from "@/core/applications/security/login/resetPasswordUseCase";
+import { RefreshTokenUseCase } from "@/core/applications/security/login/refreshTokenUseCase";
+import { GetMeUseCase } from "@/core/applications/security/login/getMeUseCase";
 import { VerifyTwoFactorUseCase } from "@/core/applications/security/login/verifyTwoFactorUseCase";
 import type {
   login,
@@ -26,53 +26,58 @@ import type {
   LoginGithubCallback,
   LoginGithubCompleteRegistration,
   LoginGithubResponse,
-  LoginMicrosoftAuthorizeResponse,
-  LoginMicrosoftCallback,
-  LoginMicrosoftCompleteRegistration,
-  LoginMicrosoftResponse,
   LoginGoogle,
   LoginResponse,
+  SecurityMe,
   Verify2FADTO,
 } from "@/core/domain/entities/security/Login";
 
 const loginRepository = new LoginRepository();
 const authorizeGithubLoginUseCase = new AuthorizeGithubLoginUseCase(loginRepository);
-const authorizeMicrosoftLoginUseCase = new AuthorizeMicrosoftLoginUseCase(loginRepository);
 const completeGithubRegistrationUseCase = new CompleteGithubRegistrationUseCase(loginRepository);
-const completeMicrosoftRegistrationUseCase = new CompleteMicrosoftRegistrationUseCase(loginRepository);
 const loginUseCase = new LoginUseCase(loginRepository);
 const loginWithGithubUseCase = new LoginWithGithubUseCase(loginRepository);
-const loginWithMicrosoftUseCase = new LoginWithMicrosoftUseCase(loginRepository);
 const loginWithGoogleUseCase = new LoginWithGoogleUseCase(loginRepository);
 const registerUseCase = new RegisterUseCase(loginRepository);
 const forgotPasswordUseCase = new ForgotPasswordUseCase(loginRepository);
 const resetPasswordUseCase = new ResetPasswordUseCase(loginRepository);
 const verifyTwoFactorUseCase = new VerifyTwoFactorUseCase(loginRepository);
+const refreshTokenUseCase = new RefreshTokenUseCase(loginRepository);
+const getMeUseCase = new GetMeUseCase(loginRepository);
 
 interface LoginStoreState {
   loading: boolean;
   error: string | null;
+  challengeToken: string | null;
+  challengeExpiration: string | null;
+  clearChallenge: () => void;
   register: (payload: RegisterUser) => Promise<RegisterUserResponse>;
   forgotPassword: (payload: ForgotPasswordDTO) => Promise<MessageResponse>;
   resetPassword: (payload: ResetPasswordDTO) => Promise<MessageResponse>;
   login: (credentials: login) => Promise<LoginChallengeResponse>;
-  verifyTwoFactor: (payload: Verify2FADTO) => Promise<LoginResponse>;
+  verifyTwoFactor: (code: string) => Promise<LoginResponse>;
+  refreshToken: (options?: {
+    expectedRole?: string;
+    maxAttempts?: number;
+    intervalMs?: number;
+  }) => Promise<LoginResponse>;
+  getMe: () => Promise<SecurityMe>;
   loginWithGoogle: (payload: LoginGoogle) => Promise<LoginResponse>;
   authorizeGithubLogin: () => Promise<LoginGithubAuthorizeResponse>;
   loginWithGithub: (payload: LoginGithubCallback) => Promise<LoginGithubResponse>;
   completeGithubRegistration: (
     payload: LoginGithubCompleteRegistration,
   ) => Promise<LoginGithubResponse>;
-  authorizeMicrosoftLogin: () => Promise<LoginMicrosoftAuthorizeResponse>;
-  loginWithMicrosoft: (payload: LoginMicrosoftCallback) => Promise<LoginMicrosoftResponse>;
-  completeMicrosoftRegistration: (
-    payload: LoginMicrosoftCompleteRegistration,
-  ) => Promise<LoginMicrosoftResponse>;
 }
 
-export const useLoginStore = create<LoginStoreState>((set) => ({
+export const useLoginStore = create<LoginStoreState>((set, get) => ({
   loading: false,
   error: null,
+  challengeToken: null,
+  challengeExpiration: null,
+  clearChallenge: () => {
+    set({ challengeToken: null, challengeExpiration: null, error: null });
+  },
   register: async (payload: RegisterUser) => {
     const loadingToastId = showLoadingToast("Creando cuenta...");
     set({ loading: true, error: null });
@@ -135,7 +140,7 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
   },
   login: async (credentials: login) => {
     const loadingToastId = showLoadingToast("Iniciando sesion...");
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, challengeToken: null, challengeExpiration: null });
     try {
       if (!credentials.email || !credentials.password) {
         set({ loading: false, error: "Email and password are required" });
@@ -143,29 +148,48 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
         throw new Error("Email and password are required");
       }
       const response = await loginUseCase.execute(credentials);
-      set({ loading: false });
+      if (!response.challengeToken) {
+        const message = "Login response missing challengeToken";
+        set({ loading: false, error: message });
+        showErrorToast(message);
+        throw new Error(message);
+      }
+      set({
+        loading: false,
+        challengeToken: response.challengeToken,
+        challengeExpiration: response.expiration ?? null,
+      });
       return response;
     } catch (error) {
-      set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Login failed: ${(error as Error).message}`);
-      throw error;
+      const message = getApiErrorMessage(error, "No se pudo iniciar sesión");
+      set({ loading: false, error: message, challengeToken: null, challengeExpiration: null });
+      showErrorToast(message);
+      throw new Error(message);
     } finally {
       dismissToast(loadingToastId);
     }
   },
-  verifyTwoFactor: async (payload: Verify2FADTO) => {
+  verifyTwoFactor: async (code: string) => {
     const loadingToastId = showLoadingToast("Validando codigo 2FA...");
     set({ loading: true, error: null });
     try {
-      if (!payload.challengeToken || !payload.code) {
+      const challengeToken = get().challengeToken?.trim() ?? "";
+      const normalizedCode = code.trim();
+
+      if (!challengeToken || !normalizedCode) {
         set({ loading: false, error: "Challenge token and 2FA code are required" });
         showErrorToast("Challenge token and 2FA code are required");
         throw new Error("Challenge token and 2FA code are required");
       }
 
+      const payload: Verify2FADTO = {
+        challengeToken,
+        code: normalizedCode,
+      };
+
       const response = await verifyTwoFactorUseCase.execute(payload);
       useAuthStore.getState().setToken(response.token);
-      set({ loading: false });
+      set({ loading: false, challengeToken: null, challengeExpiration: null });
       showSuccessToast("2FA verification successful");
       return response;
     } catch (error) {
@@ -174,6 +198,70 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
       throw error;
     } finally {
       dismissToast(loadingToastId);
+    }
+  },
+  refreshToken: async (options) => {
+    const maxAttempts = options?.maxAttempts ?? 6;
+    const intervalMs = options?.intervalMs ?? 5000;
+    const expectedRole = options?.expectedRole?.toUpperCase();
+
+    set({ loading: true, error: null });
+    let lastError: Error | null = null;
+
+    try {
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          const response = await refreshTokenUseCase.execute();
+          useAuthStore.getState().setToken(response.token);
+
+          if (!expectedRole) {
+            set({ loading: false });
+            return response;
+          }
+
+          const roles = useAuthStore.getState().currentUser?.roles ?? [];
+          if (roles.some((role) => role.toUpperCase() === expectedRole)) {
+            set({ loading: false });
+            return response;
+          }
+
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => {
+              setTimeout(resolve, intervalMs);
+            });
+          } else {
+            set({ loading: false });
+            return response;
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(getApiErrorMessage(error));
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => {
+              setTimeout(resolve, intervalMs);
+            });
+            continue;
+          }
+          throw lastError;
+        }
+      }
+
+      throw lastError ?? new Error("No se pudo actualizar el token");
+    } catch (error) {
+      const message = getApiErrorMessage(error, "No se pudo actualizar permisos");
+      set({ loading: false, error: message });
+      throw new Error(message);
+    }
+  },
+  getMe: async () => {
+    set({ loading: true, error: null });
+    try {
+      const me = await getMeUseCase.execute();
+      set({ loading: false });
+      return me;
+    } catch (error) {
+      const message = getApiErrorMessage(error, "No se pudo cargar el perfil de seguridad");
+      set({ loading: false, error: message });
+      throw new Error(message);
     }
   },
   loginWithGoogle: async (payload: LoginGoogle) => {
@@ -248,60 +336,6 @@ export const useLoginStore = create<LoginStoreState>((set) => ({
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
       showErrorToast(`GitHub registration failed: ${(error as Error).message}`);
-      throw error;
-    } finally {
-      dismissToast(loadingToastId);
-    }
-  },
-  authorizeMicrosoftLogin: async () => {
-    const loadingToastId = showLoadingToast("Autorizando Microsoft...");
-    set({ loading: true, error: null });
-    try {
-      const response = await authorizeMicrosoftLoginUseCase.execute();
-      set({ loading: false });
-      showSuccessToast("Microsoft authorization successful");
-      return response;
-    } catch (error) {
-      set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Microsoft authorize failed: ${(error as Error).message}`);
-      throw error;
-    } finally {
-      dismissToast(loadingToastId);
-    }
-  },
-  loginWithMicrosoft: async (payload: LoginMicrosoftCallback) => {
-    const loadingToastId = showLoadingToast("Iniciando sesion con Microsoft...");
-    set({ loading: true, error: null });
-    try {
-      const response = await loginWithMicrosoftUseCase.execute(payload);
-      if (response.status === "AUTHENTICATED" && response.token) {
-        useAuthStore.getState().setToken(response.token);
-      }
-      set({ loading: false });
-      showSuccessToast("Microsoft login successful");
-      return response;
-    } catch (error) {
-      set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Microsoft login failed: ${(error as Error).message}`);
-      throw error;
-    } finally {
-      dismissToast(loadingToastId);
-    }
-  },
-  completeMicrosoftRegistration: async (payload: LoginMicrosoftCompleteRegistration) => {
-    const loadingToastId = showLoadingToast("Completando registro con Microsoft...");
-    set({ loading: true, error: null });
-    try {
-      const response = await completeMicrosoftRegistrationUseCase.execute(payload);
-      if (response.status === "AUTHENTICATED" && response.token) {
-        useAuthStore.getState().setToken(response.token);
-      }
-      set({ loading: false });
-      showSuccessToast("Microsoft registration completed");
-      return response;
-    } catch (error) {
-      set({ loading: false, error: (error as Error).message });
-      showErrorToast(`Microsoft registration failed: ${(error as Error).message}`);
       throw error;
     } finally {
       dismissToast(loadingToastId);

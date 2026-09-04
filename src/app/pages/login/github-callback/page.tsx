@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLogin } from "@/hooks/security";
+import { resolvePostLoginPath } from "@/lib/postLoginRedirect";
 
 export default function GithubCallbackPage() {
   const navigate = useNavigate();
@@ -40,7 +41,9 @@ export default function GithubCallbackPage() {
 
         if (result.status === "AUTHENTICATED") {
           toast.success(result.message || "Inicio de sesion con GitHub completado");
-          void navigate("/app");
+          toast.info("Comprobando perfil…");
+          const nextPath = await resolvePostLoginPath();
+          void navigate(nextPath);
           return;
         }
 
@@ -79,7 +82,9 @@ export default function GithubCallbackPage() {
 
       if (result.status === "AUTHENTICATED") {
         toast.success(result.message || "Registro con GitHub completado");
-        void navigate("/app");
+        toast.info("Comprobando perfil…");
+        const nextPath = await resolvePostLoginPath();
+        void navigate(nextPath);
         return;
       }
 
@@ -93,9 +98,17 @@ export default function GithubCallbackPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <Card className="w-full max-w-md rounded-2xl border-slate-200">
+    <div className="flex min-h-screen items-center justify-center px-4"
+      style={{
+        backgroundImage:
+          "linear-gradient(145deg, color-mix(in oklab, var(--primary) 28%, white 72%) 0%, var(--background) 100%)",
+      }}
+    >
+      <Card className="w-full max-w-md rounded-2xl border-(--security-border)">
         <CardHeader>
+          <p className="text-sm font-semibold tracking-[0.08em] text-teal-800 uppercase">
+            urbanGO
+          </p>
           <CardTitle className="text-2xl text-slate-900">Autenticando con GitHub</CardTitle>
         </CardHeader>
 

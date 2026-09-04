@@ -5,7 +5,7 @@ export default function RegisterProfilePage() {
   return (
     <PageShell
       title="Registro de perfil"
-      description="Completa tu perfil como ciudadano o conductor para usar las funciones del sistema de transporte."
+      description="Completa tu perfil ciudadano o conductor en ms-business. La foto se sube aparte después de crear el perfil."
     >
       <PersonRegistrationForm />
     </PageShell>

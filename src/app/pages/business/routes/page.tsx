@@ -1,46 +1,77 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
+import { useSearchParams } from "react-router-dom";
 
-import { CrudDialogShell } from "@/app/components/security/crud-dialog-shell";
 import { DataTable } from "@/app/components/security/data-table";
-import { DialogField } from "@/app/components/security/dialog-field";
 import { PageShell } from "@/app/components/security/page-shell";
 import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdown";
-import { BUSINESS_LOOKUP_PAGE_SIZE, BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
-import { TextField, SelectField } from "@/app/components/business/form-fields";
+import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
+import {
+  RouteMapDesigner,
+  type RouteDesignerMode,
+  type RouteDesignerNode,
+  type RouteDesignerValues,
+} from "@/app/components/business/RouteMapDesigner";
 import { toTablePagination } from "@/infra/repository/business/businessPageAdapter";
-import { useRoute, useStopAdmin } from "@/hooks/business";
-import type { Route, RouteNodeInput } from "@/core/domain/entities/business";
+import { useRoute } from "@/hooks/business";
+import type { Route } from "@/core/domain/entities/business";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { getRouteById } from "@/services/routePlanningService";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { showErrorToast } from "@/lib/toast";
 
-type DialogMode = "create" | "edit" | "view";
+type PageMode = "list" | RouteDesignerMode;
 
-interface RouteForm {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  nodes: RouteNodeInput[];
+function nodesFromRouteDetail(
+  detail: Awaited<ReturnType<typeof getRouteById>>,
+): RouteDesignerNode[] {
+  const nodes = [...(detail.nodes ?? [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+  return nodes.map((node, index) => {
+    const lat = Number(node.stop?.latitude ?? 0);
+    const lng = Number(node.stop?.longitude ?? 0);
+    const prev = nodes[index - 1];
+    const prevLat = Number(prev?.stop?.latitude ?? lat);
+    const prevLng = Number(prev?.stop?.longitude ?? lng);
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(lat - prevLat);
+    const dLon = toRad(lng - prevLng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(prevLat)) *
+        Math.cos(toRad(lat)) *
+        Math.sin(dLon / 2) ** 2;
+    const distance =
+      index === 0 ? 0 : Math.round(2 * R * Math.asin(Math.sqrt(a)));
+
+    return {
+      stopId: node.stop?.id ?? `node-${String(index)}`,
+      stopName: node.stop?.name ?? `Parada ${String(index + 1)}`,
+      lat,
+      lng,
+      order: node.order ?? index + 1,
+      distanceFromPrevious: distance,
+      estimatedTimeMinutes:
+        index === 0 ? 0 : Math.max(0, node.estimatedTimeMinutes ?? 0),
+    };
+  });
 }
-
-const initialForm: RouteForm = {
-  id: "",
-  name: "",
-  description: "",
-  price: "",
-  nodes: [{ order: 1, stopId: "", estimatedTimeMinutes: 0 }],
-};
 
 export default function RoutesPage() {
   const crud = useRoute();
-  const stopCrud = useStopAdmin();
-  const [form, setForm] = useState<RouteForm>(initialForm);
-  const [dialogMode, setDialogMode] = useState<DialogMode>("create");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(0);
-  const [stopOptions, setStopOptions] = useState<{ value: string; label: string }[]>([]);
+  const [pageMode, setPageMode] = useState<PageMode>("list");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [designerInitial, setDesignerInitial] = useState<
+    Partial<RouteDesignerValues> | undefined
+  >(undefined);
+  const [designerKey, setDesignerKey] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const pagination = toTablePagination(crud.page?.meta ?? null);
 
@@ -49,12 +80,101 @@ export default function RoutesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  useEffect(() => {
-    void stopCrud.loadItems(0, BUSINESS_LOOKUP_PAGE_SIZE).then((page) => {
-      setStopOptions(page.items.map((s) => ({ value: s.id, label: s.name })));
+  const openList = useCallback(() => {
+    setPageMode("list");
+    setEditingId(null);
+    setDesignerInitial(undefined);
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
+
+  const openCreate = useCallback(() => {
+    setEditingId(null);
+    setDesignerInitial({
+      name: "",
+      description: "",
+      price: "",
+      nodes: [],
     });
+    setDesignerKey((k) => k + 1);
+    setPageMode("create");
+    setSearchParams({ mode: "create" }, { replace: true });
+  }, [setSearchParams]);
+
+  const openDesigner = useCallback(
+    async (mode: "edit" | "view", route: Route) => {
+      setLoadingDetail(true);
+      setEditingId(route.id);
+      try {
+        const detail = await getRouteById(route.id);
+        setDesignerInitial({
+          name: detail.name ?? route.name,
+          description: detail.description ?? route.description,
+          price: detail.price ?? route.price,
+          nodes: nodesFromRouteDetail(detail),
+        });
+        setDesignerKey((k) => k + 1);
+        setPageMode(mode);
+        setSearchParams({ mode, id: route.id }, { replace: true });
+      } catch (error) {
+        showErrorToast(
+          getApiErrorMessage(error, "No se pudo cargar el detalle de la ruta"),
+        );
+        setDesignerInitial({
+          name: route.name,
+          description: route.description,
+          price: route.price,
+          nodes: [],
+        });
+        setDesignerKey((k) => k + 1);
+        setPageMode(mode);
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [setSearchParams],
+  );
+
+  useEffect(() => {
+    if (searchParams.get("mode") === "create") {
+      openCreate();
+    }
+    // Deep-link only on first entry
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleSubmit = async (values: RouteDesignerValues) => {
+    setSubmitting(true);
+    try {
+      if (pageMode === "create") {
+        if (values.nodes.length < 3) {
+          showErrorToast("La ruta debe tener al menos 3 paradas");
+          return;
+        }
+        await crud.addItem({
+          name: values.name,
+          description: values.description,
+          price: Number(values.price),
+          nodes: values.nodes.map((node) => ({
+            order: node.order,
+            stopId: node.stopId,
+            estimatedTimeMinutes: node.estimatedTimeMinutes,
+          })),
+        });
+      } else if (pageMode === "edit" && editingId) {
+        await crud.editItem(editingId, {
+          name: values.name,
+          description: values.description,
+          price: Number(values.price),
+        });
+      }
+      openList();
+      await crud.loadItems(currentPage);
+    } catch {
+      // store toasts
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const columnHelper = createColumnHelper<Route>();
   const columns = [
@@ -73,37 +193,24 @@ export default function RoutesPage() {
                 label: "Ver",
                 icon: Eye,
                 onClick: () => {
-                  setForm({
-                    id: route.id,
-                    name: route.name,
-                    description: route.description,
-                    price: String(route.price),
-                    nodes: [],
-                  });
-                  setDialogMode("view");
-                  setIsDialogOpen(true);
+                  void openDesigner("view", route);
                 },
               },
               {
-                label: "Actualizar",
+                label: "Editar",
                 icon: Pencil,
                 onClick: () => {
-                  setForm({
-                    id: route.id,
-                    name: route.name,
-                    description: route.description,
-                    price: String(route.price),
-                    nodes: [],
-                  });
-                  setDialogMode("edit");
-                  setIsDialogOpen(true);
+                  void openDesigner("edit", route);
                 },
               },
               {
                 label: "Borrar",
                 icon: Trash2,
                 variant: "destructive",
-                onClick: () => void crud.removeItem(route.id).then(() => crud.loadItems(currentPage)),
+                onClick: () =>
+                  void crud
+                    .removeItem(route.id)
+                    .then(() => crud.loadItems(currentPage)),
               },
             ]}
           />
@@ -112,181 +219,45 @@ export default function RoutesPage() {
     }),
   ];
 
-  const handleSave = async () => {
-    try {
-      if (dialogMode === "edit") {
-        await crud.editItem(form.id, {
-          name: form.name.trim(),
-          description: form.description.trim(),
-          price: Number(form.price),
-        });
-      } else if (dialogMode === "create") {
-        await crud.addItem({
-          name: form.name.trim(),
-          description: form.description.trim(),
-          price: Number(form.price),
-          nodes: form.nodes
-            .filter((n) => n.stopId)
-            .map((n) => ({
-              order: n.order,
-              stopId: n.stopId,
-              estimatedTimeMinutes: Math.max(0, Math.round(n.estimatedTimeMinutes)),
-            })),
-        });
-      }
-      setIsDialogOpen(false);
-      await crud.loadItems(currentPage);
-    } catch {
-      // handled in store
-    }
-  };
-
   return (
-    <PageShell title="Rutas" description="Administra rutas y sus paradas.">
-      <DataTable
-        title="Listado de rutas"
-        description="Rutas del sistema."
-        data={crud.items}
-        columns={columns}
-        loading={crud.loading}
-        error={crud.error}
-        onRefresh={() => void crud.loadItems(currentPage)}
-        pageIndex={currentPage}
-        pageSize={BUSINESS_PAGE_SIZE}
-        pageCount={pagination.pageCount}
-        totalItems={pagination.totalItems}
-        onPageChange={setCurrentPage}
-        filterField="name"
-        toolbarAction={
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setForm(initialForm);
-              setDialogMode("create");
-              setIsDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-1 size-4" />
-            Adicionar
-          </Button>
-        }
-      />
-
-      <CrudDialogShell
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        mode={dialogMode}
-        title={dialogMode === "create" ? "Adicionar ruta" : dialogMode === "edit" ? "Actualizar ruta" : "Detalle de ruta"}
-        description="Configure la ruta y, al crear, asigne paradas en orden."
-        onClose={() => { setIsDialogOpen(false); }}
-        onSave={() => void handleSave()}
-      >
-        <TextField id="name" label="Nombre" value={form.name} onChange={(v) => { setForm((c) => ({ ...c, name: v })); }} disabled={dialogMode === "view"} />
-        <TextField id="description" label="Descripción" value={form.description} onChange={(v) => { setForm((c) => ({ ...c, description: v })); }} disabled={dialogMode === "view"} />
-        <TextField id="price" label="Precio" value={form.price} onChange={(v) => { setForm((c) => ({ ...c, price: v })); }} disabled={dialogMode === "view"} type="number" />
-
-        {dialogMode === "create" ? (
-          <RouteNodesEditor nodes={form.nodes} stopOptions={stopOptions} setForm={setForm} />
-        ) : null}
-      </CrudDialogShell>
-    </PageShell>
-  );
-}
-
-function RouteNodesEditor({
-  nodes,
-  stopOptions,
-  setForm,
-}: {
-  nodes: RouteNodeInput[];
-  stopOptions: { value: string; label: string }[];
-  setForm: React.Dispatch<React.SetStateAction<RouteForm>>;
-}) {
-  const updateNode = (index: number, patch: Partial<RouteNodeInput>) => {
-    setForm((c) => ({
-      ...c,
-      nodes: c.nodes.map((n, i) => (i === index ? { ...n, ...patch } : n)),
-    }));
-  };
-
-  const removeNode = (index: number) => {
-    setForm((c) => ({ ...c, nodes: c.nodes.filter((_, i) => i !== index) }));
-  };
-
-  const addNode = () => {
-    setForm((c) => ({
-      ...c,
-      nodes: [...c.nodes, { order: c.nodes.length + 1, stopId: "", estimatedTimeMinutes: 0 }],
-    }));
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium">Paradas de la ruta</p>
-      {nodes.map((node, index) => (
-        <RouteNodesEditorRow
-          key={index}
-          node={node}
-          index={index}
-          stopOptions={stopOptions}
-          updateNode={updateNode}
-          removeNode={removeNode}
-        />
-      ))}
-      <Button type="button" variant="outline" size="sm" onClick={addNode}>
-        Agregar parada
-      </Button>
-    </div>
-  );
-}
-
-function RouteNodesEditorRow({
-  node,
-  index,
-  stopOptions,
-  updateNode,
-  removeNode,
-}: {
-  node: RouteNodeInput;
-  index: number;
-  stopOptions: { value: string; label: string }[];
-  updateNode: (index: number, patch: Partial<RouteNodeInput>) => void;
-  removeNode: (index: number) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-end gap-2 rounded-md border p-3">
-      <DialogField label="Orden" htmlFor={`order-${String(index)}`}>
-        <Input
-          id={`order-${String(index)}`}
-          type="number"
-          value={node.order}
-          onChange={(e) => { updateNode(index, { order: Number(e.target.value) }); }}
-        />
-      </DialogField>
-      <DialogField label="Tiempo (min)" htmlFor={`time-${String(index)}`}>
-        <Input
-          id={`time-${String(index)}`}
-          type="number"
-          min={0}
-          step={1}
-          value={node.estimatedTimeMinutes}
-          onChange={(e) => {
-            updateNode(index, { estimatedTimeMinutes: Math.max(0, Math.round(Number(e.target.value) || 0)) });
+    <PageShell
+      title="Rutas"
+      description="Lista, crea y consulta rutas con el mismo recorrido en mapa."
+    >
+      {pageMode === "list" ? (
+        <DataTable
+          title="Listado de rutas"
+          description="Selecciona una ruta para verla o editarla, o crea una nueva con el mapa."
+          data={crud.items}
+          columns={columns}
+          loading={crud.loading || loadingDetail}
+          error={crud.error}
+          onRefresh={() => {
+            void crud.loadItems(currentPage);
           }}
+          pageIndex={currentPage}
+          pageSize={BUSINESS_PAGE_SIZE}
+          pageCount={pagination.pageCount}
+          totalItems={pagination.totalItems}
+          onPageChange={setCurrentPage}
+          filterField="name"
+          toolbarAction={
+            <Button type="button" size="sm" onClick={openCreate}>
+              <Plus className="mr-1 size-4" />
+              Nueva ruta
+            </Button>
+          }
         />
-      </DialogField>
-      <div className="min-w-[200px] flex-1">
-        <SelectField
-          label="Parada"
-          value={node.stopId}
-          onChange={(v) => { updateNode(index, { stopId: v }); }}
-          options={stopOptions}
+      ) : (
+        <RouteMapDesigner
+          key={designerKey}
+          mode={pageMode}
+          initialValues={designerInitial}
+          submitting={submitting}
+          onCancel={openList}
+          onSubmit={handleSubmit}
         />
-      </div>
-      <Button type="button" variant="ghost" size="sm" onClick={() => { removeNode(index); }}>
-        Quitar
-      </Button>
-    </div>
+      )}
+    </PageShell>
   );
 }

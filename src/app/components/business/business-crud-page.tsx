@@ -10,6 +10,14 @@ import { RowActionsDropdown } from "@/app/components/security/row-actions-dropdo
 import { BUSINESS_PAGE_SIZE } from "@/app/components/business/constants";
 import { toTablePagination } from "@/infra/repository/business/businessPageAdapter";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type DialogMode = "create" | "edit" | "view";
 
@@ -21,6 +29,7 @@ interface BusinessCrudPageProps<T extends { id: string }, TForm, CreateDto, Upda
   entityLabel: string;
   filterField?: string;
   filterPlaceholder?: string;
+  emptyMessage?: string;
   items: T[];
   page: BusinessPage<T> | null;
   loading: boolean;
@@ -41,6 +50,17 @@ interface BusinessCrudPageProps<T extends { id: string }, TForm, CreateDto, Upda
   ) => ReactNode;
   buildCreatePayload: (form: TForm) => CreateDto;
   buildUpdatePayload: (form: TForm) => UpdateDto;
+  validateForm?: (form: TForm, mode: DialogMode) => boolean;
+  isFormDirty?: (
+    form: TForm,
+    initialForm: TForm,
+    mode: DialogMode,
+  ) => boolean;
+  isSaveDisabled?: (form: TForm, mode: DialogMode) => boolean;
+  saveLabel?: string;
+  onDialogOpen?: () => void;
+  /** Passed to CrudDialogShell DialogContent (e.g. sm:max-w-4xl for map forms). */
+  dialogContentClassName?: string;
 }
 
 export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, UpdateDto>({
@@ -51,6 +71,7 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
   entityLabel,
   filterField,
   filterPlaceholder,
+  emptyMessage,
   items,
   page,
   loading,
@@ -66,10 +87,19 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
   renderForm,
   buildCreatePayload,
   buildUpdatePayload,
+  validateForm,
+  isFormDirty,
+  isSaveDisabled,
+  saveLabel = "Guardar",
+  onDialogOpen,
+  dialogContentClassName,
 }: BusinessCrudPageProps<T, TForm, CreateDto, UpdateDto>) {
   const [form, setForm] = useState<TForm>(initialForm);
+  const [formBaseline, setFormBaseline] = useState<TForm>(initialForm);
   const [dialogMode, setDialogMode] = useState<DialogMode>("create");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
   const pagination = toTablePagination(page?.meta ?? null);
@@ -81,36 +111,83 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
 
   const reload = () => loadItems(currentPage);
 
+  const formIsDirty =
+    dialogMode === "view"
+      ? false
+      : isFormDirty
+        ? isFormDirty(form, formBaseline, dialogMode)
+        : true;
+
+  const saveDisabled =
+    (isSaveDisabled?.(form, dialogMode) ?? false) ||
+    (dialogMode === "edit" && isFormDirty != null && !formIsDirty);
+
+  const showSave =
+    dialogMode === "create" ||
+    dialogMode === "edit" && (isFormDirty == null || formIsDirty || saving);
+
   const openCreate = () => {
+    onDialogOpen?.();
     setForm(initialForm);
+    setFormBaseline(initialForm);
     setDialogMode("create");
     setIsDialogOpen(true);
   };
 
   const openEdit = (entity: T) => {
-    setForm(mapToForm(entity));
+    onDialogOpen?.();
+    const mappedForm = mapToForm(entity);
+    setForm(mappedForm);
+    setFormBaseline(mappedForm);
     setDialogMode("edit");
     setIsDialogOpen(true);
   };
 
   const openView = (entity: T) => {
-    setForm(mapToForm(entity));
+    onDialogOpen?.();
+    const mappedForm = mapToForm(entity);
+    setForm(mappedForm);
+    setFormBaseline(mappedForm);
     setDialogMode("view");
     setIsDialogOpen(true);
   };
 
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setDiscardDialogOpen(false);
+    setForm(initialForm);
+  };
+
+  const requestClose = () => {
+    if (saving) return;
+    if (
+      dialogMode !== "view" &&
+      isFormDirty?.(form, formBaseline, dialogMode)
+    ) {
+      setDiscardDialogOpen(true);
+      return;
+    }
+    closeDialog();
+  };
+
   const handleSave = async () => {
+    if (validateForm && !validateForm(form, dialogMode)) {
+      return;
+    }
+
+    setSaving(true);
     try {
       if (dialogMode === "edit") {
         await editItem(getId(form), buildUpdatePayload(form));
       } else if (dialogMode === "create") {
         await addItem(buildCreatePayload(form));
       }
-      setIsDialogOpen(false);
-      setForm(initialForm);
+      closeDialog();
       await reload();
     } catch {
       // store handles toasts
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -162,9 +239,14 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
         onPageChange={setCurrentPage}
         filterField={filterField}
         filterPlaceholder={filterPlaceholder}
-        emptyMessage={`No hay ${entityLabel} registrados.`}
+        emptyMessage={emptyMessage ?? `No hay ${entityLabel} registrados.`}
         toolbarAction={
-          <Button type="button" size="sm" onClick={openCreate}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={openCreate}
+            className="bg-teal-700 text-white hover:bg-teal-600"
+          >
             <Plus className="mr-1 size-4" />
             Adicionar
           </Button>
@@ -173,7 +255,9 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
 
       <CrudDialogShell
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) requestClose();
+        }}
         mode={dialogMode}
         title={
           dialogMode === "create"
@@ -187,11 +271,41 @@ export function BusinessCrudPage<T extends { id: string }, TForm, CreateDto, Upd
             ? `Información del ${entityLabel} seleccionado.`
             : `Complete los campos del ${entityLabel}.`
         }
-        onClose={() => { setIsDialogOpen(false); }}
+        onClose={requestClose}
         onSave={() => void handleSave()}
+        saveLabel={saveLabel}
+        saving={saving}
+        saveDisabled={saveDisabled}
+        showSave={showSave}
+        contentClassName={dialogContentClassName}
       >
         {renderForm(form, setForm, dialogMode)}
       </CrudDialogShell>
+
+      <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Descartar este {entityLabel}?</DialogTitle>
+            <DialogDescription>
+              Perderás los datos que ya diligenciaste.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDiscardDialogOpen(false);
+              }}
+            >
+              Seguir editando
+            </Button>
+            <Button type="button" variant="destructive" onClick={closeDialog}>
+              Descartar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

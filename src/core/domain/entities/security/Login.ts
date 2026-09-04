@@ -47,6 +47,27 @@ export interface LoginResponse {
     token: string;
 }
 
+/** Identity from GET /api/public/security/me — no phone/photo profile. */
+export interface SecurityMeRole {
+    id: string;
+    name: string;
+    description?: string;
+}
+
+export interface SecurityMePermission {
+    id: string;
+    url: string;
+    method: string;
+}
+
+export interface SecurityMe {
+    id: string;
+    name: string;
+    email: string;
+    roles: SecurityMeRole[];
+    permissions: SecurityMePermission[];
+}
+
 export interface LoginGoogle {
     idToken: string;
 }
@@ -55,16 +76,7 @@ export interface LoginGithubAuthorizeResponse {
     authorizationUrl: string;
 }
 
-export interface LoginMicrosoftAuthorizeResponse {
-    authorizationUrl: string;
-}
-
 export interface LoginGithubCallback {
-    code: string;
-    state: string;
-}
-
-export interface LoginMicrosoftCallback {
     code: string;
     state: string;
 }
@@ -74,23 +86,7 @@ export interface LoginGithubCompleteRegistration {
     email: string;
 }
 
-export interface LoginMicrosoftCompleteRegistration {
-    registrationToken: string;
-    email: string;
-}
-
 export interface LoginGithubResponse {
-    status: string;
-    message: string;
-    token: string | null;
-    idToken: string | null;
-    registrationToken: string | null;
-    linked: boolean;
-    created: boolean;
-    user: User | null;
-}
-
-export interface LoginMicrosoftResponse {
     status: string;
     message: string;
     token: string | null;

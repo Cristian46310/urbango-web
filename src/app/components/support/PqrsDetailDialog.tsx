@@ -3,7 +3,12 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ArrowRight, MessageSquarePlus } from "lucide-react";
 
-import type { CreatePqrsUpdateRequest, Pqrs, PqrsStatus, PqrsUpdate } from "@/core/types/pqrs";
+import type {
+  CreatePqrsUpdateRequest,
+  Pqrs,
+  PqrsStatus,
+  PqrsUpdate,
+} from "@/core/types/pqrs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,17 +26,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PqrsStatusBadge, statusLabels } from "./PqrsStatusBadge";
+import {
+  PqrsStatusBadge,
+  categoryLabels,
+  statusLabels,
+  typeLabels,
+} from "./PqrsStatusBadge";
 
 interface PqrsDetailDialogProps {
   pqrs: Pqrs | null;
-  updates: PqrsUpdate[];
-  updatesLoading: boolean;
-  savingUpdate: boolean;
+  updates?: PqrsUpdate[];
+  updatesLoading?: boolean;
+  savingUpdate?: boolean;
   open: boolean;
+  mode?: "citizen" | "admin";
   onClose: () => void;
-  onLoadUpdates: (pqrsId: string) => void;
-  onAddUpdate: (pqrsId: string, payload: CreatePqrsUpdateRequest) => Promise<boolean>;
+  onLoadUpdates?: (pqrsId: string) => void;
+  onAddUpdate?: (pqrsId: string, payload: CreatePqrsUpdateRequest) => Promise<boolean>;
 }
 
 function formatDate(value: string) {
@@ -42,14 +53,24 @@ function formatDate(value: string) {
   }
 }
 
+function formatEstimated(value: string | null) {
+  if (!value) return "—";
+  try {
+    return format(new Date(value), "d 'de' MMMM 'de' yyyy", { locale: es });
+  } catch {
+    return value;
+  }
+}
+
 const pqrsStatuses: PqrsStatus[] = ["received", "in_review", "in_progress", "resolved"];
 
 export function PqrsDetailDialog({
   pqrs,
-  updates,
-  updatesLoading,
-  savingUpdate,
+  updates = [],
+  updatesLoading = false,
+  savingUpdate = false,
   open,
+  mode = "admin",
   onClose,
   onLoadUpdates,
   onAddUpdate,
@@ -59,14 +80,14 @@ export function PqrsDetailDialog({
   const [agentResponse, setAgentResponse] = useState("");
 
   useEffect(() => {
-    if (pqrs && open) {
+    if (pqrs && open && mode === "admin" && onLoadUpdates) {
       onLoadUpdates(pqrs.id);
     }
-  }, [pqrs, open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pqrs, open, mode, onLoadUpdates]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pqrs) return;
+    if (!pqrs || !onAddUpdate) return;
     const ok = await onAddUpdate(pqrs.id, {
       status_to: statusTo,
       description,
@@ -80,143 +101,188 @@ export function PqrsDetailDialog({
 
   if (!pqrs) return null;
 
+  const categoryLabel = pqrs.category
+    ? (categoryLabels[pqrs.category] ?? pqrs.category)
+    : "Sin clasificar";
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-2xl">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>PQRS #{pqrs.ticket_number}</span>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            <span className="font-mono">PQRS #{pqrs.ticket_number}</span>
             <PqrsStatusBadge status={pqrs.status} />
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 text-sm">
-          <div className="grid grid-cols-2 gap-3 rounded-lg border bg-muted/40 p-3">
+          <div className="grid gap-3 rounded-lg border bg-muted/40 p-3 sm:grid-cols-2">
             <div>
               <span className="text-xs text-muted-foreground">Usuario</span>
-              <p className="font-medium truncate">{pqrs.user_email}</p>
+              <p className="truncate font-medium">{pqrs.user_email}</p>
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Creada</span>
               <p>{formatDate(pqrs.created_at)}</p>
             </div>
             <div>
+              <span className="text-xs text-muted-foreground">Tipo</span>
+              <p>{typeLabels[pqrs.type] ?? pqrs.type}</p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Categoría</span>
+              <p>{categoryLabel}</p>
+            </div>
+            <div className="sm:col-span-2">
+              <span className="text-xs text-muted-foreground">Respuesta estimada</span>
+              <p>{formatEstimated(pqrs.estimated_response_at)}</p>
+            </div>
+            <div className="sm:col-span-2">
               <span className="text-xs text-muted-foreground">Descripción</span>
               <p className="whitespace-pre-wrap">{pqrs.description || "—"}</p>
             </div>
-            {pqrs.images?.length > 0 && (
-              <div>
-                <span className="text-xs text-muted-foreground">Adjuntos</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+            {pqrs.images?.length > 0 ? (
+              <div className="sm:col-span-2">
+                <span className="text-xs text-muted-foreground">Imágenes adjuntas</span>
+                <div className="mt-2 flex flex-wrap gap-2">
                   {pqrs.images.map((img) => (
                     <a
                       key={img.id}
                       href={img.image_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary underline"
+                      className="group block overflow-hidden rounded-md border"
+                      title={img.original_name}
                     >
-                      {img.original_name}
+                      <img
+                        src={img.image_url}
+                        alt={img.original_name}
+                        className="h-24 w-24 object-cover transition-opacity group-hover:opacity-90"
+                      />
                     </a>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Historial de seguimientos
-            </p>
-            <ScrollArea className="h-40 rounded-lg border">
-              {updatesLoading ? (
-                <p className="p-4 text-center text-sm text-muted-foreground">Cargando...</p>
-              ) : updates.length === 0 ? (
-                <p className="p-4 text-center text-sm text-muted-foreground">Sin seguimientos.</p>
-              ) : (
-                <div className="divide-y">
-                  {updates.map((u) => (
-                    <div key={u.id} className="px-3 py-2">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatDate(u.created_at)}</span>
-                        {u.status_from && u.status_to && (
-                          <>
-                            <span className="font-medium text-foreground">
-                              {statusLabels[u.status_from]}
-                            </span>
-                            <ArrowRight className="size-3" />
-                            <span className="font-medium text-foreground">
-                              {statusLabels[u.status_to]}
-                            </span>
-                          </>
-                        )}
+          {(mode === "admin" || (pqrs.updates?.length ?? 0) > 0 || updates.length > 0) && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Historial de seguimientos
+              </p>
+              <ScrollArea className="h-40 rounded-lg border">
+                {updatesLoading ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    Cargando...
+                  </p>
+                ) : (updates.length > 0 ? updates : pqrs.updates ?? []).length === 0 ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    Sin seguimientos.
+                  </p>
+                ) : (
+                  <div className="divide-y">
+                    {(updates.length > 0 ? updates : pqrs.updates ?? []).map((u) => (
+                      <div key={u.id} className="px-3 py-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{formatDate(u.created_at)}</span>
+                          {u.status_from && u.status_to ? (
+                            <>
+                              <span className="font-medium text-foreground">
+                                {statusLabels[u.status_from]}
+                              </span>
+                              <ArrowRight className="size-3" />
+                              <span className="font-medium text-foreground">
+                                {statusLabels[u.status_to]}
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                        {u.description ? (
+                          <p className="mt-1 text-sm">{u.description}</p>
+                        ) : null}
+                        {u.agent_response ? (
+                          <p className="mt-1 text-xs italic text-muted-foreground">
+                            Respuesta: {u.agent_response}
+                          </p>
+                        ) : null}
                       </div>
-                      {u.description && (
-                        <p className="mt-1 text-sm">{u.description}</p>
-                      )}
-                      {u.agent_response && (
-                        <p className="mt-1 text-xs text-muted-foreground italic">
-                          Respuesta: {u.agent_response}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          )}
 
-          <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-3 rounded-lg border p-3">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <MessageSquarePlus className="size-4" />
-              Registrar seguimiento
-            </p>
-            <div className="space-y-1">
-              <Label className="text-xs">Cambiar estado a</Label>
-              <Select
-                value={statusTo}
-                onValueChange={(v) => { setStatusTo(v as PqrsStatus); }}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {pqrsStatuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {statusLabels[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Nota interna</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => { setDescription(e.target.value); }}
-                placeholder="Descripción del seguimiento..."
-                rows={2}
-                className="text-sm"
-                maxLength={1000}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Respuesta al ciudadano</Label>
-              <Textarea
-                value={agentResponse}
-                onChange={(e) => { setAgentResponse(e.target.value); }}
-                placeholder="Mensaje de respuesta para el ciudadano..."
-                rows={2}
-                className="text-sm"
-                maxLength={2000}
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit" size="sm" disabled={savingUpdate}>
-                {savingUpdate ? "Guardando..." : "Guardar seguimiento"}
-              </Button>
-            </div>
-          </form>
+          {mode === "admin" && onAddUpdate ? (
+            <form
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+              className="space-y-3 rounded-lg border p-3"
+            >
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <MessageSquarePlus className="size-4" />
+                Registrar seguimiento
+              </p>
+              <div className="space-y-1">
+                <Label className="text-xs">Cambiar estado a</Label>
+                <Select
+                  value={statusTo}
+                  onValueChange={(v) => {
+                    setStatusTo(v as PqrsStatus);
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pqrsStatuses.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {statusLabels[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Nota interna</Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                  }}
+                  placeholder="Descripción del seguimiento..."
+                  rows={2}
+                  className="text-sm"
+                  maxLength={1000}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Respuesta al ciudadano</Label>
+                <Textarea
+                  value={agentResponse}
+                  onChange={(e) => {
+                    setAgentResponse(e.target.value);
+                  }}
+                  placeholder="Mensaje de respuesta para el ciudadano..."
+                  rows={2}
+                  className="text-sm"
+                  maxLength={2000}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" size="sm" disabled={savingUpdate}>
+                  {savingUpdate ? "Guardando..." : "Guardar seguimiento"}
+                </Button>
+              </div>
+            </form>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

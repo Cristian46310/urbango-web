@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { GroupDetail, MessageGroup } from "@/core/types/messaging";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { showErrorToast } from "@/lib/toast";
 import { getGroupById, getPublicGroups } from "@/services/groupService";
 
 export function usePublicGroups() {
@@ -33,9 +32,6 @@ export function usePublicGroups() {
     } catch (err) {
       const message = getApiErrorMessage(err, "No se pudieron cargar los grupos públicos");
       setError(message);
-      if (!silent) {
-        showErrorToast(message);
-      }
       return [];
     } finally {
       if (!silent) {
@@ -58,7 +54,6 @@ export function usePublicGroups() {
     } catch (err) {
       const message = getApiErrorMessage(err, "No se pudo cargar el grupo");
       setError(message);
-      showErrorToast(message);
       return null;
     } finally {
       setDetailLoading(false);

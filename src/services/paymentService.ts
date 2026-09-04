@@ -1,35 +1,28 @@
-import { paymentMethodCitizenRepository } from '@/infra/repository/paymentMethodCitizen';
-import { cardRechargeRepository } from '@/infra/repository/cardRecharge';
-import type { RechargeableCard } from '@/core/domain/entities/business/CardRecharge';
+import { myPaymentMethodCitizenRepository } from '@/infra/repository/paymentMethodCitizen';
+import type { PaymentMethodCode } from '@/core/domain/entities/business';
 
 export interface PaymentMethodItem {
+  /** paymentMethodCitizenId — send this on boarding. */
   id: string;
+  paymentMethodId: string;
   balance: number;
   type: string;
+  code?: PaymentMethodCode;
+  isRechargeable?: boolean;
 }
 
+/**
+ * Boarding must use linked methods from GET /payment-method-citizen/me,
+ * not the general payment-method catalog.
+ */
 export async function getMyPaymentMethods(): Promise<PaymentMethodItem[]> {
-  try {
-    const mine = await paymentMethodCitizenRepository.listMine();
-    if (mine.length > 0) {
-      return mine.map((item) => ({
-        id: item.id,
-        balance: item.balance,
-        type: item.label,
-      }));
-    }
-  } catch {
-    // Fallback si el backend aún no expone GET /payment-method-citizen/me
-  }
-
-  const cards = await cardRechargeRepository.listCards();
-  return cards.map(mapCardToPaymentMethod);
-}
-
-function mapCardToPaymentMethod(card: RechargeableCard): PaymentMethodItem {
-  return {
-    id: card.id,
-    balance: card.balance ?? 0,
-    type: card.label,
-  };
+  const mine = await myPaymentMethodCitizenRepository.listMine();
+  return mine.map((item) => ({
+    id: item.id,
+    paymentMethodId: item.paymentMethodId,
+    balance: item.balance,
+    type: item.label,
+    code: item.code,
+    isRechargeable: item.isRechargeable,
+  }));
 }

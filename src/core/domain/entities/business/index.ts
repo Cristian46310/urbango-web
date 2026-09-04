@@ -72,18 +72,37 @@ export interface UpdateStopDTO {
   type?: StopType;
 }
 
+export type PaymentMethodCode = "SYSTEM_CARD" | "CASH" | "EXTERNAL_CARD" | (string & {});
+
 export interface PaymentMethod {
   id: string;
   name: string;
+  /** Stable catalog key for UI logic (icons, saldo, recarga). */
+  code?: PaymentMethodCode;
+  isRechargeable?: boolean;
   createdAt?: string;
 }
 
 export interface CreatePaymentMethodDTO {
   name: string;
+  code?: PaymentMethodCode;
+  isRechargeable?: boolean;
 }
 
 export interface UpdatePaymentMethodDTO {
   name?: string;
+  code?: PaymentMethodCode;
+  isRechargeable?: boolean;
+}
+
+/** Nested address on citizen create/update (preferred over addressId). */
+export interface CitizenAddressInput {
+  address: string;
+  city: string;
+}
+
+export interface CitizenAddress extends CitizenAddressInput {
+  id?: string;
 }
 
 export interface Citizen {
@@ -93,7 +112,10 @@ export interface Citizen {
   email?: string;
   phone?: string;
   extraInfo?: string;
+  /** Legacy FK; still returned by API. Prefer `address`. */
   addressId?: string;
+  address?: CitizenAddress | null;
+  photoUrl?: string | null;
   createdAt?: string;
 }
 
@@ -103,6 +125,10 @@ export interface CreateCitizenDTO {
   email?: string;
   phone?: string;
   extraInfo?: string;
+  birthDate?: string;
+  /** Nested domicile — do not send together with addressId. */
+  address?: CitizenAddressInput;
+  /** @deprecated Prefer nested `address`. */
   addressId?: string;
 }
 
@@ -112,11 +138,16 @@ export interface UpdateCitizenDTO {
   email?: string;
   phone?: string;
   extraInfo?: string;
+  birthDate?: string;
+  address?: CitizenAddressInput;
+  /** @deprecated Prefer nested `address`. */
   addressId?: string;
 }
 
 export interface Driver {
   id: string;
+  userId?: string;
+  enterpriseId?: string;
   name: string;
   document?: string;
   email?: string;
@@ -127,10 +158,12 @@ export interface Driver {
 }
 
 export interface CreateDriverDTO {
+  userId: string;
+  enterpriseId: string;
   name: string;
-  document?: string;
-  email?: string;
-  phone?: string;
+  document: string;
+  email: string;
+  phone: string;
   licenseNumber: string;
   licenseExpiry: string;
 }
@@ -163,6 +196,9 @@ export type {
   TripDetails,
   StartTurnPayload,
   StartTurnResponse,
+  EndTurnPayload,
+  EndTurnResponse,
+  CurrentTurn,
 } from './Transit';
 
 export interface Route {
@@ -229,7 +265,8 @@ export interface CreateSchedulerDTO {
   routeId: string;
   date: string;
   departureTime: string;
-  status?: SchedulerStatus;
+  toleranceMinutes?: number;
+  recurrenceType?: string;
 }
 
 export interface UpdateSchedulerDTO {
@@ -263,6 +300,8 @@ export interface Turn {
   status: TurnStatus;
   busId?: string;
   driverId?: string;
+  bus?: Pick<BusEntity, "id" | "plate" | "status">;
+  driver?: Pick<Driver, "id" | "name">;
   createdAt?: string;
 }
 
@@ -327,7 +366,6 @@ export interface RealtimeIncident {
 }
 
 export interface CreateArrivalNotificationDTO {
-  email?: string;
   routeId: string;
   stopId: string;
   anticipationMinutes: 5 | 10 | 15;
@@ -365,13 +403,19 @@ export interface PaymentMethodCitizen {
   id: string;
   citizenId: string;
   paymentMethodId: string;
+  balance?: number;
   citizen?: Pick<Citizen, "id" | "name" | "document">;
-  paymentMethod?: Pick<PaymentMethod, "id" | "name">;
+  paymentMethod?: Pick<PaymentMethod, "id" | "name" | "code" | "isRechargeable">;
   createdAt?: string;
 }
 
 export interface CreatePaymentMethodCitizenDTO {
   citizenId: string;
+  paymentMethodId: string;
+}
+
+/** Self-service link: citizen id comes from JWT. */
+export interface LinkMyPaymentMethodDTO {
   paymentMethodId: string;
 }
 
@@ -389,13 +433,19 @@ export type {
 export {
   INCIDENT_TYPE_LABELS,
   INCIDENT_SEVERITY_LABELS,
+  INCIDENT_SEVERITY_OPTIONS,
+  INCIDENT_SEVERITY_RANK,
   INCIDENT_STATUS_LABELS,
   INCIDENT_TYPE_OPTIONS,
   INCIDENT_STATUS_OPTIONS,
+  INCIDENT_STATUS_FLOW,
   formatIncidentDate,
+  formatIncidentDateLong,
+  formatIncidentRadicado,
   incidentTypeLabel,
   incidentSeverityLabel,
   incidentStatusLabel,
+  truncateText,
 } from './Incident';
 
 export interface IncidentStatistics {

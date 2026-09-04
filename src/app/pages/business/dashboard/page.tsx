@@ -26,7 +26,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { dashboardRepository } from "@/infra/repository/business/DashboardRepository";
-import { buildRealtimeSocketConfig } from "@/infra/api/realtimeSocket";
+import {
+  buildRealtimeSocketConfig,
+  getRealtimeSocketAuthOptions,
+} from "@/infra/api/realtimeSocket";
 import type { RealtimeBusLocation, RealtimeIncident } from "@/core/domain/entities/business";
 
 const DEFAULT_CENTER: [number, number] = [4.6482837, -74.075816];
@@ -84,13 +87,37 @@ function getBusMarkerIcon(statusColor?: string): L.DivIcon {
 
 const MONTH_OPTIONS = [3, 6, 12] as const;
 
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function isBusLikeItem(item: unknown): item is RealtimeBusLocation {
   if (!item || typeof item !== "object") {
     return false;
   }
 
   const candidate = item as Record<string, unknown>;
-  return typeof candidate.busId === "string" && typeof candidate.lat === "number" && typeof candidate.lng === "number";
+  const lat = toFiniteNumber(candidate.lat ?? candidate.latitude);
+  const lng = toFiniteNumber(candidate.lng ?? candidate.longitude);
+  return typeof candidate.busId === "string" && lat != null && lng != null;
+}
+
+function coerceFleetBuses(fleet: RealtimeBusLocation[]): RealtimeBusLocation[] {
+  return fleet.map((bus) => {
+    const raw = bus as RealtimeBusLocation & { latitude?: number; longitude?: number };
+    return {
+      ...bus,
+      lat: toFiniteNumber(raw.lat ?? raw.latitude) ?? bus.lat,
+      lng: toFiniteNumber(raw.lng ?? raw.longitude) ?? bus.lng,
+    };
+  });
 }
 
 function isIncidentLikeItem(item: unknown): item is RealtimeIncident {
@@ -199,9 +226,11 @@ export default function BusinessDashboardPage() {
     setFleetError(null);
 
     try {
-      const fleet = await dashboardRepository.getRealtimeFleet(
-        enterpriseId === "all" ? undefined : enterpriseId,
-        routeFilter === "all" ? undefined : routeFilter,
+      const fleet = coerceFleetBuses(
+        await dashboardRepository.getRealtimeFleet(
+          enterpriseId === "all" ? undefined : enterpriseId,
+          routeFilter === "all" ? undefined : routeFilter,
+        ),
       );
 
       setFleetBuses(fleet);
@@ -246,6 +275,11 @@ export default function BusinessDashboardPage() {
 
   useEffect(() => {
     void loadRealtimeData();
+    // El script demo escribe GPS directo en BD (sin WS). Polling garantiza movimiento en mapa.
+    const intervalId = window.setInterval(() => {
+      void loadRealtimeData();
+    }, 5_000);
+    return () => window.clearInterval(intervalId);
   }, [loadRealtimeData]);
 
   useEffect(() => {
@@ -270,12 +304,12 @@ export default function BusinessDashboardPage() {
       return;
     }
 
-    const socket = io(socketConfig.url, {
-      path: socketConfig.wsPath,
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 3000,
-    });
+    const authOptions = getRealtimeSocketAuthOptions(socketConfig);
+    if (!authOptions) {
+      return;
+    }
+
+    const socket = io(socketConfig.url, authOptions);
     realtimeSocketRef.current = socket;
 
     socket.on("connect", () => {
@@ -289,12 +323,13 @@ export default function BusinessDashboardPage() {
     });
 
     const applyFleetUpdate = (fleet: RealtimeBusLocation[]) => {
-      setFleetBuses(fleet);
-      if (fleet.length > 0) {
-        setMapCenter([fleet[0].lat, fleet[0].lng]);
+      const normalized = coerceFleetBuses(fleet);
+      setFleetBuses(normalized);
+      if (normalized.length > 0) {
+        setMapCenter([normalized[0].lat, normalized[0].lng]);
       }
 
-      const routes = fleet
+      const routes = normalized
         .filter((bus) => bus.routeId)
         .reduce<{ value: string; label: string }[]>((acc, bus) => {
           if (!acc.some((item) => item.value === bus.routeId)) {
@@ -519,7 +554,7 @@ export default function BusinessDashboardPage() {
                     />
                     {displayedFleetBuses.map((bus) => (
                       <Marker
-                        key={bus.busId}
+                        key={`${bus.busId}:${bus.lat.toFixed(6)}:${bus.lng.toFixed(6)}`}
                         position={[bus.lat, bus.lng]}
                         icon={getBusMarkerIcon(bus.statusColor)}
                         eventHandlers={{ click: () => { setSelectedBus(bus); } }}

@@ -82,7 +82,11 @@ export const useCitizenStore = createBusinessCrudStore<Citizen, CreateCitizenDTO
 
 export const useDriverAdminStore = createBusinessCrudStore<Driver, CreateDriverDTO, UpdateDriverDTO>(
   createBusinessCrudUseCases(driverRepository),
-  { entityLabel: "conductor" },
+  {
+    entityLabel: "conductor",
+    createSuccessMessage:
+      "Conductor creado. El usuario debe cerrar sesión e ingresar nuevamente para activar el rol DRIVER.",
+  },
 );
 
 export const useRouteStore = createBusinessCrudStore<Route, CreateRouteDTO, UpdateRouteDTO>(
@@ -108,7 +112,7 @@ export const useSchedulerStore = createBusinessCrudStore<
 
 export const useTurnStore = createBusinessCrudStore<Turn, CreateTurnDTO, UpdateTurnDTO>(
   createBusinessCrudUseCases(turnRepository),
-  { entityLabel: "turno" },
+  { entityLabel: "Turno" },
 );
 
 export const usePaymentMethodCitizenStore = createBusinessCrudStore<

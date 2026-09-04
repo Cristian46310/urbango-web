@@ -6,6 +6,7 @@ type ErrorHandler = (statusCode: number) => void;
 
 class HttpClient {
   private instance: AxiosInstance;
+  private responseInterceptorId: number | null = null;
 
   constructor(baseURL: string) {
     this.instance = axios.create({
@@ -31,7 +32,13 @@ class HttpClient {
   }
 
   setErrorHandler(handler: ErrorHandler) {
-    this.instance.interceptors.response.use(
+    // Replace any previous handler so React StrictMode remounts don't stack interceptors.
+    if (this.responseInterceptorId !== null) {
+      this.instance.interceptors.response.eject(this.responseInterceptorId);
+      this.responseInterceptorId = null;
+    }
+
+    this.responseInterceptorId = this.instance.interceptors.response.use(
       (response) => response,
       (error: unknown) => {
         if (axios.isAxiosError(error)) {
@@ -68,8 +75,12 @@ class HttpClient {
     return response.data;
   }
 
-  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T = void>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.delete<T>(endpoint, config);
+    // 204 No Content — do not parse body
+    if (response.status === 204 || response.data == null || response.data === "") {
+      return undefined as T;
+    }
     return response.data;
   }
 }

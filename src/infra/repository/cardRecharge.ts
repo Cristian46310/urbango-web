@@ -221,6 +221,20 @@ export const cardRechargeRepository = {
     return mapCards(response);
   },
 
+  async registerCard(
+    payload: { paymentMethodId?: string; label?: string } = {},
+  ): Promise<RechargeableCard> {
+    const response = await httpMsBussines.post<unknown>(
+      ENDPOINTS.CARD_RECHARGE.CARDS_REGISTER,
+      payload,
+    );
+    const card = mapCard(unwrapData(response));
+    if (!card) {
+      throw new Error('No se pudo registrar la tarjeta del sistema');
+    }
+    return card;
+  },
+
   async preview(payload: PreviewCardRechargePayload): Promise<CardRechargePreview> {
     const response = await httpMsBussines.post<unknown>(
       ENDPOINTS.CARD_RECHARGE.PREVIEW,

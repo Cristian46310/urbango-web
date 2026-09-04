@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRoadPolyline } from "@/hooks/useRoadPolyline";
+import type { LatLngTuple } from "@/services/osrmRouteService";
 
 type Stop = {
   id: string;
@@ -67,6 +69,12 @@ export default function Page() {
   const [nodes, setNodes] = useState<SelectedNode[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const nodeWaypoints = useMemo<LatLngTuple[]>(
+    () => nodes.map((n) => [n.lat, n.lng]),
+    [nodes],
+  );
+  const { positions: routePositions, usedRoads } = useRoadPolyline(nodeWaypoints);
 
   useEffect(() => {
     async function loadStops() {
@@ -326,8 +334,13 @@ export default function Page() {
                   </Popup>
                 </Marker>
               ))}
-              {nodes.length >= 2 && (
-                <Polyline positions={nodes.map((n) => [n.lat, n.lng] as [number, number])} color="blue" />
+              {routePositions.length >= 2 && (
+                <Polyline
+                  positions={routePositions}
+                  color="blue"
+                  opacity={usedRoads ? 0.9 : 0.55}
+                  dashArray={usedRoads ? undefined : "8 10"}
+                />
               )}
             </MapContainer>
           </div>

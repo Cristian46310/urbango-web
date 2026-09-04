@@ -7,10 +7,19 @@ export class BusinessCrudRepository<T, CreateDto, UpdateDto>
 {
   private readonly basePath: string;
   private readonly byIdFn: (id: string) => string;
+  private readonly createPath: string;
+  private readonly updateMethod: "patch" | "put";
 
-  constructor(basePath: string, byId: (id: string) => string) {
+  constructor(
+    basePath: string,
+    byId: (id: string) => string,
+    createPath = basePath,
+    updateMethod: "patch" | "put" = "patch",
+  ) {
     this.basePath = basePath;
     this.byIdFn = byId;
+    this.createPath = createPath;
+    this.updateMethod = updateMethod;
   }
 
   async getById(id: string): Promise<T> {
@@ -24,10 +33,13 @@ export class BusinessCrudRepository<T, CreateDto, UpdateDto>
   }
 
   async create(data: CreateDto): Promise<T> {
-    return await httpMsBussines.post<T>(this.basePath, data);
+    return await httpMsBussines.post<T>(this.createPath, data);
   }
 
   async update(id: string, data: UpdateDto): Promise<T> {
+    if (this.updateMethod === "put") {
+      return await httpMsBussines.put<T>(this.byIdFn(id), data);
+    }
     return await httpMsBussines.patch<T>(this.byIdFn(id), data);
   }
 

@@ -6,6 +6,8 @@ import { SelectField, TextField } from "@/app/components/business/form-fields";
 import { BUSINESS_LOOKUP_PAGE_SIZE } from "@/app/components/business/constants";
 import { useNode, useRoute, useStopAdmin } from "@/hooks/business";
 import type { Node } from "@/core/domain/entities/business";
+import { isUuid } from "@/lib/uuid";
+import { showErrorToast } from "@/lib/toast";
 
 interface NodeForm {
   id: string;
@@ -34,10 +36,23 @@ export default function NodesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleRemove = async (id: string) => {
+    const node = crud.items.find((item) => item.id === id);
+    if (node) {
+      const siblings = crud.items.filter((item) => item.routeId === node.routeId);
+      if (siblings.length <= 3) {
+        showErrorToast("No se puede borrar: la ruta quedaría con menos de 3 paradas");
+        return;
+      }
+    }
+    await crud.removeItem(id);
+    await crud.loadItems();
+  };
+
   return (
     <BusinessCrudPage
       title="Nodos"
-      description="Vincula paradas a rutas con un orden."
+      description="Vincula paradas a rutas con un orden. Tras borrar, el backend resecuancia; mínimo 3 nodos por ruta."
       tableTitle="Listado de nodos"
       tableDescription="Nodos ruta-parada."
       entityLabel="nodo"
@@ -46,9 +61,15 @@ export default function NodesPage() {
       loading={crud.loading}
       error={crud.error}
       loadItems={crud.loadItems}
-      addItem={crud.addItem}
+      addItem={async (payload) => {
+        if (!isUuid(payload.routeId) || !isUuid(payload.stopId)) {
+          showErrorToast("Ruta y parada deben ser UUID válidos");
+          throw new Error("UUID inválido");
+        }
+        return crud.addItem(payload);
+      }}
       editItem={crud.editItem}
-      removeItem={crud.removeItem}
+      removeItem={handleRemove}
       initialForm={initialForm}
       mapToForm={(e) => ({
         id: e.id,

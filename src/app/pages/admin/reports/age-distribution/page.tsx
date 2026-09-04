@@ -99,7 +99,7 @@ export default function AdminAgeDistributionPage() {
 
     try {
       setLoading(true);
-      const qRouteId = routeId === "ALL" ? "" : routeId;
+      const qRouteId = routeId === "ALL" ? undefined : routeId;
       const response = await getAgeDistribution({ routeId: qRouteId, startDate, endDate });
       setReport(response);
     } catch (error) {
@@ -116,7 +116,7 @@ export default function AdminAgeDistributionPage() {
     }
 
     try {
-      const qRouteId = routeId === "ALL" ? "" : routeId;
+      const qRouteId = routeId === "ALL" ? undefined : routeId;
       const blob = await exportAgeDistributionExcel({ routeId: qRouteId, startDate, endDate });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -246,11 +246,13 @@ export default function AdminAgeDistributionPage() {
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-mono">{segment.percentage}%</td>
                       <td className="px-4 py-3 font-medium">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
-                          segment.variation.startsWith("-") 
+                          !segment.variation
+                            ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                            : segment.variation.startsWith("-")
                             ? "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400" 
                             : "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
                         }`}>
-                          {segment.variation}
+                          {segment.variation ?? "Sin datos"}
                         </span>
                       </td>
                     </tr>
